@@ -1,5 +1,5 @@
 # Publica a versão web no GitHub Pages a cada push para main.
-# iPhones e amigos sem a app jogam em https://sr-ssss.github.io/nob/
+# iPhones e amigos sem a app jogam em https://sr-ssss.github.io/NOB/
 name: Pages
 
 on:
@@ -23,7 +23,7 @@ jobs:
       # chave "publishable" do Supabase: é pública por natureza (também vai dentro do APK)
       VITE_SUPABASE_URL: https://rbuaprrmspytpsbiyimg.supabase.co
       VITE_SUPABASE_KEY: sb_publishable_rgNPBOMjSwpge9LMx0RzMQ_DdLet1G2
-      VITE_LINK_JOGAR: https://sr-ssss.github.io/nob/
+      VITE_LINK_JOGAR: https://sr-ssss.github.io/NOB/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
