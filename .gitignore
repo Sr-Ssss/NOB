@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-apk/
+.env
+android/local.properties
+android/app/build/
+android/.gradle/
+android/build/
+.claude/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/capacitor-cordova-android-plugins/
+*.log

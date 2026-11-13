@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NOB</string>
+    <string name="title_activity_main">NOB</string>
+    <string name="package_name">app.nob.party</string>
+    <string name="custom_url_scheme">app.nob.party</string>
+</resources>
