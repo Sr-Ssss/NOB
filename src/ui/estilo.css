@@ -256,3 +256,17 @@ input.resposta { font-size: 22px; }
 .gigante.escolhido { border-color: #fff; }
 .gigante:disabled { opacity: 0.85; cursor: default; }
 .visto { position: absolute; top: 10px; right: 16px; background: #fff; color: var(--tinta); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+/* menu de jogos do telemóvel (sem TV): vertical, sem vídeo */
+.menu-tel .lista-tel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.item-tel { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.item-tel.esbatido { opacity: 0.55; }
+.item-tel-cab { background: none; border: 0; padding: 0; color: inherit; font: inherit; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; text-align: left; }
+.item-tel-corpo { display: flex; flex-direction: column; gap: 10px; }
+
+/* troca de jogador (líder com bots) */
+.troca { position: sticky; top: 0; z-index: 5; background: var(--noite); padding: 6px 8px; border-bottom: 2px solid transparent; }
+.troca.como { border-bottom-color: #f5a623; }
+.troca-aviso { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff3d6; color: #6b4300; border-radius: 10px; padding: 6px 10px; font-weight: 700; margin-bottom: 6px; }
+.troca-lista { display: flex; gap: 6px; overflow-x: auto; }
+.troca-j { display: flex; align-items: center; gap: 4px; border: 2px solid transparent; border-radius: 10px; padding: 2px 8px 2px 2px; background: var(--noite-2); color: var(--creme); font: inherit; font-size: 13px; white-space: nowrap; }
+.troca-j.on { border-color: #f5a623; }

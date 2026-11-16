@@ -40,7 +40,7 @@ export function abrirCanal(codigo: string, eu: string): Canal {
     ch.on('broadcast', { event: evento }, (msg) => ouvintes.get(evento)?.forEach((cb) => cb(msg.payload)));
 
   // os ouvintes têm de ser registados antes do subscribe: guardamos os eventos pedidos
-  const eventos = ['acao', 'vista', 'pedir'];
+  const eventos = ['acao', 'vista', 'pedir', 'privado'];
   eventos.forEach(registar);
 
   ch.subscribe(async (estado) => {

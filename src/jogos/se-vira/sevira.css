@@ -1,0 +1,90 @@
+/* Se Vira! — "reunião de escritório": fundo azul-noite da app, slide branco sério */
+.jogo-sevira { min-height: 100vh; box-sizing: border-box; }
+.sv-centro { display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative; }
+
+.sv-slide {
+  background: #fff;
+  color: #1d1d1f;
+  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+  border-radius: 0;
+  border-top: 10px solid #26215c;
+  width: min(100%, calc((100vh - 230px) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+  padding: 2.2% 3%;
+  box-sizing: border-box;
+  box-shadow: 0 14px 0 rgba(0, 0, 0, 0.25);
+}
+.sv-slide-cab { display: flex; justify-content: space-between; font-size: clamp(14px, 1.3vw, 24px); color: #6b6b70; border-bottom: 2px solid #e3e3e6; padding-bottom: 0.6%; gap: 16px; }
+.sv-slide-cab span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-slide-corpo { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2%; min-height: 0; padding: 2% 0; }
+.sv-slide-pe { font-size: clamp(11px, 0.9vw, 16px); color: #9a9aa0; text-align: right; }
+
+.sv-titulo { font-size: clamp(32px, 4.4vw, 84px); font-weight: 700; text-align: center; line-height: 1.1; margin: 0; overflow-wrap: anywhere; }
+.sv-orador { display: flex; flex-direction: column; align-items: center; font-weight: 700; font-size: clamp(18px, 2vw, 34px); }
+
+.sv-foto { position: relative; flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
+.sv-foto img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sv-emoji { font-size: clamp(80px, 14vw, 260px); line-height: 1; }
+.sv-sem { color: #9a9aa0; font-size: clamp(16px, 1.6vw, 28px); }
+.sv-giphy { position: absolute; right: 6px; bottom: 6px; background: #000; color: #fff; font: 700 12px/1 Arial, sans-serif; padding: 5px 8px; letter-spacing: 0.5px; }
+.sv-escolher .sv-giphy { position: static; display: inline-block; margin-top: 8px; }
+.sv-legenda-foto { margin: 0; font-size: clamp(18px, 2vw, 38px); font-style: italic; text-align: center; }
+
+.sv-grafico { width: 100%; height: 100%; display: flex; flex-direction: column; }
+.sv-grafico h2 { margin: 0 0 2%; font-size: clamp(22px, 2.6vw, 48px); text-align: center; }
+.sv-barras { flex: 1; display: flex; align-items: flex-end; gap: 6%; padding: 0 10%; border-bottom: 3px solid #1d1d1f; min-height: 0; }
+.sv-barra { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
+.sv-barra > div { width: 100%; }
+.sv-barra b { font-size: clamp(14px, 1.4vw, 26px); }
+.sv-barra span { position: absolute; bottom: -1.6em; font-size: clamp(14px, 1.3vw, 24px); color: #6b6b70; }
+.sv-pizza-linha { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6%; min-height: 0; }
+.sv-pizza { height: 90%; aspect-ratio: 1; border-radius: 50%; }
+.sv-legenda { list-style: none; padding: 0; margin: 0; font-size: clamp(16px, 1.7vw, 30px); }
+.sv-legenda i { display: inline-block; width: 0.8em; height: 0.8em; margin-right: 0.3em; }
+
+.sv-citacao { margin: 0 8%; font-size: clamp(26px, 3.4vw, 64px); font-family: Georgia, 'Times New Roman', serif; font-style: italic; text-align: center; line-height: 1.25; }
+.sv-lista { font-size: clamp(24px, 2.8vw, 54px); line-height: 1.5; margin: 0; padding-left: 1.2em; align-self: flex-start; margin-left: 8%; }
+.sv-conclusao { font-size: clamp(64px, 11vw, 220px); font-weight: 900; letter-spacing: -2px; text-align: center; overflow-wrap: anywhere; line-height: 1; }
+
+/* reações a voar por baixo */
+.sv-reacoes { position: absolute; left: 0; right: 0; bottom: -90px; height: 190px; pointer-events: none; overflow: hidden; }
+.sv-voa { position: absolute; bottom: 0; font-size: clamp(40px, 4vw, 80px); animation: sv-voa 2.6s ease-out forwards; }
+@keyframes sv-voa {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-110px) scale(1.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .sv-voa { animation-duration: 1.2s; } }
+
+/* telemóvel */
+.sv-preparar { display: flex; flex-direction: column; gap: 10px; }
+.sv-titulo-tel { background: var(--creme); color: var(--tinta); border-radius: 16px; padding: 14px; font-weight: 800; font-size: 22px; text-align: left; width: 100%; box-sizing: border-box; }
+.sv-quadrados { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sv-quadrado { aspect-ratio: 1; border: 3px dashed var(--coral); border-radius: 16px; background: var(--noite-2); color: var(--coral); font-size: 48px; font-weight: 800; position: relative; overflow: hidden; padding: 0; }
+.sv-quadrado.cheio { border-style: solid; }
+.sv-quadrado img { width: 100%; height: 100%; object-fit: cover; }
+.sv-quadrado span { position: absolute; top: 4px; right: 6px; font-size: 18px; background: var(--tinta); color: var(--creme); border-radius: 50%; width: 26px; height: 26px; line-height: 26px; }
+.sv-escolher { display: flex; flex-direction: column; gap: 10px; max-height: 85vh; overflow: auto; }
+.sv-escolher-menu { display: flex; flex-direction: column; gap: 10px; }
+.sv-gifs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sv-gifs button { padding: 0; background: none; aspect-ratio: 1; overflow: hidden; border-radius: 8px; }
+.sv-gifs img { width: 100%; height: 100%; object-fit: cover; }
+
+.sv-comando { display: flex; flex-direction: column; gap: 16px; }
+.sv-slide-de { text-align: center; font-size: 30px; font-weight: 800; margin: 0; }
+.sv-setas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sv-setas .botao { font-size: 96px; padding: 0; height: 52vh; max-height: 480px; }
+.sv-reagir { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sv-reagir .botao { font-size: 72px; aspect-ratio: 1; padding: 0; }
+
+/* nota: slider vertical, estrelas à esquerda */
+.sv-nota { display: flex; justify-content: center; gap: 22px; height: 52vh; max-height: 460px; padding: 14px 0; }
+.sv-estrelas { display: flex; flex-direction: column; justify-content: space-between; margin: -14px 0; }
+.sv-estrela { background: none; color: #ffc93c; font-size: 40px; line-height: 28px; height: 28px; display: flex; align-items: center; gap: 8px; padding: 0; }
+.sv-estrela i { display: inline-block; width: 18px; height: 4px; background: var(--creme); border-radius: 2px; }
+.sv-estrela.cinza { color: #6f6a99; }
+.sv-barra-nota { position: relative; width: 44px; border-radius: 22px; background: #6f6a99; touch-action: none; cursor: pointer; }
+.sv-barra-cor { position: absolute; inset: 0; border-radius: 22px; background: linear-gradient(to top, #e5484d, #f5c84c 50%, #30a46c); }
+.sv-pega { position: absolute; left: -8px; right: -8px; height: 28px; border-radius: 14px; background: var(--creme); box-shadow: 0 3px 0 #bdb8a8; }

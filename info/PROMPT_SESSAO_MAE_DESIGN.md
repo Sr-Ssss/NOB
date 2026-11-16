@@ -1,4 +1,4 @@
-# Prompt da sessão-mãe · DESIGN e planeamento (13/11/2026)
+# Prompt da sessão-mãe · DESIGN e planeamento (atualizado 16/11/2026)
 
 Cola-se numa sessão nova.
 
@@ -10,13 +10,25 @@ Lê primeiro: `CLAUDE.md` e `info/PLANEAMENTO_PENDENTE.md` (preferências + list
 
 Sempre que uma decisão nova afete o código, avisa a sessão-mãe do JOGO com `SendMessage`, numa mensagem curta que diga o ficheiro e a secção.
 
-## Filhas (uma de cada vez por assunto)
-- **Conteúdo**: a sessão `conteudo-nob` (`local_b72c4375-b552-46c4-8dee-e1aff30ffafe`) já está a fazê-lo, em `conteudo/<jogo>.json` (`{id, pt, en, tags}`; no 50/50 tem de ter "___"). Está à espera de que o utilizador aprove a amostra do 50/50.
-- **Visual dos jogos** (ponto 3): faltam Revolução das Máquinas, Senha do Wi-Fi e Ragerob. Uma filha por jogo, com 1 proposta desenhada + 1 pergunta, sem animações.
-- **Logo e ícone** (ponto 4).
-- **N.P.N.**: só o ecrã de teste está decidido. O jogo fica parado até o utilizador pedir.
-- **Play Store** (ponto 9): mais tarde; denunciar/ocultar, regras de família, ficha da loja.
-- **Atualizar `info/PLANO_NOB.md`** (ponto 10): fazes tu, é pequeno.
+## Organização (pedido do utilizador, 16/11/2026)
+- Só há 2 sessões-mãe: esta (grupo **"NOB · Design"** na barra lateral) e a do JOGO (grupo **"NOB · Trabalho"**). Põe cada filha nova no teu grupo (`mcp__ccd_sidebar__move_sessions`, grupo "NOB · Design").
+- **Uma filha por jogo** (`Design · <jogo>`: visual, regras e conteúdo desse jogo) e **uma filha para menus e app** (`Design · Menus e app`: ecrãs, bonecos, logo, som, Play Store). Se já existir a filha desse jogo, mandas-lhe mensagem em vez de abrires outra.
+
+## Estado (16/11/2026)
+- ✅ Visual dos 10 jogos (ponto 3), cada um em `info/jogos/<jogo>.md` → "Visual". Por rever: Pensa-Dores (o tema sala de aula foge às cores da app).
+- ✅ `info/PLANO_NOB.md` v3 (ponto 10).
+- **Conteúdo**: em `conteudo/<jogo>/conteudo.{pt-BR,en}.json`. Confirmar se o utilizador já aprovou a amostra do 50/50 (`conteudo/5050/`); a antiga sessão `conteudo-nob` vai ser arquivada, por isso o conteúdo continua numa filha `Design · <jogo>`.
+- **Por fazer**:
+  - Logo e ícone (ponto 4) → `Design · Menus e app`;
+  - arte final dos bonecos e origem/licença dos sons → `Design · Menus e app`;
+  - Play Store (ponto 9): denunciar/ocultar, regras de família, ficha da loja → `Design · Menus e app`;
+  - N.P.N.: parado até o utilizador pedir.
+
+## Lições destas sessões
+- A app só deixa 5 sessões a trabalhar ao mesmo tempo. Se recusar, propõe a filha como cartão (`own_initiative`) e o utilizador inicia-a.
+- No modo auto, mover sessões na barra lateral (`move_sessions`) é recusado: pede ao utilizador para as arrastar.
+- Uma filha pode receber do utilizador uma decisão contrária à da mãe (ex.: a nave ficou na Revolução das Máquinas). Vale a do utilizador: atualiza o `.md`.
+- Para poupar tokens: lê só a secção que precisas (Grep), mensagens curtas, e não releias ficheiros que acabaste de editar.
 
 O brief de cada filha diz sempre:
 - formulário com ⭐ na recomendada; "decide tu" = decide e explica numa linha;

@@ -24,6 +24,7 @@ jobs:
       VITE_SUPABASE_URL: https://rbuaprrmspytpsbiyimg.supabase.co
       VITE_SUPABASE_KEY: sb_publishable_rgNPBOMjSwpge9LMx0RzMQ_DdLet1G2
       VITE_LINK_JOGAR: https://sr-ssss.github.io/NOB/
+      VITE_GIPHY_KEY: c0N7wRTJ7zpMrKt0ctKJmoIMuL34h9vL
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

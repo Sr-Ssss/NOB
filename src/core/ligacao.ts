@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { abrirCanal, type Canal } from './canal';
 import { codigoSala } from './ids';
-import { ID_TV, comandoValido, novaSala, reduzSala, vistaSala, type AcaoSala, type EstadoSala, type Idioma, type Tecla, type VistaSala } from './sala';
+import { EmissorPrivado } from './privado';
+import { ID_TV, comandoValido, novaSala, privadoSala, reduzSala, vistaSala, type AcaoSala, type EstadoSala, type Idioma, type Tecla, type VistaSala } from './sala';
 
 /** mensagem da TV para todos */
 export interface MsgVista {
@@ -35,8 +36,8 @@ function codigoTv(): string {
 }
 
 /** A TV: dona do estado. Reduz ações, corre o relógio e publica a vista. */
-export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void) {
-  const [estado, setEstado] = useState<EstadoSala>(() => novaSala(codigoTv(), idioma));
+export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: { eu: string }) {
+  const [estado, setEstado] = useState<EstadoSala>(() => ({ ...novaSala(codigoTv(), idioma), semTv: !!semTv }));
   const comando = useRef(aoComando);
   comando.current = aoComando;
   const [ligado, setLigado] = useState<boolean | null>(null);
@@ -44,6 +45,7 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void) {
   const canal = useRef<Canal | null>(null);
   const seq = useRef(0);
   const ultima = useRef('');
+  const privado = useRef<EmissorPrivado | null>(null);
 
   const despachar = (a: AcaoSala) => {
     const novo = reduzSala(ref.current, a, Date.now());
@@ -71,11 +73,13 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void) {
       return;
     }
     canal.current = c;
+    privado.current = new EmissorPrivado(ref.current.codigo);
     c.aoLigar((ok) => {
       setLigado(ok);
       if (ok) publicar(true);
     });
-    c.aoMudarPresenca((ids) => despachar({ tipo: 'ligados', ids: ids.filter((i) => i !== ID_TV) }));
+    // sem TV, o criador é o host e também joga: está sempre ligado
+    c.aoMudarPresenca((ids) => despachar({ tipo: 'ligados', ids: [...ids.filter((i) => i !== ID_TV), ...(semTv ? [semTv.eu] : [])] }));
     c.ouvir('acao', (d) => {
       const m = d as MsgAcao;
       if (typeof m?.de !== 'string' || !m.acao) return;
@@ -90,13 +94,26 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void) {
     const relogio = setInterval(() => despachar({ tipo: 'tick' }), 250);
     return () => {
       clearInterval(relogio);
+      privado.current?.fechar();
       c.sair();
     };
   }, []);
 
-  useEffect(() => publicar(), [estado]);
+  useEffect(() => {
+    publicar();
+    // canal privado: cada jogador só recebe o seu (papéis secretos)
+    privado.current?.sincronizar(estado.jogadores, (id) => privadoSala(estado, id));
+  }, [estado]);
 
-  return { estado, ligado, acao: (a: AcaoSala) => despachar(comId(a, ID_TV)) };
+  return {
+    estado,
+    ligado,
+    acao: (a: AcaoSala) => despachar(comId(a, ID_TV)),
+    /** ação do próprio criador como jogador (modo sem TV) */
+    acaoDe: (de: string, a: AcaoSala) => despachar(comId(a, de)),
+    /** sem TV: o privado do próprio criador (e dos bots dele) lê-se direto do estado */
+    privadoDe: (id: string) => privadoSala(estado, id),
+  };
 }
 
 export type EstadoLigacao = 'a_ligar' | 'ok' | 'sem_sala' | 'erro';

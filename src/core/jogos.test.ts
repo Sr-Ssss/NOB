@@ -8,7 +8,8 @@ describe('menu de jogos', () => {
     expect(motivo(j('5050'), 3)).toBeNull();
     expect(motivo(j('5050'), 2)).toEqual({ tipo: 'poucos', precisa: 3, tem: 2 });
     expect(motivo(j('5050'), 20)).toBeNull(); // a mais = audiência
-    expect(motivo(j('pirata'), 8)).toEqual({ tipo: 'em_breve' });
+    expect(motivo(j('pirata'), 8)).toBeNull();
+    expect(motivo(j('rei'), 8)).toEqual({ tipo: 'em_breve' });
   });
 
   it('pesquisa e filtros', () => {

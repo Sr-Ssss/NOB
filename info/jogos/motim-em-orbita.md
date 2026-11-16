@@ -50,3 +50,26 @@ Governo secreto numa nave: a Tripulação repara o motor, os Amotinados sabotam 
 
 ## Painel público (TV, ou separador "Painel" no telemóvel quando não há TV)
 - Reparações 0–5, Sabotagens 0–6, contador de falhas, Comandante e Piloto atuais, ordem dos jogadores, último resultado de votação.
+
+## Visual — "sala de controlo"
+- **TV** (fundo azul-noite da app, traço rabiscado como os bonecos):
+  - consola da nave vista de frente; **não aparecem humanos** (só os robôs);
+  - **2 manómetros**: à esquerda Reparação 0–5 (azul), à direita Sabotagem 0–6 (vermelho). O ponteiro sobe uma marca por carta;
+  - junto a cada marca do manómetro da Sabotagem fica o **ícone do poder** (🔍 👀 📢 🚀), conforme o n.º de jogadores;
+  - **ao centro, uma bateria de pé** com 3 células = **contador de falhas** (substitui as alavancas). Cada falha acende 1 célula (coral); à 3.ª esvazia e entra a carta do topo;
+  - em baixo, a **fila de postos da consola**, com os bonecos (todos robôs) por ordem; etiquetas "Comandante" (coral) e "Piloto" (creme); quem fica bloqueado aparece esbatido; ejetado = posto vazio, boneco esbatido;
+  - votação revelada: "sim"/"não" por cima de cada boneco até à ronda seguinte;
+  - fim: revela todos os papéis + animação da nave + pontos.
+- **Telemóvel** (cores da app, código em baixo; sem TV o Painel mostra a consola):
+  - **texto igual para todos** em cada fase + botão **"Identidade" (segurar 3 s)**: bolinha de cor + papel; aos Amotinados mostra os aliados e a IA; à IA de 5–6 mostra os Amotinados; ao largar, some;
+  1. **Carta** (início): "Segura 3 s para veres quem és";
+  2. **Comandante escolhe o Piloto**: o Comandante vê a lista (bloqueados esbatidos) + Confirmar; os outros veem "A Rita está a escolher o Piloto";
+  3. **Votação**: "Comandante: Rita · Piloto: Ana" + Sim / Não + "Votaram 4/6" (caixinhas ✅/❌);
+  4. **Sessão secreta**: Comandante "Descarta 1 cartão" (3 cartões creme 🔧/💥); Piloto "Escolhe 1" (2 cartões); os outros "À espera do Comandante e do Piloto". Os cargos são públicos, por isso isto não denuncia ninguém;
+  5. **Poder**: só o Comandante escolhe (lista + Confirmar); o resultado de 🔍/👀 aparece só a ele, dentro de um ecrã que se segura como a Identidade;
+  6. **Veto**: Piloto "Propor veto"; Comandante "Aceitar / Recusar";
+  7. **Discussão**: "Conversem, olhem para a TV" + Identidade;
+  8. **Ejetado**: "Foste ejetado. Não votes nem fales.";
+  9. **Fim**: "Ganhaste/Perdeste" + pontos + "Olha para a TV".
+- Boa prática: Reparação e Sabotagem distinguem-se pelo **ícone** (🔧/💥) e pelo lado da consola, não só pela cor (daltonismo).
+- Boa prática: ecrãs da sessão secreta e do poder têm **o mesmo tamanho e tempo mínimo** que o "À espera", para não se ler nada pela duração.

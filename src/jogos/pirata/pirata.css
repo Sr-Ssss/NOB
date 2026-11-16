@@ -1,0 +1,66 @@
+/* Pirata: visual A + B + C (info/jogos/pirata-a-bordo.md → Visual) */
+.jogo-pirata { min-height: 100vh; box-sizing: border-box; --papiro: #ecd9a8; --papiro-2: #c9a86a; --madeira: #b07a45; --madeira-2: #8a5a2e; --mar: #2c6fa0; }
+.jogo-pirata.tv.fase-noite, .jogo-pirata.tv.fase-carta { background: #1a1640; }
+.jogo-pirata.tv.fase-discussao, .jogo-pirata.tv.fase-votar, .jogo-pirata.tv.fase-resultado, .jogo-pirata.tv.fase-artilheiro { background: var(--mar); }
+.pr-narra { text-align: center; margin: 8px 0; font-size: clamp(28px, 4vw, 64px); }
+
+/* A: noite */
+.pr-noite { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pr-barco { width: min(92vw, 1100px); max-height: 62vh; }
+.pr-balanco { animation: pr-balanco 6s ease-in-out infinite; transform-origin: 405px 330px; }
+@keyframes pr-balanco { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+/* B: diário de bordo (pergaminho) */
+.pr-diario, .pr-pergaminho { display: flex; flex-direction: column; align-items: center; margin: 2vh auto; width: min(92%, 900px); }
+.pr-rolo { width: 104%; height: 22px; border-radius: 11px; background: var(--papiro-2); border: 3px solid #000; }
+.pr-folha { width: 100%; box-sizing: border-box; background: var(--papiro); color: #2a1a08; border-left: 3px solid #000; border-right: 3px solid #000; padding: 18px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: pr-abrir 0.6s ease-out; transform-origin: top; }
+.pr-folha small { color: #6b4a1e; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.pr-folha h1 { margin: 0; font-size: clamp(24px, 3.4vw, 60px); }
+.pr-diario .pr-folha { min-height: 40vh; justify-content: center; }
+@keyframes pr-abrir { from { transform: scaleY(0.05); } to { transform: scaleY(1); } }
+
+/* C: convés visto de cima + prancha */
+.pr-dia { display: flex; flex-direction: column; gap: 12px; }
+.pr-conves { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 22%; align-items: center; margin: 0 auto; width: min(96%, 1500px); }
+.pr-tabuas { background: var(--madeira); background-image: repeating-linear-gradient(0deg, transparent 0 58px, var(--madeira-2) 58px 62px); border: 5px solid #000; border-radius: 120px 40px 40px 120px; padding: 32px 48px; display: flex; flex-wrap: wrap; gap: 18px 28px; justify-content: center; min-height: 40vh; align-content: center; }
+.pr-tripulante { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; color: #fff; font-weight: 700; font-size: 1.3em; text-shadow: 0 2px 0 #000; }
+.compacto .pr-tripulante { font-size: 1em; }
+.pr-tripulante.fora { opacity: 0.3; filter: grayscale(1); }
+.pr-marca { position: absolute; top: -10px; right: -10px; background: var(--creme); color: var(--tinta); border: 3px solid #000; border-radius: 999px; min-width: 34px; text-align: center; font-weight: 800; text-shadow: none; }
+.pr-prancha { height: 70px; background: var(--madeira-2); border: 5px solid #000; border-left: 0; position: relative; display: flex; align-items: center; }
+.pr-anda { position: absolute; display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: 700; animation: pr-anda 6s ease-in forwards; }
+@keyframes pr-anda { 0% { left: -20%; top: -60px; } 70% { left: 70%; top: -60px; } 100% { left: 85%; top: 60px; opacity: 0; } }
+.pr-conves.compacto { grid-template-columns: minmax(0, 1fr) 18%; }
+.pr-conves.compacto .pr-tabuas { padding: 14px 18px; border-radius: 60px 16px 16px 60px; min-height: 0; gap: 8px 12px; font-size: 13px; }
+.pr-conves.compacto .pr-prancha { height: 36px; }
+
+/* telemóvel */
+.jogo-pirata.tel { padding-bottom: 120px; }
+.pr-frase { text-align: center; margin: 8px 0 0; }
+.pr-lista { gap: 4px; padding: 10px 12px; }
+.pr-linha { display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 10px; border-radius: 10px; background: transparent; border: 3px solid transparent; color: #2a1a08; font: inherit; font-weight: 700; font-size: 18px; min-height: 48px; text-align: left; }
+.pr-linha.on { border-color: var(--coral); background: rgba(240, 153, 123, 0.18); }
+.pr-linha:disabled { opacity: 0.35; }
+.pr-x { width: 36px; text-align: center; font-size: 22px; }
+.pr-relatorio { font-size: 22px; font-weight: 700; min-height: 120px; justify-content: center; }
+.pr-ok { font-weight: 700; }
+.pr-pergaminho.fechado { width: 70%; }
+.pr-selo { width: 96%; height: 140px; background: var(--papiro); border-left: 3px solid #000; border-right: 3px solid #000; display: flex; align-items: center; justify-content: center; font-size: 64px; color: #8a1e1e; }
+.pr-mar { background: var(--mar); border-radius: 20px; padding: 24px; text-align: center; margin-top: 12px; }
+.pr-botao-id { position: fixed; left: 50%; bottom: 52px; transform: translateX(-50%); min-width: 200px; min-height: 52px; border-radius: 999px; background: var(--noite-2); color: var(--creme); border: 3px solid var(--creme); font: inherit; font-weight: 800; font-size: 18px; user-select: none; -webkit-user-select: none; touch-action: none; z-index: 5; }
+.pr-botao-id.on { background: var(--coral); color: var(--tinta); }
+.pr-identidade { position: fixed; inset: 10% 6% auto; background: var(--creme); color: var(--tinta); border-radius: 20px; padding: 20px; text-align: center; z-index: 6; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
+.pr-identidade h2 { margin: 0; }
+.pr-identidade p { margin: 6px 0; }
+.pr-simbolo { font-size: 56px; }
+
+/* fim */
+.pr-fim { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.tel .pr-fim, .pr-revela { display: flex; flex-direction: column; gap: 12px; }
+.pr-revela h2 { text-align: center; margin: 0; }
+.pr-papeis { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.pr-papel-j { background: var(--noite-2); border-radius: 14px; padding: 8px 12px; display: flex; flex-direction: column; align-items: center; min-width: 110px; }
+.pr-papel-j.pirata { background: #5a1f2a; }
+.pr-papel-j.fora { opacity: 0.6; }
+.pr-hist { background: var(--papiro); color: #2a1a08; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .pr-balanco, .pr-folha, .pr-anda { animation: none; } }

@@ -1,0 +1,75 @@
+/* Mona Lixa: visual "museu" (info/jogos/rabiscos.md → Visual) */
+.jogo-mona { min-height: 100vh; box-sizing: border-box; }
+.tela { display: block; width: 100%; aspect-ratio: 4 / 3; height: auto; background: #fff; border-radius: 4px; }
+
+/* moldura dourada */
+.moldura {
+  padding: clamp(10px, 1.6vw, 28px);
+  background: linear-gradient(135deg, #8a6d12, #e6c35c 30%, #b8901f 55%, #f2d77a 75%, #8a6d12);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(0, 0, 0, 0.25);
+}
+.moldura .tela { border-radius: 0; box-shadow: inset 0 0 0 4px #6b520c; }
+
+/* placa de museu */
+.placa {
+  background: #f1efe8;
+  color: #2c2c2a;
+  border: 3px solid #b8901f;
+  border-radius: 4px;
+  padding: 0.5em 0.8em;
+  box-shadow: 0 3px 0 #6b520c;
+  font-weight: 700;
+  text-align: center;
+  position: relative;
+}
+.placa::before, .placa::after { content: ''; position: absolute; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: #b8901f; }
+.placa::before { left: 6px; }
+.placa::after { right: 6px; }
+.placa-texto { line-height: 1.2; }
+.placa.revelada { animation: placa-entra 0.4s ease-out; }
+.placa.verdadeira { background: #f0997b; border-color: #fff3c4; color: #4a1b0c; }
+.placa-quem { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; font-size: 0.7em; margin-top: 4px; font-weight: 600; }
+.placa-autor { display: inline-flex; align-items: center; gap: 4px; }
+.placa-pontos { color: #2b6a2b; }
+.placa.verdadeira .placa-pontos { color: #4a1b0c; }
+.placa-bonecos { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 4px; }
+@keyframes placa-entra { from { transform: translateY(-12px) scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* sala do museu (TV) */
+.museu { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(16px, 3vw, 48px); align-items: center; margin-top: 16px; }
+.museu-obra { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.museu-obra .moldura { width: 100%; box-sizing: border-box; }
+.museu-autor { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.museu-lado { display: flex; flex-direction: column; gap: 16px; }
+.museu-titulo { margin: 0; text-align: center; }
+.museu-centro { display: flex; flex-direction: column; gap: 24px; align-items: center; margin-top: 8vh; }
+.placas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.museu.compacto { grid-template-columns: 1fr; gap: 12px; }
+.museu.compacto .placas { grid-template-columns: 1fr; gap: 8px; }
+
+/* telemóvel */
+.mona-tel { display: flex; flex-direction: column; gap: 12px; }
+.mona-titulo { display: flex; align-items: center; gap: 8px; }
+.mona-titulo input { flex: 1; }
+.editor { display: flex; flex-direction: column; gap: 8px; user-select: none; -webkit-user-select: none; }
+.editor .tela { box-shadow: 0 0 0 2px #b8901f; }
+.ferramentas { display: flex; flex-direction: column; gap: 8px; }
+.cores { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.cor { aspect-ratio: 1; min-height: 36px; border-radius: 50%; border: 3px solid #f1efe8; padding: 0; cursor: pointer; }
+.cor.on { outline: 3px solid #f0997b; outline-offset: 2px; }
+.acoes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ferr { min-height: 48px; border-radius: 12px; border: 2px solid transparent; background: #f1efe8; color: #26215c; font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ferr.on { border-color: #f0997b; }
+.ferr:disabled { opacity: 0.45; }
+.ferr .ponta { display: inline-block; border-radius: 50%; }
+.placas-tel { display: flex; flex-direction: column; gap: 10px; }
+.placas-tel .placa { box-sizing: border-box; font-size: 20px; padding: 14px 16px; min-height: 48px; width: 100%; cursor: pointer; font-family: inherit; }
+.placas-tel .placa.minha { background: #9a9890; border-color: #6f6d66; box-shadow: none; color: #3a3a38; cursor: not-allowed; }
+.placas-tel .placa.escolhida { background: #f0997b; color: #4a1b0c; }
+.separadores { display: flex; gap: 6px; }
+.separadores button { flex: 1; min-height: 44px; border-radius: 12px; border: 0; background: rgba(241, 239, 232, 0.15); color: inherit; font: inherit; font-weight: 700; }
+.separadores button.on { background: #f1efe8; color: #26215c; }
+
+/* capturas (rota de demo): sem animações */
+.sem-anim *, .sem-anim *::before { animation: none !important; transition: none !important; }

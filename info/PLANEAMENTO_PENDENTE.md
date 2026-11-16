@@ -29,16 +29,16 @@ Ficheiro para continuar o planeamento numa sessão nova. A implementação do MV
 - Conteúdo da app: PT = **português do Brasil** + EN. Planeamento/conversa: PT-PT.
 - Nada de nomes com marca registada (Picasso, Van Gogh…), títulos de filmes ou palavras com duplo sentido em EN.
 
-## Para a próxima sessão (13/11/2026)
-- Fechados nesta sessão: ponto 1 (ecrãs) e ponto 2 (bonecos) → `arquitetura.md` secção "Ecrãs"; ponto 3 em pausa (7/10 jogos, visual em cada `jogos/<jogo>.md`).
-- Mudanças que a sessão **mvp-nob** ainda não conhece: líder = 1.º a entrar (passa liderança); nomes únicos, volta-se pelo nome (sem PIN); código sempre em baixo; modos rápido/votação/torneio (pontos por colocação); conta Google ≠ nome.
-- Começar pelo **ponto 6 (Ragerob · modo Pilotos)**; depois 5, 7, 8, 9, 10; o 4 (logo) e o resto do 3 quando o utilizador quiser voltar ao design.
+## Para a próxima sessão (16/11/2026)
+- Fechados: pontos 1, 2, 3 (visual dos 10 jogos), 5, 6, 10 (`PLANO_NOB.md` v3). A mãe do jogo foi avisada do PLANO_NOB v3 e das 2 frases corrigidas em `arquitetura.md` (tabelas da party; VIP → líder).
+- Decisões de 16/11: Revolução das Máquinas = "sala de controlo", a nave fica (decisão do utilizador) e não aparecem humanos; Senha do Wi-Fi = "router da sala com post-its"; Ragerob = "sucata no quintal" (estilo próprio, foge às cores da app de propósito).
+- Próximos: 4 (logo e ícone), rever o Pensa-Dores, 8 (conteúdo: confirmar a aprovação da amostra do 50/50), 9 (Play Store). O 7 (N.P.N.) fica parado.
 - Ritmo: o utilizador quer rapidez — 1 proposta visual + 1 pergunta por item, sem animações.
 
 ## O que falta planear (por ordem sugerida)
 1. ✅ **Ecrãs da app** — fechado em `arquitetura.md` → "Ecrãs". Ficam para depois: vídeos tutoriais e desenhos do "Como jogar" (ponto 3); menu de escolha de jogo no telemóvel do líder sem TV (vertical, já descrito).
-2. ✅ **Bonecos (avatares)** — `arquitetura.md` → "Bonecos": 18 formas abstratas rabiscadas (lista fechada), cores base, só piscar. Falta a arte final.
-3. 🟡 **Visual de cada jogo** (10) — feitos: 50/50, Pensa-Dores (a rever: o tema sala de aula fugiu ao das cores da app), Se Vira!, Mona Lixa, Ideias Mirabolantes, Pirata, O Rei e o Dragão. **Pausado pelo utilizador** (cansou de design): faltam Revolução das Máquinas (propostas: robô+baterias ⭐, sala de controlo, terminal), Senha do Wi-Fi, Ragerob. Regra para jogos com papéis secretos: texto igual para todos + botão Identidade (segurar 3 s). estilo próprio dentro do jogo; mostrar 2–3 propostas desenhadas por jogo.
+2. ✅ **Bonecos (avatares)** — `arquitetura.md` → "Bonecos": 18 formas abstratas rabiscadas (lista fechada), cores base, só piscar. Olhos e bocas por boneco aprovados (16/11, tabela em "Bonecos"). Falta a arte final.
+3. ✅ **Visual de cada jogo** (10/10, 16/11) — 50/50, Pensa-Dores, Se Vira!, Mona Lixa, Ideias Mirabolantes, Pirata, O Rei e o Dragão, Revolução das Máquinas ("sala de controlo"), Senha do Wi-Fi ("router da sala com post-its"), Ragerob ("sucata no quintal"). Por rever: Pensa-Dores (o tema sala de aula fugiu às cores da app). Revolução das Máquinas: a nave fica (decisão do utilizador, 16/11), sem humanos no visual. Regra para jogos com papéis secretos: texto igual para todos + botão Identidade (segurar 3 s). estilo próprio dentro do jogo; mostrar 2–3 propostas desenhadas por jogo.
 4. **Logo e ícone da NOB**.
 5. ✅ **Som** — em `arquitetura.md` → "Som (TV)". Falta a origem e a licença dos sons (adiado).
 6. ✅ **Ragerob — modo Pilotos** — liga + fórmula mista, em `jogos/rinha-de-robos.md`.

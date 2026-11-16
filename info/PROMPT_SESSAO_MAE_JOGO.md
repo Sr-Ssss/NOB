@@ -22,6 +22,27 @@ Eu escrevo como quem joga e não quero repetir o que já disse: descobre tu.
 - **"o que falta?"**: lista curta por assunto; eu escolho uma coisa de cada vez.
 - **"vou sair"**: decides sozinho com o mais simples e seguro, apontas cada decisão em `PROXIMA_SESSAO.md` para eu rever, e deixas tudo verde.
 
+## Estado à passagem (16/11/2026, mãe anterior)
+- Feito: MVP 50/50 (publicado em sr-ssss.github.io/NOB, repo Sr-Ssss/NOB, APK `NOB_v0.1.0.apk` na Área de Trabalho, não testado em telemóvel real) e **Pensa-Dores ✅**. 73 testes verdes, lint 0. Capturas em `info/progresso/0-mvp/` e `1-pensa-dores/`.
+- Filhas:
+  - `Jogo 1: Pensa-Dores` (`local_fecfdd44-2b30-4a19-8145-72068b977bcb`): terminada, no grupo "NOB · Trabalho"; pode ser arquivada ou reaproveitada para correções do Pensa-Dores;
+  - `MVP NOB` (`local_17839979-…`): arquivada.
+- Atualização: Senha do Wi-Fi ✅ (`local_ae5c7b3c-6baa-456d-a4a1-eecd271e2757`, 93 testes). Jogo 3 **`Jogo · Se Vira!`** proposto como cartão à espera do clique.
+- (antigo) Proposta à espera do clique do utilizador: **`Jogo · Senha do Wi-Fi`** (task `task_5a47743e`, brief completo já enviado; quando o utilizador disser "arranca", `start_session` só com `proposal_id`). Se tiver expirado, relançar com o mesmo brief: seguir `jogos/encriptado.md` à letra, visual "router com post-its".
+- Seguinte: jogo 3 (Se Vira!) e por aí fora, conforme `info/PLANO_JOGOS.md`. Depois (ou entre jogos, nunca em paralelo com um jogo que mexa em `src/core/`): a filha `App · Menus e ecrãs` (fechar o núcleo v3: ver `PROXIMA_SESSAO.md` → Coordenação).
+- Do lado do utilizador: clicar no cartão do jogo 2; testar o APK num telemóvel; rever o conteúdo gerado.
+
+## Lições (mãe anterior)
+- `start_session` com `user_asked` é recusado num turno iniciado por outra sessão ou por um evento. Aí, propõe-se um cartão (`own_initiative`) e diz-se ao utilizador para clicar.
+- O modo automático bloqueia o script Playwright das capturas: avisar o utilizador para o aprovar na filha.
+- Não há Python nem `gh` no PC. Usar Node, Bash e git. O Gradle precisa de `JAVA_HOME` = JBR do Android Studio.
+- Confirmar sempre `npm test` + `npm run lint` antes de anunciar uma filha como acabada, e mostrar as capturas com `SendUserFile`.
+- O utilizador quer respostas muito curtas, um jogo de cada vez, e imagens do progresso.
+
+## Organização (pedido do utilizador, 16/11/2026)
+- Só há 2 sessões-mãe: esta (grupo **"NOB · Trabalho"** na barra lateral) e a de DESIGN (grupo **"NOB · Design"**). Põe cada filha nova no teu grupo (`mcp__ccd_sidebar__move_sessions`, grupo "NOB · Trabalho").
+- **Uma filha por jogo** (`Jogo · <nome>`) e **uma filha para menus e app** (`App · Menus e ecrãs`: sala, lobby, menus, histórico, definições, Android/APK). Se já existir a filha desse jogo (ex.: "Jogo 1: Pensa-Dores"), mandas-lhe mensagem em vez de abrires outra. Ordem dos jogos: `info/PLANO_JOGOS.md`.
+
 ## Regras de coordenação
 - Antes de me dizeres que uma filha acabou, confirmas tu: `npm test`, `npm run lint` e o diff.
 - No fim de cada passo atualizas `info/PROXIMA_SESSAO.md`: feito, falta, decisões tomadas sem mim.

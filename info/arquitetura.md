@@ -109,6 +109,31 @@ android/       projeto Capacitor (Fase 3)
   - **cores (uma por boneco, bem distintas)**: 1 amassado #E6194B vermelho · 2 torre torta #4363D8 azul · 3 pingente #F58231 laranja · 4 bolhas #3CB44B verde · 5 espiral #911EB4 roxo · 6 zigue-zague #FFE119 amarelo · 7 tampa #42D4F4 ciano · 8 esticado #F032E6 magenta · 9 cubo mole #BFEF45 lima · 10 dois bicos #FABED4 rosa-claro · 11 ondulado #469990 verde-azulado · 12 pião #DCBEFF lilás · 13 mordido #9A6324 castanho · 14 escadinha #808000 oliva · 15 gosma #AAFFC3 menta · 16 peludo #800000 bordô · 17 polvo DJ #A9A9A9 cinzento · 18 feijão #FFD8B1 pêssego;
   - referências: **gosma** (pingos em baixo, 3 olhos, **sem antenas**), **peludo** (contorno aos picos), **polvo DJ** (tentáculos + auscultadores), **feijão** (forma torta, olhos a dormir). Rejeitados: pera, nuvem, raio, casinha, tijolo, ciclope, animais misturados e humanos;
   - evitar formas iguais às de outros jogos conhecidos (estrela, lua, gota, cacto, cocó);
+  - **caras (aprovado 16/11)**: cada boneco tem olhos e boca próprios, com personalidade que vem da forma; **todos piscam** (incluindo o feijão, de pálpebra a meio, e a gosma, os 3 olhos juntos):
+
+    | # | boneco | olhos | boca | personalidade |
+    |---|---|---|---|---|
+    | 1 | amassado | um grande e um pequeno | ondulada "~" | atrapalhado |
+    | 2 | torre torta | inclinados (um mais alto, como a torre) | reta, com um dente a morder | concentrado |
+    | 3 | pingente | a olhar para cima (para o fio) | sorriso pequeno | sonhador |
+    | 4 | bolhas | pontos pretos com brilho, um em cada bolha: pequeno na de cima, maior na grande | sorriso com a língua de fora para o lado | brincalhão |
+    | 5 | rabo de espiral | em espiral, de tamanhos diferentes e um mais alto | ondulada aberta | tonto |
+    | 6 | zigue-zague | zangados (sobrancelhas em V) | dentes em zigue-zague | resmungão |
+    | 7 | tampa com buraco | a espreitar de lado (para o buraco) | "o" pequeno | curioso |
+    | 8 | esticado de lado | muito afastados, um em cada ponta | sorriso larguíssimo | satisfeito |
+    | 9 | cubo mole | descaídos para fora, pupilas em baixo | aberta e mole (a escorrer) | molengão |
+    | 10 | dois bicos | grandes, com brilho | aberta em "D" | entusiasmado |
+    | 11 | ondulado | com 3 pestanas + bochechas rosa | sorriso de lado | vaidoso |
+    | 12 | pião | vesgos (pupilas para dentro) | risinho torto | distraído |
+    | 13 | mordido | arregalados, pupilas mínimas, sobrancelhas no ar; o do lado da dentada é maior | tremida para baixo | assustado |
+    | 14 | escadinha | quadrados | reta e firme | teimoso |
+    | 15 | gosma | 3 olhos | aberta, com um pingo de baba | guloso |
+    | 16 | peludo | pequeninos a espreitar por baixo do pelo; branco do olho bem visível e pupila preta, com a boca em creme, para se lerem no bordô | pequenina | tímido |
+    | 17 | polvo DJ | um semicerrado (pálpebra reta) e o outro aberto com a sobrancelha no ar | sorriso de lado | descontraído |
+    | 18 | feijão | a dormir: pálpebra a meio, pupila em baixo, olheiras | bocejo (oval) | dorminhoco |
+
+  - boa prática: detalhes finos (pestanas, olheiras, brilhos) com traço grosso, para se lerem a 32 px; cada cara reconhece-se também a preto e branco;
+  - boa prática: piscar dessincronizado entre bonecos e desligado com "reduzir movimento" (`prefers-reduced-motion`);
   - animação: só **piscar os olhos**, devagar, de vez em quando;
   - inspiração no estilo geral de party games desenhados à mão, **sem copiar personagens de outro jogo**.
 - Boas práticas: alvos de toque ≥ 48 dp; contraste ≥ 4.5:1; o campo do código só aceita letras/números e mostra erro claro se a party não existir; ecrã "Sem internet" com botão Tentar de novo.

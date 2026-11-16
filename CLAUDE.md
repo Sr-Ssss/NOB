@@ -7,7 +7,8 @@ Plataforma de party games, só online: app NOB na Play Store (modos "Ser a TV" e
 - Arquitetura e decisões técnicas: `info/arquitetura.md`
 - Estado / próximo passo: `info/PROXIMA_SESSAO.md`
 - Planeamento por terminar: `info/PLANEAMENTO_PENDENTE.md`
-- MVP em curso: `info/PLANO_MVP.md`
+- MVP: `info/PLANO_MVP.md`
+- Ordem dos jogos (uma sessão por jogo): `info/PLANO_JOGOS.md`
 - Jogos (regras de design): `info/jogos/<jogo>.md`
 - Armadilhas por assunto: `info/regras/<assunto>.md`
   - `info/regras/plataforma.md` — iOS, Bluetooth, PWA, custos

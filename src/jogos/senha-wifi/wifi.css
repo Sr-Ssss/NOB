@@ -1,0 +1,108 @@
+/* Senha do Wi-Fi — visual "router da sala com post-its" (info/jogos/encriptado.md) */
+.jogo-wifi, .tel-wifi { --postit: #f7e26b; --postit-txt: #2b2410; --router-b: #f1efe8; --router-p: #26232f; --mao: 'Gochi Hand', 'Comic Sans MS', cursive; }
+.jogo-wifi { min-height: 100vh; display: flex; flex-direction: column; }
+.wifi-palco { flex: 1; display: grid; grid-template-columns: 1fr 340px 1fr; gap: 28px; align-items: start; }
+.wifi-metade { display: flex; flex-direction: column; gap: 14px; }
+.wifi-metade-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 34px; font-weight: 800; }
+.wifi-simbolo { font-size: 1.2em; line-height: 1; }
+
+/* router: caixa rabiscada com antenas e 4 luzes numeradas */
+.router { position: relative; border: 4px solid var(--noite-escuro, #0d0b26); border-radius: 22px 18px 24px 16px; padding: 18px 16px 14px; margin-top: 34px; box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.35); }
+.router.b { background: var(--router-b); color: #1b1747; }
+.router.p { background: var(--router-p); color: #f1efe8; border-color: #f1efe8; }
+.router::before, .router::after { content: ''; position: absolute; top: -34px; width: 6px; height: 34px; border-radius: 3px; background: currentColor; }
+.router::before { left: 14%; transform: rotate(-12deg); }
+.router::after { right: 14%; transform: rotate(10deg); }
+.luzes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.luz { display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 800; font-size: 22px; }
+.luz i { width: 22px; height: 22px; border-radius: 50%; border: 3px solid currentColor; background: transparent; }
+.luz.acesa i { background: var(--coral); border-color: var(--coral); box-shadow: 0 0 14px var(--coral); }
+.luz .ordem { font-size: 14px; opacity: 0.8; min-height: 18px; }
+.luz.acesa { animation: acender 0.4s both; }
+.luz.acesa.o1 { animation-delay: 0.6s; }
+.luz.acesa.o2 { animation-delay: 1.2s; }
+@keyframes acender { from { opacity: 0.4; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .luz.acesa { animation: none; } }
+
+/* colunas de post-its por baixo de cada luz (parados: só inclinados) */
+.colunas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.coluna { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.postit { background: var(--postit); color: var(--postit-txt); font-family: var(--mao); font-size: 24px; line-height: 1.1; padding: 6px 8px; box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.3); overflow-wrap: break-word; hyphens: auto; position: relative; }
+.postit small { position: absolute; right: 4px; top: 2px; font-family: 'Baloo 2', sans-serif; font-size: 11px; opacity: 0.6; }
+.postit.novo { outline: 3px solid var(--coral); }
+.postit.vazio { opacity: 0.65; font-family: 'Baloo 2', sans-serif; font-size: 16px; }
+
+/* fichas: 2 🎯 + 2 sem sinal; vazio = tracejado, ganho = coral */
+.fichas { display: flex; gap: 8px; }
+.ficha { width: 46px; height: 46px; border-radius: 50%; border: 3px dashed currentColor; display: grid; place-items: center; font-size: 22px; opacity: 0.7; position: relative; }
+.ficha.ganha { border: 3px solid var(--coral); background: var(--coral); opacity: 1; }
+.ficha.sinal::after { content: ''; position: absolute; width: 70%; height: 3px; background: #e5484d; transform: rotate(-45deg); border-radius: 2px; }
+.ficha.sinal.ganha::after { background: #1b1747; }
+
+/* centro da TV */
+.wifi-centro { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding-top: 10px; }
+.wifi-centro .tempo { font-size: 110px; line-height: 1; }
+.wifi-ronda { font-size: 34px; font-weight: 800; }
+.wifi-fase { font-size: 30px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; padding: 4px 22px; }
+.wifi-cripto { display: flex; align-items: center; gap: 10px; font-size: 26px; }
+.wifi-codigo { font-size: 64px; font-weight: 800; letter-spacing: 4px; color: var(--coral); }
+.wifi-res { font-size: 28px; font-weight: 800; }
+
+/* telemóvel */
+.tel-wifi { overflow-x: hidden; }
+.tel-wifi .router { margin-top: 26px; padding: 12px 10px 10px; }
+.tel-wifi .router::before, .tel-wifi .router::after { top: -26px; height: 26px; width: 5px; }
+.tel-wifi .postit { font-size: 16px; padding: 5px 6px; }
+.tel-wifi .luz { font-size: 16px; }
+.tel-wifi .luz i { width: 16px; height: 16px; }
+.minhas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.minhas .postit { font-size: 24px; min-height: 64px; display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.minhas .postit b { font-family: 'Baloo 2', sans-serif; font-size: 22px; color: #a3401f; }
+.minhas .postit .trocar { margin-left: auto; min-width: 48px; min-height: 48px; border: 0; border-radius: 10px; background: rgba(0, 0, 0, 0.08); font-size: 22px; }
+.meu-codigo { font-size: 56px; font-weight: 800; text-align: center; color: var(--coral); letter-spacing: 4px; }
+.campo-pista { display: flex; align-items: center; gap: 8px; }
+.campo-pista .num { min-width: 44px; height: 48px; border-radius: 10px; background: var(--coral); color: #1b1747; font-weight: 800; font-size: 26px; display: grid; place-items: center; }
+.campo-pista input { flex: 1; min-width: 0; min-height: 48px; font-size: 20px; border-radius: 10px; border: 0; padding: 0 12px; }
+.campo-pista input.mal { outline: 3px solid #e5484d; }
+.linha-resp { display: flex; flex-direction: column; gap: 6px; }
+.linha-resp .pista { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.linha-resp .postit { flex: 1; }
+.botoes14 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.botoes14 button { min-height: 52px; font-size: 26px; font-weight: 800; border-radius: 12px; border: 3px solid var(--creme); background: transparent; color: var(--creme); }
+.botoes14 button.on { background: var(--coral); border-color: var(--coral); color: #1b1747; }
+.botoes14 button:disabled { opacity: 0.25; }
+.mudou { font-size: 13px; opacity: 0.85; color: var(--coral); }
+.confirmaram { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 15px; justify-content: center; }
+.separadores { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.separadores button { min-height: 48px; border-radius: 12px; border: 0; font-weight: 800; font-size: 18px; background: rgba(255, 255, 255, 0.1); color: inherit; }
+.separadores button.on { background: var(--coral); color: #1b1747; }
+.equipa-lista { display: flex; flex-direction: column; gap: 6px; }
+.equipa-lista .item { display: flex; align-items: center; gap: 8px; }
+.equipa-lista .item .cresce { flex: 1; }
+.equipa-lista .item button { min-width: 48px; min-height: 48px; font-size: 24px; border-radius: 12px; border: 2px solid var(--creme); background: transparent; color: var(--creme); }
+.equipa-lista .item button.on { background: var(--coral); border-color: var(--coral); color: #1b1747; }
+.wifi-dois { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.wifi-dois .cartao { font-size: 28px; }
+.tel-wifi .wifi-palco { grid-template-columns: 1fr; gap: 12px; }
+.tel-wifi .wifi-centro .tempo { font-size: 48px; }
+.tel-wifi .wifi-metade-cab { font-size: 20px; }
+.tel-wifi .wifi-codigo { font-size: 40px; }
+.tel-wifi .wifi-res, .tel-wifi .wifi-ronda, .tel-wifi .wifi-fase, .tel-wifi .wifi-cripto { font-size: 18px; }
+.tel-wifi .ficha { width: 34px; height: 34px; font-size: 16px; }
+/* TV a 3 m: texto ≥ 32 px */
+.jogo-wifi .postit { font-size: 32px; padding: 8px 10px; }
+.jogo-wifi .postit small { font-size: 14px; }
+.jogo-wifi .luz { font-size: 34px; }
+.jogo-wifi .luz i { width: 34px; height: 34px; }
+.jogo-wifi .wifi-metade-cab { font-size: 44px; }
+.jogo-wifi .ficha { width: 64px; height: 64px; font-size: 32px; }
+.jogo-wifi .router { padding: 26px 22px 20px; }
+.jogo-wifi .colunas, .jogo-wifi .luzes { gap: 14px; }
+.jogo-wifi .wifi-palco { padding: 24px 12px 80px; }
+.jogo-wifi .wifi-cripto, .jogo-wifi .wifi-res { font-size: 32px; }
+.jogo-wifi .wifi-centro .mini { font-size: 26px; }
+.jogo-wifi .minhas .postit { font-size: 40px; }
+/* dentro dos cartões creme: tinta azul-noite */
+.cartao .botoes14 button, .cartao.equipa-lista .item button { border-color: var(--noite); color: var(--noite); }
+.cartao .botoes14 button.on, .cartao.equipa-lista .item button.on { border-color: var(--coral); color: var(--noite); }
+.cartao .mudou { color: #a3401f; }

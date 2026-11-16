@@ -3,10 +3,17 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useHost } from '../core/ligacao';
 import { TEMAS, nomeJogo, t, usarIdioma } from '../core/i18n';
 import { CATALOGO, descricao, filtrar, motivo, nome, type Filtro, type InfoJogo } from '../core/jogos';
-import { ligados, podeComecar, vistaSala, type Idioma, type Tecla } from '../core/sala';
+import { jogoAtivo, ligados, podeComecar, vistaSala, type Idioma, type Tecla } from '../core/sala';
 import { Boneco } from '../ui/comuns';
 import { OPCOES, type Def5050 } from '../jogos/5050/regras';
 import { Tv5050 } from '../jogos/5050/tv';
+import { TvPensa } from '../jogos/pensa-dores/tv';
+import { TvWifi } from '../jogos/senha-wifi/tv';
+import { TvSevira } from '../jogos/se-vira/tv';
+import { TvMona } from '../jogos/mona-lixa/tv';
+import { TvIdeias } from '../jogos/ideias-mirabolantes/tv';
+import { TvPirata } from '../jogos/pirata/tv';
+import { extraTv } from '../jogos/se-vira/regras';
 
 /** opções do 50/50 (no telemóvel do líder) */
 export function Definicoes({ def, mudar }: { def: Def5050; mudar: (d: Partial<Def5050>) => void }) {
@@ -81,17 +88,18 @@ function linkJogar(codigo: string): string {
   return `${base}#/jogar?sala=${codigo}`;
 }
 
-const FILTROS: [Filtro, Parameters<typeof t>[0]][] = [
+export const FILTROS: [Filtro, Parameters<typeof t>[0]][] = [
   ['rapidos', 'fRapidos'],
   ['pessoas', 'fPessoas'],
   ['tv', 'fTv'],
   ['semtv', 'fSemTv'],
 ];
 
-function textoMotivo(j: InfoJogo, n: number): string {
-  const m = motivo(j, n);
+export function textoMotivo(j: InfoJogo, n: number, semTv = false): string {
+  const m = motivo(j, n, semTv);
   if (!m) return '';
   if (m.tipo === 'em_breve') return t('porqueEmBreve');
+  if (m.tipo === 'tv') return t('porqueTv');
   if (m.tipo === 'poucos') return t('porquePoucos', { n: m.precisa, t: m.tem });
   return t('porqueMuitos', { n: m.max, t: m.tem });
 }
@@ -112,14 +120,15 @@ export function Tv({ idioma }: { idioma: Idioma }) {
   const atual = lista[Math.min(sel, lista.length - 1)];
 
   const lancar = (j: InfoJogo | undefined) => {
-    if (j && !motivo(j, n) && podeComecar(s)) acao({ tipo: 'comecar', id: '' });
+    if (j && !motivo(j, n) && podeComecar(s)) acao({ tipo: 'comecar', id: '', jogo: j.id });
   };
   const alternarFiltro = (f: Filtro) => setFiltros((x) => (x.includes(f) ? x.filter((y) => y !== f) : [...x, f]));
 
   tecla.current = (k) => {
     if (k === 'recarregar') return location.reload();
-    if (s.jogo) {
-      if (s.jogo.fase !== 'fim') return;
+    const ja = jogoAtivo(s);
+    if (ja) {
+      if (ja.fase !== 'fim') return;
       if (k === 'esq' || k === 'dir') setSelFim((x) => 1 - x);
       if (k === 'ok') acao(selFim === 0 ? { tipo: 'outra_vez', id: '' } : { tipo: 'menu', id: '' });
       if (k === 'voltar' || k === 'menu') acao({ tipo: 'menu', id: '' });
@@ -171,6 +180,109 @@ export function Tv({ idioma }: { idioma: Idioma }) {
   }, []);
 
   if (ligado === false) return <div class="pag tv centro">{t('semLigacao')}</div>;
+
+  if (s.pirata) {
+    const vista = vistaSala(s);
+    return (
+      <>
+        <TvPirata
+          sala={vista}
+          v={vista.pirata!}
+          agora={Date.now}
+          selFim={selFim}
+          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
+          onMenu={() => acao({ tipo: 'menu', id: '' })}
+        />
+        <div class="rodape-codigo tv">{s.codigo}</div>
+      </>
+    );
+  }
+
+  if (s.ideias) {
+    const vista = vistaSala(s);
+    return (
+      <>
+        <TvIdeias
+          sala={vista}
+          v={vista.ideias!}
+          agora={Date.now}
+          selFim={selFim}
+          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
+          onMenu={() => acao({ tipo: 'menu', id: '' })}
+        />
+        <div class="rodape-codigo tv">{s.codigo}</div>
+      </>
+    );
+  }
+
+  if (s.mona) {
+    const vista = vistaSala(s);
+    return (
+      <>
+        <TvMona
+          sala={vista}
+          v={vista.mona!}
+          agora={Date.now}
+          selFim={selFim}
+          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
+          onMenu={() => acao({ tipo: 'menu', id: '' })}
+        />
+        <div class="rodape-codigo tv">{s.codigo}</div>
+      </>
+    );
+  }
+
+  if (s.sevira) {
+    const vista = vistaSala(s);
+    return (
+      <>
+        <TvSevira
+          sala={vista}
+          v={vista.sevira!}
+          extra={extraTv(s.sevira)}
+          agora={Date.now}
+          selFim={selFim}
+          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
+          onMenu={() => acao({ tipo: 'menu', id: '' })}
+        />
+        <div class="rodape-codigo tv">{s.codigo}</div>
+      </>
+    );
+  }
+
+  if (s.wifi) {
+    const vista = vistaSala(s);
+    return (
+      <>
+        <TvWifi
+          sala={vista}
+          v={vista.wifi!}
+          agora={Date.now}
+          selFim={selFim}
+          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
+          onMenu={() => acao({ tipo: 'menu', id: '' })}
+        />
+        <div class="rodape-codigo tv">{s.codigo}</div>
+      </>
+    );
+  }
+
+  if (s.pensa) {
+    const vista = vistaSala(s);
+    return (
+      <>
+        <TvPensa
+          sala={vista}
+          v={vista.pensa!}
+          agora={Date.now}
+          selFim={selFim}
+          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
+          onMenu={() => acao({ tipo: 'menu', id: '' })}
+        />
+        <div class="rodape-codigo tv">{s.codigo}</div>
+      </>
+    );
+  }
 
   if (s.jogo) {
     const vista = vistaSala(s);
@@ -260,7 +372,7 @@ export function Tv({ idioma }: { idioma: Idioma }) {
           {s.jogadores.length === 0 ? (
             <span class="mini">{t('esperandoJogadores')}</span>
           ) : (
-            s.jogadores.map((j) => <Boneco key={j.id} j={j} tam={72} marca={j.id === s.vipId ? '👑' : j.pronto ? '✓' : undefined} />)
+            s.jogadores.map((j) => <Boneco key={j.id} j={j} tam={72} marca={j.id === s.vipId ? '👑' : j.bot ? '🤖' : j.pronto ? '✓' : undefined} />)
           )}
         </div>
         <div class="faixa-info">

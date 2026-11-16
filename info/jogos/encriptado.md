@@ -40,5 +40,26 @@ Nomes genéricos (nada de "Decrypto" nem do aspeto visual dele).
 - TV/Painel: históricos, fichas, tempo, Criptógrafo.
 - Telemóvel: as palavras da equipa, os históricos, o ecrã de Criptógrafo e a resposta partilhada.
 
+## Visual — "router da sala com post-its"
+Ideia: a senha do Wi-Fi colada num post-it ao router. Escolhido a 16/11/2026.
+- **TV** (fundo azul-noite da app, traço rabiscado como os bonecos):
+  - 2 metades: ○ Brancos à esquerda, ● Pretos à direita;
+  - em cada metade, um **router** (creme para os Brancos, quase preto para os Pretos) com **4 luzes numeradas 1–4** = as 4 colunas do histórico;
+  - por baixo de cada luz, as pistas dessa palavra em **post-its amarelos** ligeiramente tortos, empilhados ronda a ronda;
+  - fichas no topo de cada metade: 2 lugares 🎯 (alvo) + 2 lugares ❌ (Wi-Fi riscado, "sem sinal"); vazio = círculo tracejado, ganho = coral;
+  - ao centro: ronda (ex. 3/8), tempo grande, fase ("pistas" / "a responder"), os 2 Criptógrafos (boneco + nome + equipa);
+  - revelação: as luzes do código acendem pela ordem e cada pista cola-se na sua coluna;
+  - código da party em baixo.
+- **Telemóvel** (cores da app, código em baixo; sem TV o Painel mostra os 2 routers):
+  - topo: as **4 palavras da equipa em post-its** numerados (sempre visíveis à equipa);
+  - **Criptógrafo**: "o teu código" grande (ex. 3 · 1 · 4) + 3 campos (número → pista) + Enviar + ✅/❌ do outro Criptógrafo;
+  - **resposta partilhada**: cada pista com botões 1–4; o escolhido fica coral; números já usados noutra linha ficam esbatidos; "Ana mudou" junto à linha alterada; Confirmar + "Confirmaram 1/2" com ✅/❌ por nome;
+  - interceção: o mesmo ecrã, mas por cima o histórico da outra equipa em vez das palavras;
+  - à espera: "Os Pretos estão a responder" + históricos.
+- Boa prática: equipas distinguem-se por **símbolo ○/●** e lado do ecrã, não só pela cor; 🎯 e ❌ por ícone (daltonismo).
+- Boa prática: botões 1–4 com ≥ 48 dp; números repetidos bloqueados na própria resposta.
+- Boa prática: quando alguém muda a resposta partilhada, os "Confirmar" já dados apagam-se (evita fechar com uma resposta que a equipa não viu).
+- Boa prática: post-its parados (só decoração inclinada, nada a mexer).
+
 ## Conteúdo
 - 500 palavras família, por temas.

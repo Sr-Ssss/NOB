@@ -1,0 +1,305 @@
+import { useRef, useState } from 'preact/hooks';
+import type { AcaoSala } from '../../core/sala';
+import { t } from '../../core/i18n';
+import { Avatar, Temporizador } from '../../ui/comuns';
+import { avatarDe, nomeDe } from '../5050/tv';
+import { PlacarSevira, txt } from './comuns';
+import { buscarGiphy, reduzirGaleria, temGiphy } from './imagens';
+import { MAX_IMAGENS, MAX_LINK, MAX_TITULO, REACOES, type Imagem } from './regras';
+import type { PropsSevira } from './tv';
+
+type Enviar = (a: AcaoSala) => void;
+const jogo = (enviar: Enviar, acao: Extract<AcaoSala, { tipo: 'jogo' }>['acao']) => enviar({ tipo: 'jogo', acao });
+
+/** escolher uma imagem: Galeria · GIPHY · Link */
+function Escolher({ aoEscolher, fechar }: { aoEscolher: (img: Imagem) => void; fechar: () => void }) {
+  const [modo, setModo] = useState<'menu' | 'giphy' | 'link'>('menu');
+  const [q, setQ] = useState('');
+  const [gifs, setGifs] = useState<string[]>([]);
+  const [link, setLink] = useState('');
+  const [erro, setErro] = useState(false);
+  const ficheiro = useRef<HTMLInputElement>(null);
+  return (
+    <div class="popup" onClick={fechar}>
+      <div class="cartao sv-escolher" onClick={(e) => e.stopPropagation()}>
+        {modo === 'menu' && (
+          <div class="sv-escolher-menu">
+            <button class="botao" onClick={() => ficheiro.current?.click()}>
+              🖼️ {t('svGaleria')}
+            </button>
+            {temGiphy() && (
+              <button class="botao sec" onClick={() => setModo('giphy')}>
+                🎞️ {t('svGiphy')}
+              </button>
+            )}
+            <button class="botao sec" onClick={() => setModo('link')}>
+              🔗 {t('svLink')}
+            </button>
+            {erro && <p class="mini">⚠ {t('svSemImagem')}</p>}
+            <input
+              ref={ficheiro}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={async (e) => {
+                const f = e.currentTarget.files?.[0];
+                if (!f) return;
+                const d = await reduzirGaleria(f);
+                if (d) aoEscolher({ tipo: 'galeria', url: d });
+                else setErro(true);
+              }}
+            />
+          </div>
+        )}
+        {modo === 'giphy' && (
+          <>
+            <form
+              class="linha"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setGifs(await buscarGiphy(q).catch(() => []));
+              }}
+            >
+              <input class="cresce" value={q} placeholder={t('svBuscarGif')} onInput={(e) => setQ(e.currentTarget.value)} />
+              <button class="botao">🔍</button>
+            </form>
+            <div class="sv-gifs">
+              {gifs.map((g) => (
+                <button key={g} onClick={() => aoEscolher({ tipo: 'giphy', url: g })}>
+                  <img src={g} alt="" loading="lazy" />
+                </button>
+              ))}
+            </div>
+            <span class="sv-giphy">{t('svPowered')}</span>
+          </>
+        )}
+        {modo === 'link' && (
+          <form
+            class="sv-escolher-menu"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const u = link.trim();
+              if (/^https?:\/\//i.test(u) && u.length <= MAX_LINK) aoEscolher({ tipo: 'link', url: u });
+              else setErro(true);
+            }}
+          >
+            <input type="url" value={link} placeholder="https://…" onInput={(e) => setLink(e.currentTarget.value)} />
+            {erro && <p class="mini">⚠ {t('svColarLink')}</p>}
+            <button class="botao">{t('svColarLink')}</button>
+          </form>
+        )}
+        <button class="botao sec" onClick={fechar}>
+          {t('fechar')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Preparar({ sala, v, tag, eu, enviar }: Pick<PropsSevira, 'sala' | 'v'> & { tag: string; eu: string; enviar: Enviar }) {
+  const sorteado = txt(v.temas[tag], sala);
+  const [titulo, setTitulo] = useState(sorteado);
+  const [editar, setEditar] = useState(false);
+  const [imgs, setImgs] = useState<(Imagem | null)[]>(Array(MAX_IMAGENS).fill(null));
+  const [aberto, setAberto] = useState<number | null>(null);
+  if (v.enviaram.includes(eu)) return <div class="cartao centro">✅ {t('svEnviado')}</div>;
+  const mudar = (i: number, img: Imagem | null) => {
+    setImgs(imgs.map((x, k) => (k === i ? img : x)));
+    jogo(enviar, { tipo: 'sv_imagem', id: '', i, img });
+  };
+  return (
+    <div class="sv-preparar">
+      <label class="mini">{t('svTeuTema')}</label>
+      {editar ? (
+        <input class="sv-titulo-tel" value={titulo} maxLength={MAX_TITULO} autoFocus onInput={(e) => setTitulo(e.currentTarget.value)} onBlur={() => setEditar(false)} />
+      ) : (
+        <button class="sv-titulo-tel" onClick={() => setEditar(true)}>
+          {titulo || sorteado} ✎
+        </button>
+      )}
+      <label class="mini">{t('svImagens')}</label>
+      <div class="sv-quadrados">
+        {imgs.map((img, i) =>
+          img ? (
+            <button key={i} class="sv-quadrado cheio" onClick={() => mudar(i, null)} aria-label={t('svRemover')}>
+              <img src={img.url} alt="" />
+              <span>✕</span>
+            </button>
+          ) : (
+            <button key={i} class="sv-quadrado" onClick={() => setAberto(i)}>
+              +
+            </button>
+          ),
+        )}
+      </div>
+      <p class="mini centro">
+        {t('svGaleria')} · {temGiphy() ? `${t('svGiphy')} · ` : ''}
+        {t('svLink')}
+      </p>
+      <button class="botao grande" onClick={() => jogo(enviar, { tipo: 'sv_enviar', id: '', titulo: titulo.trim() && titulo.trim() !== sorteado ? titulo : null })}>
+        {t('enviar')}
+      </button>
+      {aberto !== null && (
+        <Escolher
+          fechar={() => setAberto(null)}
+          aoEscolher={(img) => {
+            mudar(aberto, img);
+            setAberto(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** slider vertical de 1 a 5 ⭐: só para nas estrelas (largado entre duas, volta à de baixo) */
+export function SliderNota({ valor, mudar }: { valor: number; mudar: (n: number) => void }) {
+  const barra = useRef<HTMLDivElement>(null);
+  const [arrasto, setArrasto] = useState<number | null>(null);
+  const pos = arrasto ?? valor; // 1..5 (contínuo enquanto se arrasta)
+  const de = (y: number) => {
+    const r = barra.current!.getBoundingClientRect();
+    return Math.max(1, Math.min(5, 1 + (4 * (r.bottom - y)) / r.height));
+  };
+  const pct = ((pos - 1) / 4) * 100;
+  return (
+    <div class="sv-nota">
+      <div class="sv-estrelas">
+        {[5, 4, 3, 2, 1].map((n) => (
+          <button key={n} class={'sv-estrela' + (n > Math.floor(pos) ? ' cinza' : '')} onClick={() => mudar(n)} aria-label={`${n} ⭐`}>
+            ★<i />
+          </button>
+        ))}
+      </div>
+      <div
+        ref={barra}
+        class="sv-barra-nota"
+        role="slider"
+        aria-valuemin={1}
+        aria-valuemax={5}
+        aria-valuenow={valor}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          setArrasto(de(e.clientY));
+        }}
+        onPointerMove={(e) => arrasto !== null && setArrasto(de(e.clientY))}
+        onPointerUp={(e) => {
+          mudar(Math.floor(de(e.clientY)));
+          setArrasto(null);
+        }}
+        onPointerCancel={() => setArrasto(null)}
+      >
+        <div class="sv-barra-cor" style={{ clipPath: `inset(${100 - pct}% 0 0 0)` }} />
+        <div class="sv-pega" style={{ bottom: `calc(${pct}% - 14px)` }} />
+      </div>
+    </div>
+  );
+}
+
+function Nota({ enviar }: { enviar: Enviar }) {
+  const [n, setN] = useState(3);
+  const [foi, setFoi] = useState(false);
+  if (foi) return <div class="cartao centro">✅ {t('svNotaEnviada')}</div>;
+  return (
+    <>
+      <SliderNota valor={n} mudar={setN} />
+      <button
+        class="botao grande"
+        onClick={() => {
+          jogo(enviar, { tipo: 'sv_nota', id: '', estrelas: n });
+          setFoi(true);
+        }}
+      >
+        {t('svEnviarNota')}
+      </button>
+    </>
+  );
+}
+
+export function TelemovelSevira({ sala, v, agora, eu, tag, enviar }: PropsSevira & { eu: string; tag: string; enviar: Enviar }) {
+  const a = v.apresentador;
+  const souEu = a === eu;
+  const lider = sala.vipId === eu;
+  return (
+    <div class="pag tel-sevira">
+      <div class="topo">
+        <span>{t('svOpcoesNome')}</span>
+        {v.fase !== 'fim' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
+      </div>
+      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+
+      {v.fase === 'preparar' &&
+        (v.participantes.includes(eu) ? <Preparar key={tag} sala={sala} v={v} tag={tag} eu={eu} enviar={enviar} /> : <p class="centro">{t('olhaTv')}</p>)}
+
+      {v.fase === 'tema' && a && (
+        <div class="cartao centro">
+          {souEu ? (
+            <h2>{t('svEsTu')}</h2>
+          ) : (
+            <>
+              <p>{t('svVaiApresentar')}</p>
+              <Avatar n={avatarDe(sala, a)} tam={96} />
+              <h2>{nomeDe(sala, a)}</h2>
+            </>
+          )}
+        </div>
+      )}
+
+      {v.fase === 'apresentar' &&
+        (souEu ? (
+          <div class="sv-comando">
+            <p class="sv-slide-de">{t('svSlideDe', { n: v.slide + 1, t: v.nSlides })}</p>
+            <div class="sv-setas">
+              <button class="botao sec" disabled={v.slide === 0} onClick={() => jogo(enviar, { tipo: 'sv_slide', id: '', dir: -1 })} aria-label="◀">
+                ◀
+              </button>
+              <button class="botao" disabled={v.slide >= v.nSlides - 1} onClick={() => jogo(enviar, { tipo: 'sv_slide', id: '', dir: 1 })} aria-label="▶">
+                ▶
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p class="centro">{t('svReaja')}</p>
+            <div class="sv-reagir">
+              {REACOES.map((r) => (
+                <button key={r} class="botao sec" onClick={() => jogo(enviar, { tipo: 'sv_reagir', id: '', r })}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          </>
+        ))}
+
+      {v.fase === 'nota' &&
+        a &&
+        (souEu ? (
+          <p class="cartao centro">{t('svPlateiaNota')}</p>
+        ) : (
+          <>
+            <h2 class="centro">{t('svNotaPara', { nome: nomeDe(sala, a) })}</h2>
+            <Nota key={a} enviar={enviar} />
+          </>
+        ))}
+
+      {v.fase === 'fim' && (
+        <>
+          <h1 class="pergunta">{t('fim')}</h1>
+          <div class="cartao">
+            <PlacarSevira sala={sala} v={v} tam={40} />
+          </div>
+          {lider && (
+            <div class="linha">
+              <button class="botao cresce" onClick={() => enviar({ tipo: 'outra_vez', id: '' })}>
+                {t('jogarOutraVez')}
+              </button>
+              <button class="botao sec" onClick={() => enviar({ tipo: 'menu', id: '' })}>
+                {t('menu')}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

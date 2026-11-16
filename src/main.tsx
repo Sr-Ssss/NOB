@@ -5,6 +5,13 @@ import { idiomaDispositivo, t, usarIdioma } from './core/i18n';
 import type { Idioma } from './core/sala';
 import { Tv } from './tv/Tv';
 import { Jogar } from './jogar/Jogar';
+import { Criar } from './jogar/Criar';
+import { DemoPensa } from './jogos/pensa-dores/demo';
+import { DemoWifi } from './jogos/senha-wifi/demo';
+import { DemoSevira } from './jogos/se-vira/demo';
+import { DemoMona } from './jogos/mona-lixa/demo';
+import { DemoIdeias } from './jogos/ideias-mirabolantes/demo';
+import { DemoPirata } from './jogos/pirata/demo';
 import { Definicoes } from './ui/Definicoes';
 import { NpnTeste } from './npn/Npn';
 import { Avatar } from './ui/comuns';
@@ -17,6 +24,7 @@ function rota(): string {
 function Inicio() {
   const [codigo, setCodigo] = useState('');
   const [aviso, setAviso] = useState('');
+  const [criar, setCriar] = useState(false);
   const ok = /^[A-Z0-9]{4}$/.test(codigo);
   const entrar = () => {
     if (ok) location.hash = `#/jogar?sala=${codigo}`;
@@ -63,10 +71,22 @@ function Inicio() {
 
       <div class="ou">{t('ou')}</div>
 
-      <a href="#/tv" class="botao sec centro" style={{ textDecoration: 'none' }}>
-        📺 {t('criarParty')}
-        <div class="mini" style={{ fontWeight: 600 }}>{t('criarDica')}</div>
-      </a>
+      {!criar ? (
+        <button class="botao sec centro" onClick={() => setCriar(true)}>
+          {t('criarParty')}
+        </button>
+      ) : (
+        <div class="linha">
+          <a href="#/tv" class="botao sec centro cresce" style={{ textDecoration: 'none' }}>
+            📺 {t('tenhoTv')}
+            <div class="mini" style={{ fontWeight: 600 }}>{t('tenhoTvDica')}</div>
+          </a>
+          <a href="#/criar" class="botao sec centro cresce" style={{ textDecoration: 'none' }}>
+            📱 {t('semTv')}
+            <div class="mini" style={{ fontWeight: 600 }}>{t('semTvDica')}</div>
+          </a>
+        </div>
+      )}
 
       {aviso && <div class="aviso">{aviso}</div>}
 
@@ -100,6 +120,13 @@ function App() {
   };
   if (r === '/tv') return <Tv idioma={idioma} />;
   if (r === '/jogar') return <Jogar />;
+  if (r === '/criar') return <Criar />;
+  if (import.meta.env.DEV && r === '/demo-pensa') return <DemoPensa />;
+  if (import.meta.env.DEV && r === '/demo-wifi') return <DemoWifi />;
+  if (import.meta.env.DEV && r === '/demo-sevira') return <DemoSevira />;
+  if (import.meta.env.DEV && r === '/demo-mona') return <DemoMona />;
+  if (import.meta.env.DEV && r === '/demo-ideias') return <DemoIdeias />;
+  if (import.meta.env.DEV && r === '/demo-pirata') return <DemoPirata />;
   if (r === '/definicoes') return <Definicoes idioma={idioma} mudar={mudar} />;
   if (r === '/npn') return <NpnTeste />;
   return <Inicio />;
