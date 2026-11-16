@@ -13,6 +13,7 @@ import { TvSevira } from '../jogos/se-vira/tv';
 import { TvMona } from '../jogos/mona-lixa/tv';
 import { TvIdeias } from '../jogos/ideias-mirabolantes/tv';
 import { TvPirata } from '../jogos/pirata/tv';
+import { TvMaquinas } from '../jogos/revolucao-maquinas/tv';
 import { extraTv } from '../jogos/se-vira/regras';
 
 /** opções do 50/50 (no telemóvel do líder) */
@@ -180,6 +181,16 @@ export function Tv({ idioma }: { idioma: Idioma }) {
   }, []);
 
   if (ligado === false) return <div class="pag tv centro">{t('semLigacao')}</div>;
+
+  if (s.maquinas) {
+    const vista = vistaSala(s);
+    return (
+      <>
+        <TvMaquinas sala={vista} v={vista.maquinas!} agora={Date.now} selFim={selFim} onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })} onMenu={() => acao({ tipo: 'menu', id: '' })} />
+        <div class="rodape-codigo tv">{s.codigo}</div>
+      </>
+    );
+  }
 
   if (s.pirata) {
     const vista = vistaSala(s);

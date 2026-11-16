@@ -12,6 +12,7 @@ import { DemoSevira } from './jogos/se-vira/demo';
 import { DemoMona } from './jogos/mona-lixa/demo';
 import { DemoIdeias } from './jogos/ideias-mirabolantes/demo';
 import { DemoPirata } from './jogos/pirata/demo';
+import { DemoMaquinas } from './jogos/revolucao-maquinas/demo';
 import { Definicoes } from './ui/Definicoes';
 import { NpnTeste } from './npn/Npn';
 import { Avatar } from './ui/comuns';
@@ -127,6 +128,7 @@ function App() {
   if (import.meta.env.DEV && r === '/demo-mona') return <DemoMona />;
   if (import.meta.env.DEV && r === '/demo-ideias') return <DemoIdeias />;
   if (import.meta.env.DEV && r === '/demo-pirata') return <DemoPirata />;
+  if (import.meta.env.DEV && r === '/demo-maquinas') return <DemoMaquinas />;
   if (r === '/definicoes') return <Definicoes idioma={idioma} mudar={mudar} />;
   if (r === '/npn') return <NpnTeste />;
   return <Inicio />;

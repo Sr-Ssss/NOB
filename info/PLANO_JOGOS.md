@@ -31,3 +31,4 @@ Base: o MVP do 50/50 (`src/jogos/5050/`, `src/core/`, `src/ui/`). Cada jogo segu
 | ✅ Mona Lixa (16/11; canvas partilhado em `src/ui/tela.tsx` + `tracos.ts`) | 4 |
 | ✅ Ideias Mirabolantes (16/11; `Tela`/`Quadro` ganharam `planta`) | 5 |
 | ✅ Pirata (16/11; canal privado reutilizável em `src/core/privado.ts` + `privadoSala`) | 6 |
+| ✅ Revolução das Máquinas (16/11; reaproveita o canal privado do Pirata) | 7 |

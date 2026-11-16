@@ -12,6 +12,8 @@ import { DefinicoesIdeias } from '../jogos/ideias-mirabolantes/definicoes';
 import { DEF_PADRAO_IDEIAS } from '../jogos/ideias-mirabolantes/regras';
 import { DefinicoesPirata } from '../jogos/pirata/definicoes';
 import { DEF_PADRAO_PIRATA } from '../jogos/pirata/regras';
+import { DefinicoesMaquinas } from '../jogos/revolucao-maquinas/definicoes';
+import { DEF_PADRAO_MAQUINAS } from '../jogos/revolucao-maquinas/regras';
 
 /**
  * Menu de jogos do telemóvel do líder, sem TV: o mesmo conteúdo do menu da TV,
@@ -63,6 +65,7 @@ export function MenuJogos({ vista, enviar, fechar }: { vista: VistaSala; enviar:
                   {j.id === 'mona' && <DefinicoesMona def={vista.defMona ?? DEF_PADRAO_MONA} n={vista.jogadores.filter((x) => x.ligado).length} mudar={(d) => enviar({ tipo: 'definir_mona', id: '', def: d })} />}
                   {j.id === 'ideias' && <DefinicoesIdeias def={vista.defIdeias ?? DEF_PADRAO_IDEIAS} n={vista.jogadores.filter((x) => x.ligado).length} mudar={(d) => enviar({ tipo: 'definir_ideias', id: '', def: d })} />}
                   {j.id === 'pirata' && <DefinicoesPirata def={vista.defPirata ?? DEF_PADRAO_PIRATA} n={vista.jogadores.filter((x) => x.ligado).length} mudar={(d) => enviar({ tipo: 'definir_pirata', id: '', def: d })} />}
+                  {j.id === 'maquinas' && <DefinicoesMaquinas def={vista.defMaquinas ?? DEF_PADRAO_MAQUINAS} mudar={(d) => enviar({ tipo: 'definir_maquinas', id: '', def: d })} />}
                   {j.id === 'pensa' &&<DefinicoesPensa def={vista.defPensa} mudar={(d) => enviar({ tipo: 'definir_pensa', id: '', def: d })} />}
                   {!m && (
                     <>

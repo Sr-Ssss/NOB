@@ -23,6 +23,9 @@ import { DEF_PADRAO_IDEIAS } from '../jogos/ideias-mirabolantes/regras';
 import { TelemovelPirata } from '../jogos/pirata/telemovel';
 import { DefinicoesPirata } from '../jogos/pirata/definicoes';
 import { DEF_PADRAO_PIRATA, type PrivadoPirata } from '../jogos/pirata/regras';
+import { TelemovelMaquinas } from '../jogos/revolucao-maquinas/telemovel';
+import { DEF_PADRAO_MAQUINAS, type PrivadoMaquinas } from '../jogos/revolucao-maquinas/regras';
+import { DefinicoesMaquinas } from '../jogos/revolucao-maquinas/definicoes';
 import { Definicoes } from '../tv/Tv';
 import { MenuJogos, Tutorial } from './MenuJogos';
 
@@ -276,6 +279,10 @@ function Lobby({ vista, eu, entrada, mudar, enviar }: { vista: VistaSala; eu: st
             <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('prNome')}</summary>
             <DefinicoesPirata def={vista.defPirata ?? DEF_PADRAO_PIRATA} n={vista.jogadores.filter((j) => j.ligado).length} mudar={(d) => enviar({ tipo: 'definir_pirata', id: '', def: d })} />
           </details>
+          <details class="cartao">
+            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('rmNome')}</summary>
+            <DefinicoesMaquinas def={vista.defMaquinas ?? DEF_PADRAO_MAQUINAS} mudar={(d) => enviar({ tipo: 'definir_maquinas', id: '', def: d })} />
+          </details>
         </>
       ) : (
         <p class="centro mini">{t('esperaVip', { nome: lider?.nome ?? '…' })}</p>
@@ -314,15 +321,17 @@ export function Jogar() {
   if (vista) usarIdioma(vista.idioma);
   // canal privado (papéis secretos): o meu e, se for o líder, o dos meus bots
   const souLider = !!vista && vista.vipId === eu;
-  const tags: Record<string, string> = vista?.pirata && entrada ? { [eu]: entrada.tag, ...(souLider ? tagsBots() : {}) } : {};
-  const privados = usePrivados(codigo, tags, vista?.pirata ? `${vista.pirata.fase}:${vista.pirata.noite}` : '');
+  const tags: Record<string, string> = (vista?.pirata || vista?.maquinas) && entrada ? { [eu]: entrada.tag, ...(souLider ? tagsBots() : {}) } : {};
+  const privados = usePrivados(codigo, tags, vista?.pirata ? `${vista.pirata.fase}:${vista.pirata.noite}` : vista?.maquinas ? `${vista.maquinas.fase}:${vista.maquinas.comandante}:${vista.maquinas.sabotagens}` : '');
 
   // já estava nesta party (recarregou a página): volta a entrar sozinho
   useEffect(() => {
     if (dentro && !entrada) setEntrada({ nome: dentro.nome, avatar: dentro.avatar, tag: idAleatorio() });
   }, [!!dentro]);
 
-  const fase = vista?.pirata
+  const fase = vista?.maquinas
+    ? `rm:${vista.maquinas.fase}:${vista.maquinas.comandante}`
+    : vista?.pirata
     ? `r:${vista.pirata.fase}:${vista.pirata.noite}`
     : vista?.ideias
     ? `i:${vista.ideias.fase}:${vista.ideias.atual}`
@@ -412,7 +421,7 @@ function TrocaJogador({ vista, eu, como, trocar }: { vista: VistaSala; eu: strin
 export function EcraJogador(p: PropsEcra) {
   const { vista, eu, enviar } = p;
   const [como, setComo] = useState<string | null>(null);
-  const emJogo = !!(vista.tutorial || vista.pirata || vista.ideias || vista.mona || vista.sevira || vista.wifi || vista.pensa || vista.jogo);
+  const emJogo = !!(vista.tutorial || vista.maquinas || vista.pirata || vista.ideias || vista.mona || vista.sevira || vista.wifi || vista.pensa || vista.jogo);
   const temBots = vista.vipId === eu && vista.jogadores.some((j) => j.bot);
   if (!emJogo || !temBots) return <Ecra {...p} />;
   const bot = vista.jogadores.find((j) => j.id === como && j.bot);
@@ -437,6 +446,14 @@ export function EcraJogador(p: PropsEcra) {
 
 function Ecra({ vista, eu, entrada, mudar, enviar, agora, privadoDe }: PropsEcra) {
   if (vista.tutorial) return <Tutorial vista={vista} eu={eu} enviar={enviar} agora={agora} />;
+  if (vista.maquinas) {
+    return (
+      <>
+        <TelemovelMaquinas key={eu} sala={vista} v={vista.maquinas} agora={agora} eu={eu} privado={(privadoDe?.(eu) as PrivadoMaquinas | null) ?? null} enviar={enviar} />
+        <div class="rodape-codigo">{vista.codigo}</div>
+      </>
+    );
+  }
   if (vista.pirata) {
     return (
       <>

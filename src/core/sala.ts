@@ -89,6 +89,21 @@ import {
   type EstadoPirata,
   type VistaPirata,
 } from '../jogos/pirata/regras';
+import {
+  DEF_PADRAO_MAQUINAS,
+  MIN_JOGADORES as MIN_MAQUINAS,
+  MAX_JOGADORES as MAX_MAQUINAS,
+  SO_LIDER_MAQUINAS,
+  TIPOS_MAQUINAS,
+  novoMaquinas,
+  privadoMaquinas,
+  reduzMaquinas,
+  vistaMaquinas,
+  type AcaoMaquinas,
+  type DefMaquinas,
+  type EstadoMaquinas,
+  type VistaMaquinas,
+} from '../jogos/revolucao-maquinas/regras';
 
 export const ID_TV = 'tv';
 export const MAX_NOME = 12;
@@ -138,6 +153,8 @@ export interface EstadoSala {
   ideias?: EstadoIdeias | null;
   defPirata?: DefPirata;
   pirata?: EstadoPirata | null;
+  defMaquinas?: DefMaquinas;
+  maquinas?: EstadoMaquinas | null;
   /** criada no telemóvel, sem TV */
   semTv?: boolean;
   /** tutorial a passar para todos antes do jogo (null = nenhum) */
@@ -157,6 +174,7 @@ export type AcaoSala =
   | { tipo: 'definir_mona'; id: string; def: Partial<DefMona> }
   | { tipo: 'definir_ideias'; id: string; def: Partial<DefIdeias> }
   | { tipo: 'definir_pirata'; id: string; def: Partial<DefPirata> }
+  | { tipo: 'definir_maquinas'; id: string; def: Partial<DefMaquinas> }
   /** jogo: '5050' (padrão), 'pensa', 'wifi', 'sevira', 'mona', 'ideias' ou 'pirata' */
   | { tipo: 'comecar'; id: string; jogo?: string; tutorial?: boolean }
   | { tipo: 'outra_vez'; id: string }
@@ -167,7 +185,7 @@ export type AcaoSala =
   | { tipo: 'pronto'; id: string; pronto: boolean }
   /** tecla do comando virtual da TV (só o líder); não muda o estado, a TV trata-a */
   | { tipo: 'comando'; id: string; tecla: Tecla }
-  | { tipo: 'jogo'; acao: Extract<Acao5050 | AcaoPensa | AcaoWifi | AcaoSevira | AcaoMona | AcaoIdeias | AcaoPirata, { id: string }> }
+  | { tipo: 'jogo'; acao: Extract<Acao5050 | AcaoPensa | AcaoWifi | AcaoSevira | AcaoMona | AcaoIdeias | AcaoPirata | AcaoMaquinas, { id: string }> }
   /** o líder cria um bot (id e tag gerados no telemóvel do líder, que guarda a tag) */
   | { tipo: 'bot_add'; id: string; bot: string; tag: string }
   | { tipo: 'bot_del'; id: string; bot: string }
@@ -178,7 +196,7 @@ export type AcaoSala =
 export const PREFIXO_BOT = 'bot-';
 
 export function novaSala(codigo: string, idioma: Idioma): EstadoSala {
-  return { codigo, idioma, jogadores: [], vipId: null, def: { ...DEF_PADRAO }, jogo: null, defPensa: { ...DEF_PADRAO_PENSA }, pensa: null, defWifi: { ...DEF_PADRAO_WIFI }, wifi: null, defSevira: { ...DEF_PADRAO_SEVIRA }, sevira: null, defMona: { ...DEF_PADRAO_MONA }, mona: null, defIdeias: { ...DEF_PADRAO_IDEIAS }, ideias: null, defPirata: { ...DEF_PADRAO_PIRATA }, pirata: null, aliases: {} };
+  return { codigo, idioma, jogadores: [], vipId: null, def: { ...DEF_PADRAO }, jogo: null, defPensa: { ...DEF_PADRAO_PENSA }, pensa: null, defWifi: { ...DEF_PADRAO_WIFI }, wifi: null, defSevira: { ...DEF_PADRAO_SEVIRA }, sevira: null, defMona: { ...DEF_PADRAO_MONA }, mona: null, defIdeias: { ...DEF_PADRAO_IDEIAS }, ideias: null, defPirata: { ...DEF_PADRAO_PIRATA }, pirata: null, defMaquinas: { ...DEF_PADRAO_MAQUINAS }, maquinas: null, aliases: {} };
 }
 
 export function ligados(s: EstadoSala): string[] {
@@ -198,7 +216,13 @@ function manda(s: EstadoSala, id: string): boolean {
 
 const SO_PENSA = ['responder', 'votos_final'];
 
-function passarAoJogo(s: EstadoSala, acao: Acao5050 | AcaoPensa | AcaoWifi | AcaoSevira | AcaoMona | AcaoIdeias | AcaoPirata, agora: number): EstadoSala {
+function passarAoJogo(s: EstadoSala, acao: Acao5050 | AcaoPensa | AcaoWifi | AcaoSevira | AcaoMona | AcaoIdeias | AcaoPirata | AcaoMaquinas, agora: number): EstadoSala {
+  if (s.maquinas) {
+    if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !TIPOS_MAQUINAS.includes(acao.tipo)) return s;
+    if ('id' in acao && SO_LIDER_MAQUINAS.includes(acao.tipo) && !manda(s, acao.id)) return s;
+    return { ...s, maquinas: reduzMaquinas(s.maquinas, acao as AcaoMaquinas, agora) };
+  }
+  if (TIPOS_MAQUINAS.includes(acao.tipo)) return s;
   if (s.pirata) {
     if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !TIPOS_PIRATA.includes(acao.tipo)) return s;
     if ('id' in acao && SO_LIDER_PIRATA.includes(acao.tipo) && !manda(s, acao.id)) return s;
@@ -231,8 +255,8 @@ function passarAoJogo(s: EstadoSala, acao: Acao5050 | AcaoPensa | AcaoWifi | Aca
 }
 
 /** o jogo em curso (qualquer um) */
-export function jogoAtivo(s: Pick<EstadoSala, 'jogo' | 'pensa' | 'wifi' | 'sevira' | 'mona' | 'ideias' | 'pirata'>): { fase: string; participantes: string[]; audiencia: string[]; usadas: string[] } | null {
-  return s.pirata ?? s.ideias ?? s.mona ?? s.sevira ?? s.wifi ?? s.pensa ?? s.jogo;
+export function jogoAtivo(s: Pick<EstadoSala, 'jogo' | 'pensa' | 'wifi' | 'sevira' | 'mona' | 'ideias' | 'pirata' | 'maquinas'>): { fase: string; participantes: string[]; audiencia: string[]; usadas: string[] } | null {
+  return s.maquinas ?? s.pirata ?? s.ideias ?? s.mona ?? s.sevira ?? s.wifi ?? s.pensa ?? s.jogo;
 }
 
 function comecarPensa(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
@@ -268,11 +292,19 @@ function comecarIdeias(s: EstadoSala, agora: number, usadas: string[]): EstadoSa
 function comecarPirata(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
   const n = ligados(s).length;
   if (n < MIN_PIRATA || n > MAX_PIRATA) return s;
-  return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, pirata: novoPirata(ligados(s), s.defPirata ?? DEF_PADRAO_PIRATA, agora, usadas) };
+  return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, maquinas: null, pirata: novoPirata(ligados(s), s.defPirata ?? DEF_PADRAO_PIRATA, agora, usadas) };
+}
+
+/** com ou sem TV; 5–10 jogadores (papéis pelo canal privado) */
+function comecarMaquinas(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
+  const n = ligados(s).length;
+  if (n < MIN_MAQUINAS || n > MAX_MAQUINAS) return s;
+  return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, pirata: null, maquinas: novoMaquinas(ligados(s), s.defMaquinas ?? DEF_PADRAO_MAQUINAS, agora, usadas) };
 }
 
 /** começa o jogo pedido */
 function comecarJogo(s: EstadoSala, jogo: string | undefined, agora: number): EstadoSala {
+  if (jogo === 'maquinas') return comecarMaquinas(s, agora, []);
   if (jogo === 'pirata') return comecarPirata(s, agora, []);
   if (jogo === 'ideias') return comecarIdeias(s, agora, []);
   if (jogo === 'pensa') return comecarPensa(s, agora, []);
@@ -339,6 +371,7 @@ export function reduzSala(s: EstadoSala, acao: AcaoSala, agora: number): EstadoS
         if (r.wifi && r.wifi.fase !== 'fim') r = { ...r, wifi: { ...r.wifi, audiencia: [...r.wifi.audiencia, a.id] } };
         if (r.sevira && r.sevira.fase !== 'fim') r = { ...r, sevira: { ...r.sevira, audiencia: [...r.sevira.audiencia, a.id] } };
         if (r.mona && r.mona.fase !== 'fim') r = { ...r, mona: { ...r.mona, audiencia: [...r.mona.audiencia, a.id] } };
+        if (r.maquinas && r.maquinas.fase !== 'fim') r = { ...r, maquinas: { ...r.maquinas, audiencia: [...r.maquinas.audiencia, a.id] } };
         if (r.pirata && r.pirata.fase !== 'fim') r = { ...r, pirata: { ...r.pirata, audiencia: [...r.pirata.audiencia, a.id] } };
         if (r.ideias && r.ideias.fase !== 'fim') r = { ...r, ideias: { ...r.ideias, audiencia: [...r.ideias.audiencia, a.id] } };
       }
@@ -374,6 +407,9 @@ export function reduzSala(s: EstadoSala, acao: AcaoSala, agora: number): EstadoS
     case 'definir_ideias':
       if (!manda(s, a.id) || jogoAtivo(s)) return s;
       return { ...s, defIdeias: { ...(s.defIdeias ?? DEF_PADRAO_IDEIAS), ...a.def } };
+    case 'definir_maquinas':
+      if (!manda(s, a.id) || jogoAtivo(s)) return s;
+      return { ...s, defMaquinas: { ...(s.defMaquinas ?? DEF_PADRAO_MAQUINAS), ...a.def } };
     case 'definir_pirata':
       if (!manda(s, a.id) || jogoAtivo(s)) return s;
       return { ...s, defPirata: { ...(s.defPirata ?? DEF_PADRAO_PIRATA), ...a.def } };
@@ -393,12 +429,13 @@ export function reduzSala(s: EstadoSala, acao: AcaoSala, agora: number): EstadoS
       if (s.mona) return comecarMona(s, agora, s.mona.usadas);
       if (s.ideias) return comecarIdeias(s, agora, s.ideias.usadas);
       if (s.pirata) return comecarPirata(s, agora, s.pirata.usadas);
+      if (s.maquinas) return comecarMaquinas(s, agora, s.maquinas.usadas);
       return { ...s, jogo: novoJogo(ligados(s), s.def, agora, j.usadas) };
     }
     case 'menu': {
       const j = jogoAtivo(s);
       if (!manda(s, a.id) || (j && j.fase !== 'fim')) return s;
-      return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, pirata: null, jogadores: s.jogadores.map((j) => ({ ...j, pronto: false })) };
+      return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, pirata: null, maquinas: null, jogadores: s.jogadores.map((j) => ({ ...j, pronto: false })) };
     }
     case 'saltar':
       if (!manda(s, a.id) || !s.tutorial) return s;
@@ -472,6 +509,8 @@ export interface VistaSala {
   ideias?: VistaIdeias | null;
   defPirata?: DefPirata;
   pirata?: VistaPirata | null;
+  defMaquinas?: DefMaquinas;
+  maquinas?: VistaMaquinas | null;
   semTv: boolean;
   tutorial: { jogo: string; ate: number } | null;
   aliases: Record<string, string>;
@@ -498,6 +537,8 @@ export function vistaSala(s: EstadoSala): VistaSala {
     ideias: s.ideias ? vistaIdeias(s.ideias, (id) => tags.get(id)) : null,
     defPirata: s.defPirata ?? DEF_PADRAO_PIRATA,
     pirata: s.pirata ? vistaPirata(s.pirata) : null,
+    defMaquinas: s.defMaquinas ?? DEF_PADRAO_MAQUINAS,
+    maquinas: s.maquinas ? vistaMaquinas(s.maquinas) : null,
     semTv: !!s.semTv,
     tutorial: s.tutorial ?? null,
     aliases: s.aliases,
@@ -510,5 +551,6 @@ export function vistaSala(s: EstadoSala): VistaSala {
  */
 export function privadoSala(s: EstadoSala, id: string): unknown {
   if (s.pirata) return privadoPirata(s.pirata, id);
+  if (s.maquinas) return privadoMaquinas(s.maquinas, id);
   return null;
 }

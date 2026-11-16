@@ -1,5 +1,18 @@
 # Próxima sessão
 
+## 16/11/2026 — Revolução das Máquinas (jogo 7)
+- `src/jogos/revolucao-maquinas/`: `regras.ts` (reducer puro), `tv.tsx`, `telemovel.tsx` (Eu/Painel sem TV; Identidade a segurar 3 s), `comuns.tsx` (`Consola`: 2 manómetros + bateria das falhas + fila de postos; `Segurar`), `definicoes.tsx`, `maquinas.css`, `demo.tsx`.
+- Canal privado: o mesmo do Pirata (`privadoSala` → `privadoMaquinas`: papel, aliados, IA, mão de cartas, veto, resultado do 🔍/👀). Pirata intacto.
+- Sala: `EstadoSala.maquinas`/`defMaquinas`, `definir_maquinas`, `comecar` com `jogo: 'maquinas'`; ações `rm_*` (`rm_seguir` só o líder). Catálogo: `feito: true`, 5–10, com e sem TV.
+- Decisões do utilizador: 45 s por escolha (sem escolha = sorteio; voto em falta = Não; veto sem resposta = recusado); discussão 60 s (30 s–3 min) + "Seguir" do líder; pontos: equipa +1000, IA vencedora +500, **+100 por carta da sua cor que entra com você no governo** (Comandante e Piloto).
+- Decisões tomadas sem o utilizador (o utilizador deixou ao meu critério ou não perguntei; confirmar): depois de 3 falhas ninguém fica bloqueado; se não houver ninguém elegível, ignoram-se os bloqueios; a votação acaba quando todos os vivos votam; voto só uma vez; "votos revelados" 6 s, "entrou a carta" 5 s, resultado do 🔍/👀 10 s (o Comandante pode tocar OK); 🔍 mostra a IA como 🔴 Amotinado; 👀 não tira as cartas; 📢 a rotação continua a seguir ao Comandante normal; veto aceite → falha +1 e discussão; pausa abaixo de 3 ligados; a carta de caos não dá pontos nem poder.
+- Conteúdo: o jogo não precisa (só textos em `src/i18n/`, pt-BR + en).
+- Testes: `regras.test.ts` (16) + `sala.test.ts` (2). 202 verdes; tsc e lint a 0.
+- Verificado no browser: partida inteira sem TV (líder + 4 bots, Supabase real), jogada com um ciclo que toca nos botões de cada um: governos rejeitados e aprovados, sessão secreta, 👀 Espiar, até ao fim (Amotinados ganharam; IA 1700 = 1000 + 500 + 2 cartas). Com TV: só pela demo.
+- Capturas: `info/progresso/7-revolucao-maquinas/` (rota dev `#/demo-maquinas?fase=carta|nomear|votar|votos|comandante|piloto|poder|ver|discussao|fim&ecra=tv|tel[&eu=j1][&id=1][&semtv=1][&zoom=1.2136]`; Edge headless com `--user-data-dir` próprio, senão fica pendurado).
+- APK `NOB_v0.2.0.apk` (versionCode 200) foi feito **antes** deste jogo; o jogo 7 ainda não está no GitHub nem num APK.
+- Próximo: jogo 8, O Rei e o Dragão.
+
 ## 16/11/2026 — Pirata (jogo 6)
 - `src/jogos/pirata/`: `regras.ts` (reducer puro), `tv.tsx` (com voz `speechSynthesis`), `telemovel.tsx` (Eu/Painel sem TV; botão Identidade a segurar 3 s), `comuns.tsx` (`Barco`, `Diario`, `Conves` + prancha, `Revelacao`, `Palco`), `definicoes.tsx`, `pirata.css`, `demo.tsx`.
 - **Canal privado (para os jogos 7 e 8)**: `src/core/privado.ts`. Um canal por jogador `p:<código>:<tag>` (a tag nunca vai na vista).

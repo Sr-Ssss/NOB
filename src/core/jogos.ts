@@ -22,7 +22,7 @@ export const CATALOGO: InfoJogo[] = [
   { id: 'ideias', pt: 'Ideias Mirabolantes', en: 'Harebrained Ideas', descPt: 'Invenções inúteis para problemas bobos.', descEn: 'Useless inventions for silly problems.', min: 3, max: 16, minutos: 20, precisaTv: false, feito: true },
   { id: 'pirata', pt: 'Pirata', en: 'Pirate', descPt: 'Há piratas a bordo. Descubra quem são antes que joguem você no mar.', descEn: 'Pirates on board. Find them before you walk the plank.', min: 5, max: 16, minutos: 20, precisaTv: false, feito: true },
   { id: 'rei', pt: 'O Rei e o Dragão', en: 'The King and the Dragon', descPt: 'Duas salas, duas equipes e trocas de reféns.', descEn: 'Two rooms, two teams, hostage swaps.', min: 6, max: 24, minutos: 15, precisaTv: false, feito: false },
-  { id: 'maquinas', pt: 'Revolução das Máquinas', en: 'Machine Uprising', descPt: 'Robôs leais contra robôs rebeldes.', descEn: 'Loyal robots versus rebel robots.', min: 5, max: 10, minutos: 25, precisaTv: false, feito: false },
+  { id: 'maquinas', pt: 'Revolução das Máquinas', en: 'Machine Uprising', descPt: 'Robôs leais contra robôs rebeldes.', descEn: 'Loyal robots versus rebel robots.', min: 5, max: 10, minutos: 25, precisaTv: false, feito: true },
   { id: 'wifi', pt: 'Senha do Wi-Fi', en: 'Wi-Fi Password', descPt: 'Dê pistas em código sem a outra equipe perceber.', descEn: 'Give coded clues without the other team cracking them.', min: 4, max: 16, minutos: 25, precisaTv: false, feito: true },
   { id: 'ragerob', pt: 'Ragerob', en: 'Ragerob', descPt: 'Aposte, compre peças e pilote robôs de luta.', descEn: 'Bet, buy parts and pilot battle robots.', min: 2, max: 10, minutos: 20, precisaTv: true, feito: false },
 ];
