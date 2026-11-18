@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { novaSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
+import { novaSala, privadoSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
 
 function com(n: number): EstadoSala {
   let s = novaSala('ABCD', 'pt-BR');
@@ -14,7 +14,8 @@ describe('Senha do Wi-Fi na sala', () => {
     expect(s.wifi?.fase).toBe('palavras');
     expect(s.wifi?.pool.length).toBeGreaterThanOrEqual(200);
     const v = vistaSala(s);
-    expect(Object.keys(v.wifi!.privado).sort()).toEqual(['t1', 't2', 't3', 't4']);
+    expect(JSON.stringify(v)).not.toMatch(/"palavras":|"t[1-4]"/);
+    for (const id of ['j1', 'j2', 'j3', 'j4']) expect((privadoSala(s, id) as { palavras: unknown[] }).palavras.length).toBe(4);
   });
 
   it('equipas à mão: só o líder move; "menu" no fim limpa o jogo', () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ID_TV, TEMPO_DESLIGADO, novaSala, reduzSala, vistaSala, type AcaoSala, type EstadoSala } from './sala';
+import { TOLERANCIA } from './saidas';
 
 function com(n: number): EstadoSala {
   let s = novaSala('ABCD', 'pt-BR');
@@ -20,12 +21,24 @@ describe('sala', () => {
     expect(s.jogadores[0].avatar).toBe(9);
   });
 
-  it('VIP desliga: passa ao seguinte; volta e não recupera', () => {
+  it('VIP desliga: só passa ao seguinte depois da tolerância; volta e não recupera', () => {
     let s = com(3);
     s = r(s, { tipo: 'ligados', ids: ['j2', 'j3'] });
+    expect(s.vipId).toBe('j1'); // ecrã bloqueado não conta
+    s = r(s, { tipo: 'tick' }, 100 + TOLERANCIA - 1);
+    expect(s.vipId).toBe('j1');
+    s = r(s, { tipo: 'tick' }, 100 + TOLERANCIA);
     expect(s.vipId).toBe('j2');
-    s = r(s, { tipo: 'ligados', ids: ['j1', 'j2', 'j3'] });
+    s = r(s, { tipo: 'ligados', ids: ['j1', 'j2', 'j3'] }, 100 + TOLERANCIA + 1);
     expect(s.vipId).toBe('j2');
+  });
+
+  it('volta dentro da tolerância: continua líder', () => {
+    let s = com(3);
+    s = r(s, { tipo: 'ligados', ids: ['j2', 'j3'] });
+    s = r(s, { tipo: 'ligados', ids: ['j1', 'j2', 'j3'] }, 5000);
+    s = r(s, { tipo: 'tick' }, 100 + TOLERANCIA + 1);
+    expect(s.vipId).toBe('j1');
   });
 
   it('só o VIP ou a TV começam, e só com 3 ligados', () => {

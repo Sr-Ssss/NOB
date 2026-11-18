@@ -1,4 +1,5 @@
 import { baralhar } from '../../core/ids';
+import { irPara, pausaPorFalta, podio, quantosLigados, type Podio } from '../../core/jogo';
 
 /**
  * Pirata: regras em info/jogos/pirata-a-bordo.md.
@@ -62,7 +63,7 @@ export interface EstadoPirata {
   papeis: Record<string, Papel>;
   vivos: string[];
   /** ordem de saída */
-  fora: { id: string; quando: 'noite' | 'dia' | 'canhao'; n: number }[];
+  fora: { id: string; quando: 'noite' | 'dia' | 'canhao' | 'saiu'; n: number }[];
   noite: number;
   /** escolhas da noite em curso (qualquer papel) */
   escolhas: Record<string, string>;
@@ -98,10 +99,6 @@ export function contarPapeis(n: number, artilheiro = true): { piratas: number; a
 
 export function limiarVigia(def: DefPirata, n: number): number {
   return def.vigiar ?? (n <= 6 ? 2 : 3);
-}
-
-function irPara(e: EstadoPirata, fase: FasePirata, segundos: number, agora: number): EstadoPirata {
-  return { ...e, fase, terminaEm: fase === 'fim' ? 0 : agora + segundos * 1000 };
 }
 
 export function novoPirata(ids: string[], def: Partial<DefPirata>, agora: number, usadas: string[] = []): EstadoPirata {
@@ -161,7 +158,7 @@ function maisEscolhido(escolhas: string[], seed: number): string | null {
   return baralhar(topo, seed)[0];
 }
 
-function sai(e: EstadoPirata, id: string | null, quando: 'noite' | 'dia' | 'canhao'): EstadoPirata {
+function sai(e: EstadoPirata, id: string | null, quando: 'noite' | 'dia' | 'canhao' | 'saiu'): EstadoPirata {
   if (!id || !e.vivos.includes(id)) return e;
   return { ...e, vivos: e.vivos.filter((x) => x !== id), fora: [...e.fora, { id, quando, n: e.noite }] };
 }
@@ -279,13 +276,9 @@ export function reduzPirata(e: EstadoPirata, acao: AcaoPirata, agora: number): E
   if (e.fase === 'fim' && acao.tipo !== 'ligados') return e;
   switch (acao.tipo) {
     case 'ligados': {
-      let s: EstadoPirata = { ...e, ligados: acao.ids };
-      if (s.fase !== 'fim') {
-        const n = s.participantes.filter((id) => acao.ids.includes(id)).length;
-        if (n < MIN_LIGADOS && s.pausaRestante === null) s = { ...s, pausaRestante: Math.max(0, s.terminaEm - agora) };
-        else if (n >= MIN_LIGADOS && s.pausaRestante !== null) s = { ...s, terminaEm: agora + s.pausaRestante, pausaRestante: null };
-      }
-      return s;
+      const s: EstadoPirata = { ...e, ligados: acao.ids };
+      if (s.fase === 'fim') return s;
+      return pausaPorFalta(s, quantosLigados(s.participantes, acao.ids) < MIN_LIGADOS, agora);
     }
     case 'pr_noite':
       if (e.fase !== 'noite' || pausadoPirata(e) || !podeEscolher(e, acao.id, acao.alvo)) return e;
@@ -313,15 +306,10 @@ export function reduzPirata(e: EstadoPirata, acao: AcaoPirata, agora: number): E
 
 /* ---------- vistas ---------- */
 
-export interface PodioPirata {
-  id: string;
-  pontos: number;
-  lugar: number;
-}
+export type PodioPirata = Podio;
 
 export function podioPirata(e: Pick<EstadoPirata, 'participantes' | 'pontos'>): PodioPirata[] {
-  const lista = e.participantes.map((id) => ({ id, pontos: e.pontos[id] ?? 0 })).sort((x, y) => y.pontos - x.pontos);
-  return lista.map((p) => ({ ...p, lugar: lista.findIndex((q) => q.pontos === p.pontos) + 1 }));
+  return podio(e.participantes, e.pontos);
 }
 
 /** o que a TV publica: nunca leva papéis (salvo "revelar" de quem sai, e todos no fim) */
@@ -333,7 +321,7 @@ export interface VistaPirata {
   participantes: string[];
   audiencia: string[];
   vivos: string[];
-  fora: { id: string; quando: 'noite' | 'dia' | 'canhao'; n: number; papel: Papel | null }[];
+  fora: { id: string; quando: 'noite' | 'dia' | 'canhao' | 'saiu'; n: number; papel: Papel | null }[];
   noite: number;
   /** amanhecer: quem foi atirado ao mar (null = ninguém) */
   vitima: string | null;
@@ -411,4 +399,25 @@ export function privadoPirata(e: EstadoPirata, id: string): PrivadoPirata | null
     resultado: e.fase === 'amanhecer' ? (e.privados[id] ?? null) : null,
     ...(id in e.votos && e.fase === 'votar' ? { voto: e.votos[id] } : {}),
   };
+}
+
+/* ---------- saídas a meio (src/core/saidas.ts) ---------- */
+
+/** quem está vivo faz falta (vota, tem papel) */
+export const importantePirata = (e: EstadoPirata, id: string): boolean => e.vivos.includes(id);
+/** quem já foi ao mar já não joga */
+export const foraPirata = (e: EstadoPirata, id: string): boolean => !e.vivos.includes(id);
+
+/** o líder decidiu seguir sem ele: sai do barco (como quem vai ao mar) e vê-se se o jogo acabou */
+export function sairPirata(e: EstadoPirata, id: string, agora: number): EstadoPirata {
+  if (!e.vivos.includes(id) || e.fase === 'fim') return e;
+  const escolhas = { ...e.escolhas };
+  delete escolhas[id];
+  const votos = { ...e.votos };
+  delete votos[id];
+  const s = sai({ ...e, escolhas, votos }, id, 'saiu');
+  const v = vencedorPirata(s);
+  if (v) return acabar(s, v, agora);
+  if (s.fase === 'votar' && s.vivos.every((x) => x in s.votos)) return fimDaVotacao(s, agora);
+  return s;
 }

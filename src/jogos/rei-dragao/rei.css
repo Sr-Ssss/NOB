@@ -1,0 +1,72 @@
+/* O Rei e o Dragão: "duas torres e uma ponte" (aprovado pelo utilizador; info/jogos/dois-lados.md → Visual) */
+.jogo-rei { min-height: 100vh; box-sizing: border-box; background: var(--noite); }
+.rd-narra { text-align: center; margin: 8px 0; font-size: clamp(22px, 3.4vw, 56px); }
+.rd-castelos { display: flex; align-items: flex-end; justify-content: center; gap: 0; width: min(98%, 1700px); margin: 0 auto; }
+.rd-torre { position: relative; flex: 1 1 0; min-height: 66vh; display: flex; }
+.compacto .rd-torre { min-height: 300px; }
+.rd-torre-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rd-dentro { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; padding: 13% 14% 22%; box-sizing: border-box; color: var(--creme); }
+.rd-titulo { margin: 0; font-size: clamp(18px, 2.6vw, 44px); text-shadow: 2px 2px 0 #000; }
+.rd-lider { margin: 2px 0 8px; font-weight: 700; text-shadow: 1px 1px 0 #000; }
+.rd-gente { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.compacto .rd-gente { gap: 4px; }
+.rd-pessoa { display: flex; flex-direction: column; align-items: center; min-width: 72px; font-weight: 700; text-shadow: 1px 1px 0 #000; }
+.compacto .rd-pessoa { min-width: 44px; font-size: 12px; }
+.rd-pessoa.novo { animation: rd-chega 1.2s ease-out; }
+.rd-av { position: relative; }
+.rd-coroa { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 1.3em; }
+.rd-carta-fim { font-size: 0.85em; background: var(--creme); color: var(--tinta); border: 2px solid #000; border-radius: 8px; padding: 0 6px; text-shadow: none; }
+.rd-pessoa.dragao .rd-av { animation: rd-vira 1.4s ease-in-out infinite alternate; }
+.rd-ponte { position: relative; display: flex; flex-direction: column; align-items: center; width: clamp(110px, 18vw, 320px); margin-bottom: 22vh; }
+.compacto .rd-ponte { margin-bottom: 90px; width: 90px; }
+.rd-ponte-svg { width: 100%; }
+.rd-relogio { font-size: clamp(22px, 4vw, 72px); font-weight: 800; color: var(--creme); background: var(--tinta); border: 5px solid #000; border-radius: 50%; min-width: 2.6em; aspect-ratio: 1; display: grid; place-items: center; margin-bottom: 8px; }
+.compacto .rd-relogio { font-size: 18px; border-width: 3px; }
+.rd-atravessa { position: absolute; top: 58%; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; }
+.rd-viajante { animation: rd-atravessa 2.4s ease-in-out infinite alternate; }
+.rd-viajante.chegou { animation: none; opacity: 0.4; }
+.rd-tv-fim .rd-torre { min-height: 52vh; }
+.rd-tv-fim .rd-ponte { margin-bottom: 16vh; }
+.rd-tv-fim .rd-dentro { padding: 9% 6% 16%; }
+.rd-fogo { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); font-size: clamp(60px, 9vw, 170px); z-index: 2; animation: rd-cospe 0.9s ease-in-out infinite alternate; white-space: nowrap; }
+.rd-fogo span { font-size: 0.6em; }
+.rd-torre.fogo .rd-torre-svg path:first-child { fill: #f0997b; }
+@keyframes rd-atravessa { from { transform: translateX(-40%); } to { transform: translateX(40%); } }
+@keyframes rd-chega { from { transform: scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rd-vira { from { transform: rotate(-6deg); } to { transform: rotate(6deg) scale(1.15); } }
+@keyframes rd-cospe { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.12); } }
+.sem-anim .rd-viajante, .sem-anim .rd-fogo, .sem-anim .rd-pessoa { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .rd-viajante, .rd-fogo, .rd-pessoa, .rd-av { animation: none !important; } }
+
+/* telemóvel */
+.rd-tel-topo { text-align: center; font-weight: 800; font-size: 18px; margin: 4px 0 8px; }
+.rd-vai { text-align: center; font-size: clamp(30px, 9vw, 54px); margin: 16px 0; }
+.rd-mini-torre { width: 120px; height: 180px; position: relative; margin: 0 auto; }
+.rd-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.rd-botoes .botao { margin: 0; }
+.rd-lista { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.rd-linha { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 3px solid #000; border-radius: 12px; background: var(--creme); color: var(--tinta); font-weight: 700; font-size: 17px; text-align: left; }
+.rd-linha.on { background: var(--coral); }
+.rd-linha:disabled { opacity: 0.45; }
+.rd-linha .cresce { flex: 1; }
+.rd-escuro { min-height: 70vh; margin: 8px 0; border-radius: 18px; background: #0d0b1f; color: #f1efe8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; box-sizing: border-box; }
+.rd-escuro h2 { font-size: 34px; margin: 0; }
+.rd-escuro .rd-bola { font-size: 28px; }
+.rd-escuro p { font-size: 20px; margin: 0; max-width: 26em; }
+.rd-escuro .info { text-align: left; overflow: auto; font-size: 18px; justify-content: flex-start; }
+.rd-info { position: fixed; inset: 0; z-index: 60; background: var(--creme); color: var(--tinta); overflow: auto; padding: 20px; font-size: 20px; line-height: 1.45; }
+.rd-info h3 { margin: 18px 0 6px; font-size: 24px; }
+.rd-info li { margin: 4px 0; }
+.rd-pedido { border: 4px solid #000; border-radius: 16px; background: var(--coral); color: var(--tinta); padding: 12px; margin: 8px 0; text-align: center; font-weight: 800; font-size: 20px; }
+
+/* Mostrar cor / carta: em baixo, segurar 2 s com barra de progresso */
+.jogo-rei.tel { padding-bottom: 200px; }
+.rd-mostrar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 12px 100px; background: var(--noite); border-top: 3px solid #000; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rd-segurar { position: relative; overflow: hidden; height: 60px; border: 4px solid #000; border-radius: 16px; background: var(--creme); color: var(--tinta); font-weight: 800; font-size: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.rd-progresso { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--coral); }
+.rd-rotulo { position: relative; }
+.rd-revelado { position: fixed; inset: 0 0 180px; z-index: 40; background: #0d0b1f; color: #f1efe8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
+.rd-revelado h2 { font-size: 34px; margin: 0; }
+.rd-revelado .rd-bola { font-size: 30px; }
+.rd-revelado p { font-size: 20px; margin: 0; }
+.rd-aviso { position: fixed; left: 12px; right: 12px; bottom: 176px; z-index: 42; background: var(--tinta); color: var(--creme); border: 3px solid #000; border-radius: 12px; padding: 10px; text-align: center; font-weight: 800; }

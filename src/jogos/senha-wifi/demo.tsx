@@ -2,7 +2,7 @@ import { paramsHash } from '../../core/ids';
 import { usarIdioma } from '../../core/i18n';
 import type { VistaSala } from '../../core/sala';
 import { palavrasWifi } from './conteudo';
-import { criptografo, novoWifi, reduzWifi, respondentes, vistaWifi as vista, type AcaoWifi, type EstadoWifi, type Lado } from './regras';
+import { criptografo, novoWifi, privadoWifi, reduzWifi, respondentes, vistaWifi as vista, type AcaoWifi, type EstadoWifi, type Lado } from './regras';
 import { TelemovelWifi } from './telemovel';
 import { TvWifi } from './tv';
 
@@ -81,11 +81,11 @@ export function DemoWifi() {
 }
 
 function Demo({ e, sala, ecra, quem, zoom, fase }: { e: EstadoWifi; sala: VistaSala; ecra: string; quem: string | null; zoom: number; fase: string }) {
-  const v = vista(e, (id) => 'tag-' + id);
+  const v = vista(e);
   const nada = () => {};
   // o Edge headless não desce abaixo de 500 px: o zoom simula um ecrã de 412 px
   if (zoom !== 1) (document.documentElement.style as unknown as { zoom: string }).zoom = String(zoom);
   // por omissão, mostra quem interessa à fase: o Criptógrafo dos Brancos ou quem interceta
   const eu = quem ?? (fase === 'cripto' ? criptografo(e, 'b') : fase === 'resposta' ? respondentes(e)[0] : e.equipas.b[0]);
-  return ecra === 'tel' ? <TelemovelWifi sala={sala} v={v} agora={Date.now} eu={eu} tag={'tag-' + eu} enviar={nada} /> : <TvWifi sala={sala} v={v} agora={Date.now} onOutraVez={nada} onMenu={nada} />;
+  return ecra === 'tel' ? <TelemovelWifi sala={sala} v={v} agora={Date.now} eu={eu} privado={privadoWifi(e, eu)} enviar={nada} /> : <TvWifi sala={sala} v={v} agora={Date.now} onOutraVez={nada} onMenu={nada} />;
 }

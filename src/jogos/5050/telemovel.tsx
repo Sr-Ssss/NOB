@@ -4,7 +4,9 @@ import { t } from '../../core/i18n';
 import { conteudoDe, textoEm, type Item } from '../../core/conteudo';
 import reserva from './conteudo.json';
 import { MAX_RESPOSTA, MAX_TEXTO, type Lado } from './regras';
-import { Cabecalho, Placar, Premios, type PropsJogo } from './tv';
+import { Balanca, Cabecalho, Placar, Premios, nomeDe, type PropsJogo } from './tv';
+import { Progresso } from '../../ui/ecraunico';
+import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 interface Frase {
   id: string;
@@ -53,16 +55,18 @@ function Escrever({ sala, v, enviar }: Pick<PropsJogo, 'sala' | 'v'> & { enviar:
     return f.length ? f : todas;
   }, [sala.idioma, v.def.temas.join()]);
 
-  const [modo, setModo] = useState<'completar' | 'minha'>('completar');
-  const [frase, setFrase] = useState(() => sortear(frases, v.usadas));
-  const [vistas, setVistas] = useState<string[]>([]);
-  const [trocas, setTrocas] = useState(0);
-  const [lacuna, setLacuna] = useState('');
-  const [minha, setMinha] = useState('');
-  const [a, setA] = useState(t('sim'));
-  const [b, setB] = useState(t('nao'));
-  const [minhaA, setMinhaA] = useState(t('sim'));
-  const [minhaB, setMinhaB] = useState(t('nao'));
+  // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
+  const g = `${sala.codigo}:5050:${v.ronda}`;
+  const [modo, setModo] = useRascunho<'completar' | 'minha'>(g, 'modo', 'completar');
+  const [frase, setFrase] = useRascunho(g, 'frase', () => sortear(frases, v.usadas), (x) => frases.some((f) => f.id === (x as Frase | null)?.id));
+  const [vistas, setVistas] = useRascunho<string[]>(g, 'vistas', []);
+  const [trocas, setTrocas] = useRascunho(g, 'trocas', 0);
+  const [lacuna, setLacuna] = useRascunho(g, 'lacuna', '');
+  const [minha, setMinha] = useRascunho(g, 'minha', '');
+  const [a, setA] = useRascunho(g, 'a', t('sim'));
+  const [b, setB] = useRascunho(g, 'b', t('nao'));
+  const [minhaA, setMinhaA] = useRascunho(g, 'minhaA', t('sim'));
+  const [minhaB, setMinhaB] = useRascunho(g, 'minhaB', t('nao'));
 
   const [antes, depois] = frase.texto.split(LACUNA);
   const completar = modo === 'completar';
@@ -173,6 +177,7 @@ export function Telemovel5050({
   const chave = `${v.ronda}:${dil?.texto}`;
   const eAutor = !!v.dilema?.autorTag && v.dilema.autorTag === tag;
   const voto = meuVoto?.chave === chave ? meuVoto.lado : null;
+  useSoRascunho(v.fase === 'escrever' && participa && !v.enviaram.includes(eu) ? `${sala.codigo}:5050:${v.ronda}` : null);
 
   const votar = (lado: Lado) => {
     setMeuVoto({ chave, lado });
@@ -192,7 +197,8 @@ export function Telemovel5050({
           <b>50/50</b> — {t('ajuda5050')}
         </div>
       )}
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {v.fase === 'escrever' &&
         (!participa ? (
@@ -200,22 +206,34 @@ export function Telemovel5050({
         ) : v.enviaram.includes(eu) ? (
           <div class="cartao centro">✅ {t('enviado')}</div>
         ) : (
-          <Escrever key={v.ronda} sala={sala} v={v} enviar={enviar} />
+          <>
+            <Progresso semTv={sala.semTv} ids={v.participantes} feitos={v.enviaram} />
+            <Escrever key={v.ronda} sala={sala} v={v} enviar={enviar} />
+          </>
         ))}
 
-      {(v.fase === 'mostrar' || v.fase === 'votar' || v.fase === 'revelar') &&
-        dil &&
-        (eAutor ? (
-          <>
-            <div class="cartao pergunta-tel">{dil.texto}</div>
-            <p class="centro">🤞 {t('esTuAutor')}</p>
-          </>
-        ) : (
+      {/* sem TV, um só ecrã: no fim de cada votação o telemóvel mostra a balança da TV */}
+      {v.fase === 'revelar' && sala.semTv && v.resultado && (
+        <>
+          <div class="cartao pergunta-tel">{v.resultado.texto}</div>
+          <Balanca sala={sala} a={v.resultado.a} b={v.resultado.b} segundos={null} r={v.resultado} mostrarVotos={v.def.mostrarVotos} />
+          <div class="cartao centro">
+            {t('autor', { nome: nomeDe(sala, v.resultado.autor) })} <b>+{v.resultado.pontos}</b>
+            {v.resultado.perfeito && <span> · {t('perfeito')}</span>}
+          </div>
+        </>
+      )}
+
+      {(v.fase === 'mostrar' || v.fase === 'votar' || (v.fase === 'revelar' && !sala.semTv)) &&
+        dil && (
+          // o autor vê o mesmo ecrã (o voto dele não conta), para não se denunciar
           <>
             <Votar texto={dil.texto} a={dil.a} b={dil.b} voto={voto} ativo={v.fase === 'votar'} aoVotar={votar} />
-            <p class="centro mini">{v.fase === 'votar' ? (voto ? t('votaste') : t('fVotar')) : v.fase === 'mostrar' ? t('fMostrar') : t('olhaTv')}</p>
+            <p class="centro mini">{v.fase === 'votar' ? (voto ? t('votoFeito') : t('fVotar')) : v.fase === 'mostrar' ? t('fMostrar') : t('olhaTv')}</p>
+            {eAutor && <p class="centro mini">🤞 {t('esTuAutor')}</p>}
+            {v.fase === 'votar' && <Progresso semTv={sala.semTv} ids={v.votantes} feitos={v.votaram} />}
           </>
-        ))}
+        )}
 
       {(v.fase === 'placar' || v.fase === 'fim') && (
         <>

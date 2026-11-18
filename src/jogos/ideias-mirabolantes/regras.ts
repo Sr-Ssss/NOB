@@ -1,4 +1,5 @@
 import { baralhar } from '../../core/ids';
+import { irPara, pausaPorFalta, podio, quantosLigados, type Podio } from '../../core/jogo';
 import type { Idioma } from '../../core/sala';
 import { limparTracos, type Traco } from '../../ui/tracos';
 
@@ -85,10 +86,6 @@ export type AcaoIdeias =
   | { tipo: 'tick' };
 
 const textoP = (p: Problema, i: Idioma) => (i === 'en' ? p.en : p.pt);
-
-function irPara(e: EstadoIdeias, fase: FaseIdeias, segundos: number, agora: number): EstadoIdeias {
-  return { ...e, fase, terminaEm: fase === 'fim' ? 0 : agora + segundos * 1000 };
-}
 
 export function sorteiaApresentadores(n: number, quem: DefIdeias['quem']): boolean {
   return n > MAX_SORTEADOS && quem !== 'todos';
@@ -269,13 +266,9 @@ export function pausadoIdeias(e: EstadoIdeias): boolean {
 export function reduzIdeias(e: EstadoIdeias, acao: AcaoIdeias, agora: number): EstadoIdeias {
   switch (acao.tipo) {
     case 'ligados': {
-      let s: EstadoIdeias = { ...e, ligados: acao.ids };
-      const n = todos(s).filter((id) => acao.ids.includes(id)).length;
-      if (s.fase !== 'fim') {
-        if (n < MIN_LIGADOS && s.pausaRestante === null) s = { ...s, pausaRestante: Math.max(0, s.terminaEm - agora) };
-        else if (n >= MIN_LIGADOS && s.pausaRestante !== null) s = { ...s, terminaEm: agora + s.pausaRestante, pausaRestante: null };
-      }
-      return s;
+      const s: EstadoIdeias = { ...e, ligados: acao.ids };
+      if (s.fase === 'fim') return s;
+      return pausaPorFalta(s, quantosLigados(todos(s), acao.ids) < MIN_LIGADOS, agora);
     }
     case 'im_problema': {
       if (e.fase !== 'problema' || pausadoIdeias(e) || !e.participantes.includes(acao.id)) return e;
@@ -317,15 +310,10 @@ export function reduzIdeias(e: EstadoIdeias, acao: AcaoIdeias, agora: number): E
   }
 }
 
-export interface PodioIdeias {
-  id: string;
-  pontos: number;
-  lugar: number;
-}
+export type PodioIdeias = Podio;
 
 export function podioIdeias(e: Pick<EstadoIdeias, 'participantes' | 'pontos'>): PodioIdeias[] {
-  const lista = e.participantes.map((id) => ({ id, pontos: e.pontos[id] ?? 0 })).sort((x, y) => y.pontos - x.pontos);
-  return lista.map((p) => ({ ...p, lugar: lista.findIndex((q) => q.pontos === p.pontos) + 1 }));
+  return podio(e.participantes, e.pontos);
 }
 
 export interface CartaoInvencao {

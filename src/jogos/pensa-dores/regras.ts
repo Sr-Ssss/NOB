@@ -1,4 +1,5 @@
 import { baralhar } from '../../core/ids';
+import { irPara, pausaPorFalta, podio, quantosLigados, type Podio } from '../../core/jogo';
 
 /** Pensa-Dores: regras em info/jogos/respostas-rapidas.md */
 
@@ -197,10 +198,6 @@ export function acabouEscrever(e: EstadoPensa, id: string): boolean {
   return e.duelos.every((d, i) => !d.autores.includes(id) || !!e.respostas[i]?.[id]);
 }
 
-function irPara(e: EstadoPensa, fase: FasePensa, segundos: number, agora: number): EstadoPensa {
-  return { ...e, fase, terminaEm: fase === 'fim' ? 0 : agora + segundos * 1000 };
-}
-
 function somar(pontos: Record<string, number>, opcoes: ResOpcao[]): Record<string, number> {
   const p = { ...pontos };
   for (const o of opcoes) p[o.autor] = (p[o.autor] ?? 0) + o.pontos;
@@ -334,13 +331,9 @@ export function pausadoPensa(e: EstadoPensa): boolean {
 export function reduzPensa(e: EstadoPensa, acao: AcaoPensa, agora: number): EstadoPensa {
   switch (acao.tipo) {
     case 'ligados': {
-      let s: EstadoPensa = { ...e, ligados: acao.ids };
-      const n = todos(s).filter((id) => acao.ids.includes(id)).length;
-      if (s.fase !== 'fim') {
-        if (n < MIN_LIGADOS && s.pausaRestante === null) s = { ...s, pausaRestante: Math.max(0, s.terminaEm - agora) };
-        else if (n >= MIN_LIGADOS && s.pausaRestante !== null) s = { ...s, terminaEm: agora + s.pausaRestante, pausaRestante: null };
-      }
-      return s;
+      const s: EstadoPensa = { ...e, ligados: acao.ids };
+      if (s.fase === 'fim') return s;
+      return pausaPorFalta(s, quantosLigados(todos(s), acao.ids) < MIN_LIGADOS, agora);
     }
     case 'responder': {
       if (pausadoPensa(e)) return e;
@@ -386,15 +379,10 @@ export function reduzPensa(e: EstadoPensa, acao: AcaoPensa, agora: number): Esta
   }
 }
 
-export interface PodioPensa {
-  id: string;
-  pontos: number;
-  lugar: number;
-}
+export type PodioPensa = Podio;
 
 export function podioPensa(e: Pick<EstadoPensa, 'participantes' | 'pontos'>): PodioPensa[] {
-  const lista = e.participantes.map((id) => ({ id, pontos: e.pontos[id] ?? 0 })).sort((x, y) => y.pontos - x.pontos);
-  return lista.map((p) => ({ ...p, lugar: lista.findIndex((q) => q.pontos === p.pontos) + 1 }));
+  return podio(e.participantes, e.pontos);
 }
 
 /** vista pública: os autores só aparecem na revelação (antes só vai a tag secreta, para "é a tua") */

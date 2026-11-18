@@ -7,12 +7,16 @@ import { PlacarSevira, txt } from './comuns';
 import { buscarGiphy, reduzirGaleria, temGiphy } from './imagens';
 import { MAX_IMAGENS, MAX_LINK, MAX_TITULO, REACOES, type Imagem } from './regras';
 import type { PropsSevira } from './tv';
+import { useRascunho, useSoRascunho } from '../../ui/rascunho';
+
+/** nome das reações para leitores de ecrã */
+const NOME_REACAO: Record<string, string> = { '😂': 'Hahaha', '👏': 'Palmas', '🤯': 'Uau', '😴': 'Zzz' };
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Extract<AcaoSala, { tipo: 'jogo' }>['acao']) => enviar({ tipo: 'jogo', acao });
 
 /** escolher uma imagem: Galeria · GIPHY · Link */
-function Escolher({ aoEscolher, fechar }: { aoEscolher: (img: Imagem) => void; fechar: () => void }) {
+function Escolher({ aoEscolher, fechar, links }: { aoEscolher: (img: Imagem) => void; fechar: () => void; links: boolean }) {
   const [modo, setModo] = useState<'menu' | 'giphy' | 'link'>('menu');
   const [q, setQ] = useState('');
   const [gifs, setGifs] = useState<string[]>([]);
@@ -32,9 +36,11 @@ function Escolher({ aoEscolher, fechar }: { aoEscolher: (img: Imagem) => void; f
                 🎞️ {t('svGiphy')}
               </button>
             )}
-            <button class="botao sec" onClick={() => setModo('link')}>
-              🔗 {t('svLink')}
-            </button>
+            {links && (
+              <button class="botao sec" onClick={() => setModo('link')}>
+                🔗 {t('svLink')}
+              </button>
+            )}
             {erro && <p class="mini">⚠ {t('svSemImagem')}</p>}
             <input
               ref={ficheiro}
@@ -98,9 +104,11 @@ function Escolher({ aoEscolher, fechar }: { aoEscolher: (img: Imagem) => void; f
 
 function Preparar({ sala, v, tag, eu, enviar }: Pick<PropsSevira, 'sala' | 'v'> & { tag: string; eu: string; enviar: Enviar }) {
   const sorteado = txt(v.temas[tag], sala);
-  const [titulo, setTitulo] = useState(sorteado);
+  // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
+  const g = `${sala.codigo}:sevira:p`;
+  const [titulo, setTitulo] = useRascunho(g, 'titulo', sorteado);
   const [editar, setEditar] = useState(false);
-  const [imgs, setImgs] = useState<(Imagem | null)[]>(Array(MAX_IMAGENS).fill(null));
+  const [imgs, setImgs] = useRascunho<(Imagem | null)[]>(g, 'imgs', () => Array(MAX_IMAGENS).fill(null), (x) => Array.isArray(x) && x.length === MAX_IMAGENS);
   const [aberto, setAberto] = useState<number | null>(null);
   if (v.enviaram.includes(eu)) return <div class="cartao centro">✅ {t('svEnviado')}</div>;
   const mudar = (i: number, img: Imagem | null) => {
@@ -133,14 +141,16 @@ function Preparar({ sala, v, tag, eu, enviar }: Pick<PropsSevira, 'sala' | 'v'> 
         )}
       </div>
       <p class="mini centro">
-        {t('svGaleria')} · {temGiphy() ? `${t('svGiphy')} · ` : ''}
-        {t('svLink')}
+        {t('svGaleria')}
+        {temGiphy() ? ` · ${t('svGiphy')}` : ''}
+        {v.def.links ? ` · ${t('svLink')}` : ''}
       </p>
       <button class="botao grande" onClick={() => jogo(enviar, { tipo: 'sv_enviar', id: '', titulo: titulo.trim() && titulo.trim() !== sorteado ? titulo : null })}>
         {t('enviar')}
       </button>
       {aberto !== null && (
         <Escolher
+          links={!!v.def.links}
           fechar={() => setAberto(null)}
           aoEscolher={(img) => {
             mudar(aberto, img);
@@ -219,6 +229,7 @@ function Nota({ enviar }: { enviar: Enviar }) {
 export function TelemovelSevira({ sala, v, agora, eu, tag, enviar }: PropsSevira & { eu: string; tag: string; enviar: Enviar }) {
   const a = v.apresentador;
   const souEu = a === eu;
+  useSoRascunho(v.fase === 'preparar' && v.participantes.includes(eu) && !v.enviaram.includes(eu) ? `${sala.codigo}:sevira:p` : null);
   const lider = sala.vipId === eu;
   return (
     <div class="pag tel-sevira">
@@ -226,7 +237,8 @@ export function TelemovelSevira({ sala, v, agora, eu, tag, enviar }: PropsSevira
         <span>{t('svOpcoesNome')}</span>
         {v.fase !== 'fim' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {v.fase === 'preparar' &&
         (v.participantes.includes(eu) ? <Preparar key={tag} sala={sala} v={v} tag={tag} eu={eu} enviar={enviar} /> : <p class="centro">{t('olhaTv')}</p>)}
@@ -263,7 +275,7 @@ export function TelemovelSevira({ sala, v, agora, eu, tag, enviar }: PropsSevira
             <p class="centro">{t('svReaja')}</p>
             <div class="sv-reagir">
               {REACOES.map((r) => (
-                <button key={r} class="botao sec" onClick={() => jogo(enviar, { tipo: 'sv_reagir', id: '', r })}>
+                <button key={r} class="botao sec" aria-label={NOME_REACAO[r] ?? r} onClick={() => jogo(enviar, { tipo: 'sv_reagir', id: '', r })}>
                   {r}
                 </button>
               ))}

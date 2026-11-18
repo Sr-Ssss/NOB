@@ -70,7 +70,8 @@ function Equipas({ sala, v, prontos }: { sala: VistaSala; v: VistaWifi; prontos?
 export function TvWifi({ sala, v, agora, selFim = 0, onOutraVez, onMenu }: PropsWifi & { selFim?: number; onOutraVez: () => void; onMenu: () => void }) {
   return (
     <div class="pag tv jogo-wifi">
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
       {v.fase === 'equipas' && (
         <>
           <h1 class="pergunta">{t('swLiderMonta')}</h1>

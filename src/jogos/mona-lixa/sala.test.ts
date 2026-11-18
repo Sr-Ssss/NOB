@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOGO, motivo } from '../../core/jogos';
-import { PREFIXO_BOT, novaSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
+import { PREFIXO_BOT, minhaMarca, novaSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
 
 function com(n: number, semTv = false): EstadoSala {
   let s: EstadoSala = { ...novaSala('ABCD', 'pt-BR'), semTv };
@@ -16,7 +16,10 @@ describe('Mona Lixa na sala', () => {
     expect(s.mona?.fase).toBe('desenhar');
     expect(s.mona?.conteudo.desenhos.length).toBeGreaterThanOrEqual(300);
     expect(s.mona?.conteudo.falsos.length).toBeGreaterThanOrEqual(150);
-    expect(Object.keys(vistaSala(s).mona!.sorteados).sort()).toEqual(['t1', 't2', 't3']);
+    // cada um encontra o seu pela marca (a tag nunca sai)
+    const v = vistaSala(s);
+    expect(Object.keys(v.mona!.sorteados).sort()).toEqual(['t1', 't2', 't3'].map((t) => minhaMarca(v, t)).sort());
+    expect(JSON.stringify(v)).not.toMatch(/"t[1-3]"/);
     const j = CATALOGO.find((x) => x.id === 'mona')!;
     expect(motivo(j, 3, true)).toBeNull();
     expect(motivo(j, 20)).toBeNull();

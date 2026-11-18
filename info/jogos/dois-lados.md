@@ -25,13 +25,13 @@
 | 🤩 Curioso | 🔵🔴 | Com o Dragão |
 | 🙇 Pajem | 🔵🔴 | Com o Rei |
 | 😤 Rebelde | 🔵🔴 | Longe do Rei |
-| 🎲 Apostador | ⚪ | Aposta na equipa vencedora (no fim) |
-| 🏹 Arqueiro | ⚪ | No fim aponta a alguém |
-| 🎯 Alvo | ⚪ | Não ser apontado pelo Arqueiro |
-| 🪆 Isco | ⚪ | Ser apontado pelo Arqueiro |
-| 🥔 Batata Quente | ⚪ | Não ficar com a batata no fim |
+| 🔮 Vidente | ⚪ | Adivinha a equipa vencedora (no fim) |
+| 🏹 Caçador | ⚪ | No fim aponta a quem acha que é o Fugitivo |
+| 🦊 Fugitivo | ⚪ | Não ser apontado pelo Caçador |
+| 🎭 Sósia | ⚪ | Fazer-se passar pelo Fugitivo (ser apontado pelo Caçador) |
+| 🐸 Sapo Enfeitiçado | ⚪ | Não ficar com o sapo no fim |
 - 🔵🔴 = existe nas duas cores; precisa também que a sua equipa ganhe. ⚪ = neutro, só o objetivo próprio.
-- Pares e trios (Gémeos, Rivais, Arqueiro+Alvo+Isco) são sorteados sempre juntos; se não couberem, saem todos.
+- Pares e trios (Gémeos, Rivais, Caçador+Fugitivo+Sósia) são sorteados sempre juntos; se não couberem, saem todos.
 
 ## Rondas
 | Jogadores | Rondas | Reféns por líder |
@@ -53,11 +53,11 @@
 5. **Últimos 30 s**: o líder recebe um menu para escolher os reféns. Se não escolher, a app sorteia.
 6. **Troca**: o telemóvel do refém diz "Vai para: Sala 2". A TV mostra quem está a mudar. A lista das divisões atualiza.
 7. Repete até à última ronda.
-8. **Antes da revelação** (30 s): o Apostador escolhe a equipa; o Arqueiro escolhe o alvo.
+8. **Antes da revelação** (30 s): o Vidente escolhe a equipa; o Caçador escolhe a quem aponta.
 9. **Meia-noite**: a TV revela todas as cartas, faz a animação do Dragão a cuspir fogo na divisão dele e mostra a pontuação. Os telemóveis mostram só "Ganhaste/Perdeste" + pontos de cada um.
 
-## 🥔 Batata Quente
-- Começa com o jogador sorteado como Batata Quente.
+## 🐸 Sapo Enfeitiçado
+- Começa com o jogador sorteado como Sapo Enfeitiçado. (Nomes mudados a 17/11 para não usar os de outro jogo; as regras são as mesmas.)
 - Numa **troca mútua de carta** com quem tem a batata, aparece o botão **Passar batata** a quem a tem. A batata passa se os dois confirmarem; o outro fica com ela.
 - Quem tiver a batata no fim perde.
 
@@ -77,7 +77,7 @@
   5. **Votação de líder**: lista da sala + Votar;
   6. **Líder (últimos 30 s)**: "Escolhe N reféns" + lista + Confirmar;
   7. **Troca de sala**: refém vê "Foste escolhido! Vai para: Sala 2" + "Cheguei"; os outros veem "Ficas na Sala 1";
-  8. **Antes da meia-noite (30 s)**: Apostador escolhe 🔵/🔴; Arqueiro escolhe o alvo; os outros veem "À espera…";
+  8. **Antes da meia-noite (30 s)**: Vidente escolhe 🔵/🔴; Caçador escolhe a quem aponta; os outros veem "À espera…";
   9. **Meia-noite**: "Ganhaste/Perdeste" + pontos + "Olha para a TV".
 
 ## Pontos

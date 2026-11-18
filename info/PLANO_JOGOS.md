@@ -13,7 +13,7 @@ Base: o MVP do 50/50 (`src/jogos/5050/`, `src/core/`, `src/ui/`). Cada jogo segu
 | 6 | Pirata / Pirate | `jogos/pirata-a-bordo.md` | Primeiro de papéis secretos: canal privado, noite/dia, vigia por limiar | sim (A + B + C) |
 | 7 | Revolução das Máquinas / Machine Uprising | `jogos/motim-em-orbita.md` | Papéis secretos + baralho + poderes + veto | **não**: propor 2–3 (robô+baterias ⭐, sala de controlo, terminal) |
 | 8 | O Rei e o Dragão / The King and the Dragon | `jogos/dois-lados.md` | 2 divisões, líderes com votação, reféns, 16 papéis, batata quente, troca mútua | sim (dois castelos e o dragão) |
-| 9 | Ragerob | `jogos/rinha-de-robos.md` | Física (Matter.js), IA dos robôs, economia, leilões, modo Pilotos; precisa de TV | **não**: propor 2–3 |
+| 9 | Ragerob | `jogos/rinha-de-robos.md` | Física (Matter.js), IA dos robôs, economia, leilões, modo Pilotos; precisa de TV | sim ("sucata no quintal") |
 
 ## Regras para todas as sessões de jogo
 - Seguir **à letra** as regras, os pontos, as definições, os nomes e o visual do `.md` do jogo e de `arquitetura.md` (Idiomas, Ecrãs, Bonecos, Design da app, Modo sem TV, regra "Identidade" para papéis secretos). Não inventar regras; se faltar algo, perguntar.
@@ -32,3 +32,5 @@ Base: o MVP do 50/50 (`src/jogos/5050/`, `src/core/`, `src/ui/`). Cada jogo segu
 | ✅ Ideias Mirabolantes (16/11; `Tela`/`Quadro` ganharam `planta`) | 5 |
 | ✅ Pirata (16/11; canal privado reutilizável em `src/core/privado.ts` + `privadoSala`) | 6 |
 | ✅ Revolução das Máquinas (16/11; reaproveita o canal privado do Pirata) | 7 |
+| ✅ O Rei e o Dragão (17/11; visual mudou para "duas torres e uma ponte"; equipas Corte / Rebeldes) | 8 |
+| ✅ Ragerob (18/11; visual "sucata no quintal"; física Matter.js só na TV; modos Apostas e Pilotos) | 9 |

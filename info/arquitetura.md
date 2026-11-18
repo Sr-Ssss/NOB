@@ -104,12 +104,14 @@ android/       projeto Capacitor (Fase 3)
 - **Login opcional (Google)**: ecrã próprio em Definições → Conta ("Guarda o teu histórico… Não é preciso para jogar") + aviso pequeno no Histórico, só depois da 1.ª party, que se pode fechar e não volta a aparecer.
 - **Remover anúncios**: ecrã simples em Definições (texto "Todos os jogos continuam grátis…", botão **2,99 €**, compra única, + "Restaurar compra") + um **✕ pequeno ao lado do anúncio do rodapé** que abre o mesmo ecrã. Nunca aparece sozinho em popup.
 - **Bonecos (ponto 2)**:
-  - **18 bonecos**, **formas abstratas com cara** que não precisam de representar nada, ar de **rabisco à mão (tipo Paint)**: traço preto grosso e irregular, formas imperfeitas, **cores base**; cada um único na forma **e** na cor (distinguem-se mesmo sem ver cores);
-  - **12 já aprovados**: amassado, torre torta, pingente, bolhas (boca: sorriso com a língua de fora para o lado), rabo de espiral, zigue-zague, tampa com buraco, esticado de lado, gosma, peludo, polvo DJ, feijão, cubo mole, dois bicos, ondulado, pião, mordido, escadinha → **18 bonecos** (grelha 3×6 no telemóvel);
-  - **cores (uma por boneco, bem distintas)**: 1 amassado #E6194B vermelho · 2 torre torta #4363D8 azul · 3 pingente #F58231 laranja · 4 bolhas #3CB44B verde · 5 espiral #911EB4 roxo · 6 zigue-zague #FFE119 amarelo · 7 tampa #42D4F4 ciano · 8 esticado #F032E6 magenta · 9 cubo mole #BFEF45 lima · 10 dois bicos #FABED4 rosa-claro · 11 ondulado #469990 verde-azulado · 12 pião #DCBEFF lilás · 13 mordido #9A6324 castanho · 14 escadinha #808000 oliva · 15 gosma #AAFFC3 menta · 16 peludo #800000 bordô · 17 polvo DJ #A9A9A9 cinzento · 18 feijão #FFD8B1 pêssego;
-  - referências: **gosma** (pingos em baixo, 3 olhos, **sem antenas**), **peludo** (contorno aos picos), **polvo DJ** (tentáculos + auscultadores), **feijão** (forma torta, olhos a dormir). Rejeitados: pera, nuvem, raio, casinha, tijolo, ciclope, animais misturados e humanos;
+  - **18 bonecos**, **formas abstratas com cara** que não precisam de representar nada, ar de **rabisco à mão (tipo Paint)**: traço preto grosso e irregular, formas imperfeitas, **cores vivas** (nada de pastel, 18/11); cada um único na forma **e** na cor (distinguem-se mesmo sem ver cores);
+  - **lista (v2, 18/11)**: 1 amassado · 2 torre torta · 3 pingente · 4 bolhas · 5 rabo de espiral · 6 **rasgado** · 7 **lasca** · 8 esticado de lado · 9 **pentágono torto** · 10 **trapézio torto** · 11 ondulado · 12 pião · 13 mordido · 14 escadinha · 15 gosma · 16 peludo · 17 **crista** · 18 **nuvem** (grelha 3×6 no telemóvel);
+  - **formas novas (18/11)**: rasgado = pentágono irregular, um lado bem maior, base rasgada em zigue-zague; lasca = hexágono torto, como uma lasca partida; pentágono torto = pentágono de cantos moles com um lado bem maior; trapézio torto = largo em cima, estreito em baixo, inclinado; crista = bloco de cantos redondos com crista de 3 bicos em cima; nuvem = nuvem simples de desenho, 3 altos em cima e base reta (pedida pelo utilizador a 18/11, sai da lista de rejeitados). O utilizador prefere formas **abstratas** a coisas reais distorcidas;
+  - **saíram (18/11, o utilizador achou-os esquisitos)**: cubo mole, feijão, polvo DJ, dois bicos, tampa com buraco; zigue-zague (demasiado básico). Também rejeitados na v2: sanfona, dobrado, oito, calombo, gancho, triângulo gordo, rosca, batata, quadrado inchado, ovo torto, mancha, meio reto meio mole, caído;
+  - **cores vivas (v2, 18/11)**: 1 #FF2A2A vermelho · 2 #2255FF azul · 3 #FF7A00 laranja · 4 #1DCC4A verde · 5 #9B2CFF roxo · 6 #FFDD00 amarelo · 7 #00D4FF ciano · 8 #FF22DD magenta · 9 #B4FF00 lima · 10 #FF3D8B rosa-choque · 11 #00C2A8 turquesa · 12 #C77DFF violeta · 13 #FFAA00 âmbar · 14 #FF6B4A coral · 15 #3DFFA2 menta-viva · 16 #D6004F framboesa · 17 #29A8FF azul-céu · 18 #5A3CFF índigo;
+  - referências: **gosma** (pingos em baixo, 3 olhos, **sem antenas**), **peludo** (contorno aos picos). Rejeitados: pera, raio, casinha, tijolo, ciclope, animais misturados e humanos;
   - evitar formas iguais às de outros jogos conhecidos (estrela, lua, gota, cacto, cocó);
-  - **caras (aprovado 16/11)**: cada boneco tem olhos e boca próprios, com personalidade que vem da forma; **todos piscam** (incluindo o feijão, de pálpebra a meio, e a gosma, os 3 olhos juntos):
+  - **caras (aprovado 16/11, revisto 18/11)**: cada boneco tem olhos e boca próprios, com personalidade que vem da forma; **todos piscam** (incluindo a nuvem, de pálpebra a meio, e a gosma, os 3 olhos juntos):
 
     | # | boneco | olhos | boca | personalidade |
     |---|---|---|---|---|
@@ -118,24 +120,29 @@ android/       projeto Capacitor (Fase 3)
     | 3 | pingente | a olhar para cima (para o fio) | sorriso pequeno | sonhador |
     | 4 | bolhas | pontos pretos com brilho, um em cada bolha: pequeno na de cima, maior na grande | sorriso com a língua de fora para o lado | brincalhão |
     | 5 | rabo de espiral | em espiral, de tamanhos diferentes e um mais alto | ondulada aberta | tonto |
-    | 6 | zigue-zague | zangados (sobrancelhas em V) | dentes em zigue-zague | resmungão |
-    | 7 | tampa com buraco | a espreitar de lado (para o buraco) | "o" pequeno | curioso |
+    | 6 | rasgado | zangados (sobrancelhas em V) | dentes em zigue-zague | resmungão |
+    | 7 | lasca | a olhar para cima e para o lado | traço curto de lado ("hmm") | pensativo |
     | 8 | esticado de lado | muito afastados, um em cada ponta | sorriso larguíssimo | satisfeito |
-    | 9 | cubo mole | descaídos para fora, pupilas em baixo | aberta e mole (a escorrer) | molengão |
-    | 10 | dois bicos | grandes, com brilho | aberta em "D" | entusiasmado |
+    | 9 | pentágono torto | grandes e redondos | "O" grande, a cantar | cantor |
+    | 10 | trapézio torto | grandes, com brilho | aberta em "D" | entusiasmado |
     | 11 | ondulado | com 3 pestanas + bochechas rosa | sorriso de lado | vaidoso |
     | 12 | pião | vesgos (pupilas para dentro) | risinho torto | distraído |
     | 13 | mordido | arregalados, pupilas mínimas, sobrancelhas no ar; o do lado da dentada é maior | tremida para baixo | assustado |
     | 14 | escadinha | quadrados | reta e firme | teimoso |
     | 15 | gosma | 3 olhos | aberta, com um pingo de baba | guloso |
-    | 16 | peludo | pequeninos a espreitar por baixo do pelo; branco do olho bem visível e pupila preta, com a boca em creme, para se lerem no bordô | pequenina | tímido |
-    | 17 | polvo DJ | um semicerrado (pálpebra reta) e o outro aberto com a sobrancelha no ar | sorriso de lado | descontraído |
-    | 18 | feijão | a dormir: pálpebra a meio, pupila em baixo, olheiras | bocejo (oval) | dorminhoco |
+    | 16 | peludo | pequeninos a espreitar por baixo do pelo; branco do olho bem visível e pupila preta; franja e boca em creme, para se lerem no framboesa | pequenina | tímido |
+    | 17 | crista | semicerrados (pálpebra reta), pupilas de lado | sorriso de lado | manhoso |
+    | 18 | nuvem | a dormir: pálpebra a meio, pupila em baixo, olheiras | bocejo oval | dorminhoco |
 
   - boa prática: detalhes finos (pestanas, olheiras, brilhos) com traço grosso, para se lerem a 32 px; cada cara reconhece-se também a preto e branco;
   - boa prática: piscar dessincronizado entre bonecos e desligado com "reduzir movimento" (`prefers-reduced-motion`);
   - animação: só **piscar os olhos**, devagar, de vez em quando;
   - inspiração no estilo geral de party games desenhados à mão, **sem copiar personagens de outro jogo**.
+- **Logo e ícone (ponto 4, aprovado 18/11)**:
+  - **ícone**: fundo azul-noite (#26215C), cantos redondos; ao centro um **O grosso coral-vivo (#FF6B4A)** com buraco no meio, traço preto rabiscado como os bonecos; a **cara fica só na parte de baixo do O** (2 olhos pequenos + sorriso). Os olhos piscam só na app, nunca no ícone;
+  - **logo**: "N" + o mesmo O com cara + "B", letras creme (#F1EFE8) em Baloo 2 (800), com contorno preto;
+  - boa prática: ícone adaptativo do Android (o desenho fica nos 66% do centro, que é a zona segura); ícone da Play Store 512×512; testar a 48 px;
+  - medidas do desenho (viewBox 100×100): anel `M14 48 A36 36 0 1 0 86 48 A36 36 0 1 0 14 48 Z M38 48 A12 12 0 1 0 62 48 A12 12 0 1 0 38 48 Z` (evenodd); olhos em (42,69) e (58,69), rx4.6 ry5.6, pupila r2.4; boca `M45 78 Q50 82 55 78`.
 - Boas práticas: alvos de toque ≥ 48 dp; contraste ≥ 4.5:1; o campo do código só aceita letras/números e mostra erro claro se a party não existir; ecrã "Sem internet" com botão Tentar de novo.
 
 ## Modo sem TV
@@ -150,7 +157,14 @@ android/       projeto Capacitor (Fase 3)
 - Jogos com papéis secretos: só sons neutros. Nenhum som depende do papel de alguém; a tensão fica nas votações e nas revelações.
 - Boa prática: na TV, volume separado para música e efeitos; ficheiros OGG curtos, pré-carregados no lobby.
 - Por decidir mais tarde: de onde vêm os sons e que licenças têm.
-- O host (estado + timers) passa a ser o telemóvel do criador. Se ele se desligar, a sala pausa até voltar.
+- O host (estado + timers) passa a ser o telemóvel do criador. Se ele fechar a app, outro telemóvel assume (17/11, `src/core/passagem.ts`):
+  - o host escolhe um **herdeiro** (o líder, se não é ele; senão o ligado mais antigo) e manda-lhe, no máximo a cada 2 s e pelo menos a cada 10 s, uma **cópia** (estado, sal dos sorteios, chaves dos telemóveis) cifrada só para ele, com **chaves novas de host** já assinadas pelas suas;
+  - publica a vista pelo menos a cada 3 s; a vista leva `prox` (impressão das chaves do herdeiro, dentro da assinatura) e a `cadeia` de passagens;
+  - o herdeiro, 15 s sem vistas, passa a host (`#/criar`) com a cópia; o relógio retoma onde estava quando o host se calou;
+  - os outros telemóveis só trocam de host com uma cadeia assinada a partir do host que fixaram, para o herdeiro anunciado, e com esse host calado há 8 s;
+  - o criador passa a ser um jogador qualquer: sai pela regra de saídas a meio (tolerância, pausa se faz falta) e volta pelo `#/jogar` com o mesmo papel; se reabrir o `#/criar` no mesmo separador, vê que foi substituído e passa a jogador.
+  - Limite: o herdeiro tem o estado todo no aparelho (papéis de todos). É o preço de não depender de servidor; só um herdeiro de cada vez.
+- **Recarregar o host não apaga a party** (TV e sem TV, 17/11): o host grava o estado e o sal no separador (`sessionStorage`, `nob.tv.estado`) a cada 2 s, ao sair da página e ao sair do ecrã, e recupera-o ao arrancar (mesmo código, < 1 h). O relógio retoma da hora da gravação e o `seq` continua a subir. Fechar o separador apaga a gravação; aí vale a passagem ao herdeiro.
 
 | Jogo | Sem TV? |
 |---|---|

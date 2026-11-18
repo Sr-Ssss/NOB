@@ -1,8 +1,19 @@
 import { render } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
+// fontes dentro da app (licença OFL): nada é pedido à Google (RGPD) e funciona sem rede
+import '@fontsource/baloo-2/latin-500.css';
+import '@fontsource/baloo-2/latin-700.css';
+import '@fontsource/baloo-2/latin-800.css';
+import '@fontsource/baloo-2/latin-ext-500.css';
+import '@fontsource/baloo-2/latin-ext-700.css';
+import '@fontsource/baloo-2/latin-ext-800.css';
+import '@fontsource/gochi-hand/latin-400.css';
 import './ui/estilo.css';
+import { aplicarTextoGrande } from './ui/acessibilidade';
+import { Logo } from './ui/logo';
 import { idiomaDispositivo, t, usarIdioma } from './core/i18n';
 import type { Idioma } from './core/sala';
+import { CODIGO_VALIDO } from './core/ids';
 import { Tv } from './tv/Tv';
 import { Jogar } from './jogar/Jogar';
 import { Criar } from './jogar/Criar';
@@ -13,6 +24,8 @@ import { DemoMona } from './jogos/mona-lixa/demo';
 import { DemoIdeias } from './jogos/ideias-mirabolantes/demo';
 import { DemoPirata } from './jogos/pirata/demo';
 import { DemoMaquinas } from './jogos/revolucao-maquinas/demo';
+import { DemoRei } from './jogos/rei-dragao/demo';
+import { DemoRagerob } from './jogos/ragerob/demo';
 import { Definicoes } from './ui/Definicoes';
 import { NpnTeste } from './npn/Npn';
 import { Avatar } from './ui/comuns';
@@ -26,7 +39,7 @@ function Inicio() {
   const [codigo, setCodigo] = useState('');
   const [aviso, setAviso] = useState('');
   const [criar, setCriar] = useState(false);
-  const ok = /^[A-Z0-9]{4}$/.test(codigo);
+  const ok = CODIGO_VALIDO.test(codigo);
   const entrar = () => {
     if (ok) location.hash = `#/jogar?sala=${codigo}`;
   };
@@ -42,7 +55,7 @@ function Inicio() {
           <Avatar n={3} tam={54} />
           <Avatar n={17} tam={54} />
         </div>
-        <h1 class="logo">NOB</h1>
+        <Logo />
         <small>{t('slogan')}</small>
       </div>
 
@@ -58,11 +71,11 @@ function Inicio() {
           id="codigo"
           class="codigo"
           value={codigo}
-          maxLength={4}
+          maxLength={6}
           autoCapitalize="characters"
           autoComplete="off"
           inputMode="text"
-          placeholder="ABCD"
+          placeholder="ABCDE"
           onInput={(e) => setCodigo(e.currentTarget.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
         />
         <button class="botao grande" style={{ width: '100%', marginTop: 12 }} disabled={!ok} type="submit">
@@ -129,9 +142,12 @@ function App() {
   if (import.meta.env.DEV && r === '/demo-ideias') return <DemoIdeias />;
   if (import.meta.env.DEV && r === '/demo-pirata') return <DemoPirata />;
   if (import.meta.env.DEV && r === '/demo-maquinas') return <DemoMaquinas />;
+  if (import.meta.env.DEV && r === '/demo-rei') return <DemoRei />;
+  if (import.meta.env.DEV && r === '/demo-ragerob') return <DemoRagerob />;
   if (r === '/definicoes') return <Definicoes idioma={idioma} mudar={mudar} />;
   if (r === '/npn') return <NpnTeste />;
   return <Inicio />;
 }
 
+aplicarTextoGrande(); // Definições → Acessibilidade
 render(<App />, document.getElementById('app')!);

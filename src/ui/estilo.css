@@ -4,7 +4,7 @@
   --creme: #f1efe8;
   --coral: #f0997b;
   --tinta: #26215c;
-  --cinza: #8d89b3;
+  --cinza: #a5a1cc; /* ≥ 4.5:1 sobre --noite (era #8d89b3, 4.4:1) */
   --ok: #7fd1a0;
   color-scheme: dark;
 }
@@ -71,7 +71,7 @@ button { font: inherit; cursor: pointer; border: 0; }
 .cartao .chip { background: #ddd8ca; color: var(--tinta); }
 .cartao .chip.on { background: var(--coral); }
 
-input, textarea {
+input, textarea, select {
   font: inherit;
   width: 100%;
   border: 3px solid transparent;
@@ -80,7 +80,10 @@ input, textarea {
   background: #fff;
   color: var(--tinta);
 }
-input:focus, textarea:focus { outline: none; border-color: var(--coral); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--coral); }
+/* caixas de escolha: tamanho próprio, ao lado do texto (o `width: 100%` de cima esticava-as) */
+input[type='checkbox'] { width: 22px; height: 22px; padding: 0; flex: none; accent-color: var(--coral); }
+label.linha { font-weight: 700; margin: 10px 0; flex-wrap: nowrap; }
 textarea { resize: none; min-height: 96px; }
 input.codigo { text-transform: uppercase; letter-spacing: 10px; font-size: 36px; text-align: center; font-weight: 800; }
 label { font-weight: 700; display: block; margin-bottom: 4px; }
@@ -91,7 +94,7 @@ label { font-weight: 700; display: block; margin-bottom: 4px; }
 
 .bonecos { display: flex; flex-wrap: wrap; gap: 12px; }
 .boneco { display: flex; flex-direction: column; align-items: center; width: 84px; text-align: center; font-weight: 700; font-size: 16px; position: relative; }
-.tv .boneco { width: clamp(84px, 11vw, 150px); font-size: clamp(16px, 2vw, 26px); }
+.tv .boneco { width: clamp(84px, 11vw, 150px); font-size: clamp(16px, 2vw, 32px); /* ≥ 32 px a 3 m (arquitetura.md → Qualidade) */ }
 .boneco.off { opacity: 0.35; filter: grayscale(1); }
 .boneco .marca { position: absolute; top: -6px; right: 4px; font-size: 20px; }
 .tv .boneco .marca { font-size: 32px; }
@@ -143,7 +146,8 @@ label { font-weight: 700; display: block; margin-bottom: 4px; }
   border-radius: 999px;
   padding: 2px 18px;
   font-weight: 800;
-  letter-spacing: 5px;
+  letter-spacing: 4px; /* código de 5 letras (auditoria T8) */
+  white-space: nowrap;
   z-index: 5;
 }
 .tv .rodape-codigo, .rodape-codigo.tv { font-size: clamp(28px, 4vw, 56px); bottom: 16px; }
@@ -211,7 +215,7 @@ details summary { cursor: pointer; min-height: 32px; }
 .faixa { grid-column: 1 / -1; display: flex; align-items: center; gap: 24px; background: var(--creme); color: var(--tinta); border-radius: 24px; padding: 14px 24px; }
 .faixa-codigo { display: flex; flex-direction: column; }
 .faixa-codigo small { font-weight: 700; font-size: 0.75em; }
-.codigo-grande { font-size: clamp(48px, 5.5vw, 96px); font-weight: 800; letter-spacing: 0.12em; line-height: 1; }
+.codigo-grande { font-size: clamp(44px, 5vw, 88px); font-weight: 800; letter-spacing: 0.08em; line-height: 1; white-space: nowrap; }
 .faixa-bonecos { flex: 1; display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .faixa-bonecos .boneco { width: 84px; font-size: 16px; }
 .faixa-info { display: flex; flex-direction: column; text-align: right; font-weight: 800; }
@@ -270,3 +274,27 @@ input.resposta { font-size: 22px; }
 .troca-lista { display: flex; gap: 6px; overflow-x: auto; }
 .troca-j { display: flex; align-items: center; gap: 4px; border: 2px solid transparent; border-radius: 10px; padding: 2px 8px 2px 2px; background: var(--noite-2); color: var(--creme); font: inherit; font-size: 13px; white-space: nowrap; }
 .troca-j.on { border-color: #f5a623; }
+
+/* modo sem TV: um só ecrã (src/ui/ecraunico.tsx) */
+.espera-faixa { margin: 0; padding: 8px 12px; border-radius: 12px; background: var(--noite-2); text-align: center; font-weight: 700; }
+.palco-tel { display: flex; flex-direction: column; gap: 10px; }
+.progresso-tel { margin: 0; text-align: center; font-weight: 700; }
+
+/* saídas a meio (src/ui/saidas.tsx) */
+.saidas { display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; }
+.saidas .saida { display: flex; flex-direction: column; gap: 6px; }
+.aviso-tv-saida { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 50; background: var(--creme); color: var(--tinta); border: 4px solid #000; border-radius: 20px; padding: 16px 32px; font-size: 36px; font-weight: 800; text-align: center; max-width: 90vw; }
+
+
+/* acessibilidade (src/ui/acessibilidade.ts) */
+:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+html.texto-grande { zoom: 1.2; }
+/* quem pode estar na party (src/ui/membros.tsx): "👥 Jogadores" do líder em jogo */
+.gerir-jogadores { margin: 8px 0; }
+.linha-jogador { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* logo v2: "N" + O coral + "B", creme com contorno preto (arquitetura.md → Logo e ícone) */
+.logo-nob .logo-v2 { display: flex; align-items: center; justify-content: center; gap: 2px; color: #f1efe8; -webkit-text-stroke: 5px #1d1b26; paint-order: stroke fill; }

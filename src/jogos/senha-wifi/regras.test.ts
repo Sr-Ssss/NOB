@@ -11,6 +11,7 @@ import {
   reduzWifi,
   respondentes,
   sortearEquipas,
+  privadoWifi,
   vistaWifi,
   type AcaoWifi,
   type EstadoWifi,
@@ -137,12 +138,17 @@ describe('Senha do Wi-Fi', () => {
 
   it('o código só vai para o Criptógrafo; as palavras só para a própria equipa', () => {
     const e = arrancar(4);
-    const v = vistaWifi(e, (id) => 't-' + id);
+    const v = vistaWifi(e);
     const c = criptografo(e, 'b');
-    expect(v.privado['t-' + c].codigo).toEqual(e.codigos.b);
+    expect(privadoWifi(e, c)!.codigo).toEqual(e.codigos.b);
     const colega = e.equipas.b.find((x) => x !== c)!;
-    expect(v.privado['t-' + colega].codigo).toBeUndefined();
-    expect(v.privado['t-' + e.equipas.p[0]].palavras).toEqual(e.palavras.p);
+    expect(privadoWifi(e, colega)!.codigo).toBeUndefined();
+    expect(privadoWifi(e, e.equipas.p[0])!.palavras).toEqual(e.palavras.p);
+    expect(privadoWifi(e, 'ninguem')).toBeNull();
+    // a vista pública não leva palavras nem códigos
+    const txt = JSON.stringify(v);
+    for (const w of [...e.palavras.b, ...e.palavras.p]) expect(txt).not.toContain(JSON.stringify(w.pt));
+    expect(txt).not.toContain('codigo');
     expect(v.pistas.b).toBeNull();
   });
 

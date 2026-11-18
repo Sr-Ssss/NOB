@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { BONECOS, CARAS, N_BONECOS } from './bonecos';
+import { describe, expect, it, vi } from 'vitest';
+import { BONECOS, CARAS, N_BONECOS, nomeBoneco } from './bonecos';
+import { usarIdioma } from '../core/i18n';
+import pt from '../i18n/pt-BR.json';
+import en from '../i18n/en.json';
 
 describe('bonecos', () => {
   it('18 bonecos, cada um com cor e cara próprias', () => {
@@ -21,5 +24,23 @@ describe('bonecos', () => {
   it('a gosma tem 3 olhos', () => {
     const i = BONECOS.findIndex((b) => b.nome === 'gosma');
     expect(CARAS[i](BONECOS[i].cor).olhos.match(/<ellipse/g)).toHaveLength(3);
+  });
+});
+
+describe('nomes dos bonecos (i18n)', () => {
+  it('18 nomes diferentes em cada idioma, pela mesma ordem', () => {
+    for (const d of [pt, en]) {
+      const nomes = d.nomesBonecos.split('|').map((s) => s.trim());
+      expect(nomes).toHaveLength(N_BONECOS);
+      expect(new Set(nomes).size).toBe(N_BONECOS);
+      expect(nomes.every(Boolean)).toBe(true);
+    }
+    vi.stubGlobal('document', { documentElement: {} });
+    usarIdioma('en');
+    expect(nomeBoneco(14)).toBe('Goo');
+    usarIdioma('pt-BR');
+    expect(nomeBoneco(14)).toBe('Gosma');
+    expect(nomeBoneco(18)).toBe(nomeBoneco(0));
+    vi.unstubAllGlobals();
   });
 });

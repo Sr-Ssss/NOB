@@ -37,9 +37,9 @@ Ficheiro para continuar o planeamento numa sessão nova. A implementação do MV
 
 ## O que falta planear (por ordem sugerida)
 1. ✅ **Ecrãs da app** — fechado em `arquitetura.md` → "Ecrãs". Ficam para depois: vídeos tutoriais e desenhos do "Como jogar" (ponto 3); menu de escolha de jogo no telemóvel do líder sem TV (vertical, já descrito).
-2. ✅ **Bonecos (avatares)** — `arquitetura.md` → "Bonecos": 18 formas abstratas rabiscadas (lista fechada), cores base, só piscar. Olhos e bocas por boneco aprovados (16/11, tabela em "Bonecos"). Falta a arte final.
+2. ✅ **Bonecos (avatares)** — `arquitetura.md` → "Bonecos": 18 formas abstratas rabiscadas (lista fechada), cores base, só piscar. Olhos e bocas por boneco aprovados (16/11, tabela em "Bonecos"). v2 (18/11): cores vivas e formas novas (rasgado, lasca, pentágono torto, trapézio torto, crista, nuvem). Falta a arte final.
 3. ✅ **Visual de cada jogo** (10/10, 16/11) — 50/50, Pensa-Dores, Se Vira!, Mona Lixa, Ideias Mirabolantes, Pirata, O Rei e o Dragão, Revolução das Máquinas ("sala de controlo"), Senha do Wi-Fi ("router da sala com post-its"), Ragerob ("sucata no quintal"). Por rever: Pensa-Dores (o tema sala de aula fugiu às cores da app). Revolução das Máquinas: a nave fica (decisão do utilizador, 16/11), sem humanos no visual. Regra para jogos com papéis secretos: texto igual para todos + botão Identidade (segurar 3 s). estilo próprio dentro do jogo; mostrar 2–3 propostas desenhadas por jogo.
-4. **Logo e ícone da NOB**.
+4. ✅ **Logo e ícone da NOB** (18/11): O coral com cara em baixo, em `arquitetura.md` → "Logo e ícone".
 5. ✅ **Som** — em `arquitetura.md` → "Som (TV)". Falta a origem e a licença dos sons (adiado).
 6. ✅ **Ragerob — modo Pilotos** — liga + fórmula mista, em `jogos/rinha-de-robos.md`.
 7. 🟡 **Operação N.P.N.** — o jogo fica parado. Ecrã de teste BLE decidido (`jogos/npn.md` → "Agora"). O resto fica para depois:

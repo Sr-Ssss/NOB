@@ -1,4 +1,5 @@
 import { baralhar } from '../../core/ids';
+import { normalizar, pausaPorFalta, podio, type Podio } from '../../core/jogo';
 
 /** Senha do Wi-Fi: regras em info/jogos/encriptado.md */
 
@@ -88,6 +89,8 @@ export interface EstadoWifi {
   usadas: string[];
   pool: Palavra[];
   seed: number;
+  /** Criptógrafo de cada equipa nesta ronda */
+  criptos?: Partial<Record<Lado, string>>;
 }
 
 export type AcaoWifi =
@@ -107,14 +110,7 @@ export const TIPOS_WIFI = ['mover', 'fechar_equipas', 'trocar', 'prontas', 'pist
 const vazia = (): Resposta => ({ nums: [null, null, null], mudouPor: [null, null, null], confirmados: [] });
 
 /** sem acentos, minúsculas, só letras/números */
-export function normalizar(s: string): string {
-  return s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
+export { normalizar };
 
 export function textoPalavra(p: Palavra, idioma: string): string {
   return idioma === 'en' ? p.en : p.pt;
@@ -145,10 +141,24 @@ export function ladoDe(e: Pick<EstadoWifi, 'equipas'>, id: string): Lado | null 
   return e.equipas.b.includes(id) ? 'b' : e.equipas.p.includes(id) ? 'p' : null;
 }
 
-/** o Criptógrafo roda pela equipa a cada ronda */
-export function criptografo(e: Pick<EstadoWifi, 'equipas' | 'ronda'>, l: Lado): string {
+/** o Criptógrafo roda pela equipa a cada ronda (fixado no início da ronda em `criptos`, saltando quem está desligado) */
+export function criptografo(e: Pick<EstadoWifi, 'equipas' | 'ronda'> & { criptos?: Partial<Record<Lado, string>> }, l: Lado): string {
+  const fixo = e.criptos?.[l];
+  if (fixo && e.equipas[l].includes(fixo)) return fixo;
   const eq = e.equipas[l];
   return eq[(e.ronda - 1) % eq.length] ?? '';
+}
+
+/** na rotação, o primeiro ligado a partir da vez desta ronda */
+function escolherCripto(e: EstadoWifi, l: Lado, ronda: number, sem?: string): string {
+  const eq = e.equipas[l].filter((id) => id !== sem);
+  if (!eq.length) return '';
+  const base = (ronda - 1) % eq.length;
+  for (let k = 0; k < eq.length; k++) {
+    const id = eq[(base + k) % eq.length];
+    if (e.ligados.includes(id)) return id;
+  }
+  return eq[base];
 }
 
 const ligadosDe = (e: EstadoWifi, ids: string[]) => ids.filter((id) => e.ligados.includes(id));
@@ -194,7 +204,7 @@ function comecarPalavras(e: EstadoWifi, agora: number): EstadoWifi {
 function comecarRonda(e: EstadoWifi, ronda: number, agora: number): EstadoWifi {
   const seed = e.seed + ronda * 101;
   return irPara(
-    { ...e, ronda, codigos: { b: novoCodigo(seed), p: novoCodigo(seed + 7) }, pistas: { b: null, p: null }, turno: 'b', passo: 'descodificar', resposta: vazia(), intercecao: null, revelacao: null },
+    { ...e, ronda, criptos: { b: escolherCripto(e, 'b', ronda), p: escolherCripto(e, 'p', ronda) }, codigos: { b: novoCodigo(seed), p: novoCodigo(seed + 7) }, pistas: { b: null, p: null }, turno: 'b', passo: 'descodificar', resposta: vazia(), intercecao: null, revelacao: null },
     'pistas',
     e.def.pistas,
     agora,
@@ -334,11 +344,8 @@ function fechouResposta(e: EstadoWifi): boolean {
 export function reduzWifi(e: EstadoWifi, acao: AcaoWifi, agora: number): EstadoWifi {
   switch (acao.tipo) {
     case 'ligados': {
-      let s: EstadoWifi = { ...e, ligados: acao.ids };
-      const falta = faltaGente(s);
-      if (falta && s.pausaRestante === null) s = { ...s, pausaRestante: Math.max(0, s.terminaEm - agora) };
-      else if (!falta && s.pausaRestante !== null) s = { ...s, terminaEm: s.terminaEm ? agora + s.pausaRestante : 0, pausaRestante: null };
-      return s;
+      const s: EstadoWifi = { ...e, ligados: acao.ids };
+      return pausaPorFalta(s, faltaGente(s), agora, true);
     }
     case 'mover': {
       if (e.fase !== 'equipas' || !e.participantes.includes(acao.jogador)) return e;
@@ -397,18 +404,13 @@ export function reduzWifi(e: EstadoWifi, acao: AcaoWifi, agora: number): EstadoW
   }
 }
 
-export interface PodioWifi {
-  id: string;
-  pontos: number;
-  lugar: number;
-}
+export type PodioWifi = Podio;
 
 export function podioWifi(e: Pick<EstadoWifi, 'participantes' | 'pontos'>): PodioWifi[] {
-  const lista = e.participantes.map((id) => ({ id, pontos: e.pontos[id] ?? 0 })).sort((x, y) => y.pontos - x.pontos);
-  return lista.map((p) => ({ ...p, lugar: lista.findIndex((q) => q.pontos === p.pontos) + 1 }));
+  return podio(e.participantes, e.pontos);
 }
 
-/** o que só a equipa vê (vai pela tag secreta do jogador; canal privado fica para o Pirata) */
+/** o que só a equipa vê (canal privado, cifrado) */
 export interface PrivadoWifi {
   lado: Lado;
   palavras: Palavra[];
@@ -443,18 +445,18 @@ export interface VistaWifi {
   pontos: Record<string, number>;
   podio: PodioWifi[];
   usadas: string[];
-  privado: Record<string, PrivadoWifi>;
 }
 
-export function vistaWifi(e: EstadoWifi, tagDe: (id: string) => string | undefined): VistaWifi {
+/** canal privado (cifrado só para este jogador): as palavras da equipa e, ao Criptógrafo, o código */
+export function privadoWifi(e: EstadoWifi, id: string): PrivadoWifi | null {
+  const l = ladoDe(e, id);
+  if (!l) return null;
+  const cripto = e.ronda ? criptografo(e, l) : '';
+  return { lado: l, palavras: e.palavras[l], trocadas: e.trocadas[l], codigo: e.fase === 'pistas' && cripto === id ? e.codigos[l] : undefined };
+}
+
+export function vistaWifi(e: EstadoWifi): VistaWifi {
   const criptografos = { b: e.ronda ? criptografo(e, 'b') : '', p: e.ronda ? criptografo(e, 'p') : '' };
-  const privado: Record<string, PrivadoWifi> = {};
-  for (const l of LADOS)
-    for (const id of e.equipas[l]) {
-      const tag = tagDe(id);
-      if (!tag) continue;
-      privado[tag] = { lado: l, palavras: e.palavras[l], trocadas: e.trocadas[l], codigo: e.fase === 'pistas' && criptografos[l] === id ? e.codigos[l] : undefined };
-    }
   const abertas = e.fase !== 'pistas' && e.fase !== 'palavras' && e.fase !== 'equipas';
   return {
     def: e.def,
@@ -482,6 +484,24 @@ export function vistaWifi(e: EstadoWifi, tagDe: (id: string) => string | undefin
     pontos: e.pontos,
     podio: podioWifi(e),
     usadas: e.usadas,
-    privado,
   };
+}
+
+/* ---------- saídas a meio (src/core/saidas.ts) ---------- */
+
+/** o Criptógrafo que ainda não deu as pistas faz falta: sem ele a equipa não joga a ronda */
+export const importanteWifi = (e: EstadoWifi, id: string): boolean => e.fase === 'pistas' && LADOS.some((l) => criptografo(e, l) === id && !e.pistas[l]);
+
+/** o líder decidiu seguir sem ele: sai da equipa; se era o Criptógrafo, passa ao seguinte ligado */
+export function sairWifi(e: EstadoWifi, id: string): EstadoWifi {
+  const l = ladoDe(e, id);
+  if (!l || e.fase === 'fim') return e;
+  const s: EstadoWifi = {
+    ...e,
+    equipas: { ...e.equipas, [l]: e.equipas[l].filter((x) => x !== id) },
+    prontos: e.prontos.filter((x) => x !== id),
+    resposta: { ...e.resposta, confirmados: e.resposta.confirmados.filter((x) => x !== id) },
+  };
+  if (criptografo(e, l) !== id) return s;
+  return { ...s, criptos: { ...e.criptos, [l]: escolherCripto(e, l, e.ronda, id) } };
 }

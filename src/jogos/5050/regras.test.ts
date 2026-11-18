@@ -7,6 +7,7 @@ import {
   premios,
   reduz5050,
   vista5050,
+  votantes,
   type Acao5050,
   type Estado5050,
 } from './regras';
@@ -31,7 +32,8 @@ function votarDilema(e: Estado5050, agora: number, lado: (id: string, i: number)
   expect(s.fase).toBe('votar');
   const autor = autorAtual(s);
   const vs = s.participantes.filter((id) => id !== autor && s.ligados.includes(id));
-  s = aplicar(s, vs.map((id, i) => ({ tipo: 'votar', id, lado: lado(id, i) })), agora);
+  // o autor também carrega (vê o mesmo ecrã), mas não conta
+  s = aplicar(s, [{ tipo: 'votar', id: autor!, lado: 'a' }, ...vs.map((id, i) => ({ tipo: 'votar' as const, id, lado: lado(id, i) }))], agora);
   return s;
 }
 
@@ -72,15 +74,30 @@ describe('50/50 com 3 jogadores', () => {
     expect(e.ronda).toBe(2);
   });
 
-  it('o autor não pode votar no próprio dilema', () => {
+  it('o autor carrega como os outros (anónimo), mas o voto dele não conta', () => {
     let e = todosEnviam(novoJogo(ids(3), {}, 0), 0);
     e = reduz5050(e, { tipo: 'tick' }, e.terminaEm);
     const autor = autorAtual(e)!;
-    const depois = reduz5050(e, { tipo: 'votar', id: autor, lado: 'a' }, e.terminaEm - 1);
-    expect(depois.votos[autor]).toBeUndefined();
+    // na vista o autor aparece a votar como os outros
+    expect(vista5050(e, () => '').votantes).toContain(autor);
+    e = reduz5050(e, { tipo: 'votar', id: autor, lado: 'a' }, e.terminaEm - 1);
+    expect(vista5050(e, () => '').votaram).toContain(autor);
+    const vs = votantes(e);
+    expect(vs).not.toContain(autor);
+    e = aplicar(e, vs.map((id) => ({ tipo: 'votar', id, lado: 'b' }) as Acao5050), e.terminaEm - 1);
+    expect(e.fase).toBe('revelar');
+    expect(e.resultados[0].votosA).toEqual([]);
   });
 
-  it('pode mudar o voto até ao fim', () => {
+  it('se o autor não carregar, a votação acaba no tempo', () => {
+    let e = todosEnviam(novoJogo(ids(3), {}, 0), 0);
+    e = reduz5050(e, { tipo: 'tick' }, e.terminaEm);
+    e = aplicar(e, votantes(e).map((id) => ({ tipo: 'votar', id, lado: 'b' }) as Acao5050), e.terminaEm - 1);
+    expect(e.fase).toBe('votar');
+    expect(reduz5050(e, { tipo: 'tick' }, e.terminaEm).fase).toBe('revelar');
+  });
+
+  it('pode mudar o voto enquanto falta alguém (o ecrã não o promete)', () => {
     let e = todosEnviam(novoJogo(ids(3), {}, 0), 0);
     e = reduz5050(e, { tipo: 'tick' }, e.terminaEm);
     const v = e.participantes.find((id) => id !== autorAtual(e))!;
@@ -185,7 +202,7 @@ describe('desligar', () => {
     const vs = e.participantes.filter((id) => id !== autor);
     e = reduz5050(e, { tipo: 'votar', id: vs[0], lado: 'a' }, e.terminaEm - 1000);
     e = reduz5050(e, { tipo: 'ligados', ids: e.participantes.filter((id) => id !== vs[0]) }, e.terminaEm - 900);
-    e = aplicar(e, vs.slice(1).map((id, i) => ({ tipo: 'votar', id, lado: i < 2 ? 'a' : 'b' }) as Acao5050), e.terminaEm - 500);
+    e = aplicar(e, [autor, ...vs.slice(1)].map((id, i) => ({ tipo: 'votar', id, lado: i > 0 && i < 3 ? 'a' : 'b' }) as Acao5050), e.terminaEm - 500);
     expect(e.fase).toBe('revelar');
     const r = e.resultados[0];
     expect(r.votosA.length + r.votosB.length).toBe(3);
@@ -222,5 +239,14 @@ describe('vista pública', () => {
     e = reduz5050(e, { tipo: 'tick' }, e.terminaEm);
     e = reduz5050(e, { tipo: 'tick' }, e.terminaEm);
     expect(vista5050(e, () => undefined).resultado?.autor).toBe(autorAtual(e));
+  });
+
+  it('com "Mostrar quem votou = Não" só manda contagens', () => {
+    let e = todosEnviam(novoJogo(ids(4), { mostrarVotos: false }, 0), 0);
+    e = votarDilema(e, e.terminaEm, (_, i) => (i < 2 ? 'a' : 'b'));
+    const r = vista5050(e, () => undefined).resultado!;
+    expect(r.votosA.length + r.votosB.length).toBe(3);
+    expect([...r.votosA, ...r.votosB].every((x) => x === '')).toBe(true);
+    expect(e.resultados[0].votosA.every((x) => x !== '')).toBe(true);
   });
 });

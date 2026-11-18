@@ -5,6 +5,7 @@ import { Avatar, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { equipaDe, type Carta, type PrivadoMaquinas, type VistaMaquinas } from './regras';
 import { COR, Consola, PlacarMaquinas, Segurar, nomePapel, narracao, type PropsMaquinas } from './comuns';
+import { chaveSegurar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
@@ -60,7 +61,7 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaMaquinas; eu:
   const nome = (id: string | null) => (id ? nomeDe(sala, id) : '');
   switch (v.fase) {
     case 'carta':
-      return <Frase texto={t('rmCarta')} />;
+      return <Frase texto={t(chaveSegurar('rmCarta'))} />;
     case 'nomear':
       if (!cmd) return <Frase texto={t('rmNomear', { nome: nome(v.comandante) })} />;
       return (
@@ -146,7 +147,7 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaMaquinas; eu:
       if (!cmd || !r) return <Frase texto={narracao(sala, v)} />;
       return (
         <>
-          <Frase texto={t('rmVer')} />
+          <Frase texto={t(chaveSegurar('rmVer'))} />
           <Segurar rotulo={v.poder === 'espiar' ? '👀' : '🔍'}>
             {r.tipo === 'espiar' ? (
               <div class="rm-cartas">
@@ -200,7 +201,6 @@ function Identidade({ sala, p, aberta }: { sala: VistaSala; p: PrivadoMaquinas |
 
 export function TelemovelMaquinas({ sala, v, agora, eu, privado, enviar, idAberta }: PropsMaquinas & { eu: string; privado: PrivadoMaquinas | null; enviar: Enviar; idAberta?: boolean }) {
   const [ajuda, setAjuda] = useState(false);
-  const [painel, setPainel] = useState(false);
   const fim = v.fase === 'fim';
   const papel = v.papeis[eu];
   const ganhei = fim && !!papel && equipaDe(papel) === v.vencedor;
@@ -215,20 +215,11 @@ export function TelemovelMaquinas({ sala, v, agora, eu, privado, enviar, idAbert
       </div>
       {ajuda && (
         <div class="cartao" onClick={() => setAjuda(false)}>
-          <b>{t('rmNome')}</b> — {t('ajudaMaquinas')}
+          <b>{t('rmNome')}</b> — {t('ajudaMaquinas', { segurar: t(chaveSegurar('idSegurar')) })}
         </div>
       )}
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
-      {sala.semTv && !fim && (
-        <div class="separadores">
-          <button class={painel ? '' : 'on'} onClick={() => setPainel(false)}>
-            {t('swEu')}
-          </button>
-          <button class={painel ? 'on' : ''} onClick={() => setPainel(true)}>
-            {t('swPainel')}
-          </button>
-        </div>
-      )}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
       {fim ? (
         <>
           {v.participantes.includes(eu) && (
@@ -251,10 +242,16 @@ export function TelemovelMaquinas({ sala, v, agora, eu, privado, enviar, idAbert
             </div>
           )}
         </>
-      ) : painel && sala.semTv ? (
-        <Consola sala={sala} v={v} compacto />
       ) : (
-        <Eu sala={sala} v={v} eu={eu} p={privado} enviar={enviar} />
+        <>
+          <Eu sala={sala} v={v} eu={eu} p={privado} enviar={enviar} />
+          {/* sem TV, um só ecrã: a consola (o que a TV mostraria) fica sempre por baixo */}
+          {sala.semTv && (
+            <div class="palco-tel">
+              <Consola sala={sala} v={v} compacto />
+            </div>
+          )}
+        </>
       )}
       {!fim && v.participantes.includes(eu) && v.fase !== 'ver' && <Identidade sala={sala} p={privado} aberta={idAberta} />}
     </div>

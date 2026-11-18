@@ -2,18 +2,9 @@ import { useEffect, useState } from 'preact/hooks';
 import { t } from '../core/i18n';
 import { CATALOGO, descricao, filtrar, motivo, nome, type Filtro } from '../core/jogos';
 import type { AcaoSala, VistaSala } from '../core/sala';
-import { FILTROS, Definicoes, textoMotivo } from '../tv/Tv';
-import { DefinicoesPensa } from '../jogos/pensa-dores/definicoes';
-import { DefinicoesWifi } from '../jogos/senha-wifi/definicoes';
-import { DEF_PADRAO_WIFI } from '../jogos/senha-wifi/regras';
-import { DefinicoesMona } from '../jogos/mona-lixa/definicoes';
-import { DEF_PADRAO_MONA } from '../jogos/mona-lixa/regras';
-import { DefinicoesIdeias } from '../jogos/ideias-mirabolantes/definicoes';
-import { DEF_PADRAO_IDEIAS } from '../jogos/ideias-mirabolantes/regras';
-import { DefinicoesPirata } from '../jogos/pirata/definicoes';
-import { DEF_PADRAO_PIRATA } from '../jogos/pirata/regras';
-import { DefinicoesMaquinas } from '../jogos/revolucao-maquinas/definicoes';
-import { DEF_PADRAO_MAQUINAS } from '../jogos/revolucao-maquinas/regras';
+import { FILTROS, textoMotivo } from '../tv/Tv';
+import { COM_ECRAS, acaoDefinir, opcoesNaVista } from '../jogos/ecras';
+import { jogoEscolhido, jogosDoLobby } from './lobbyTv';
 
 /**
  * Menu de jogos do telemóvel do líder, sem TV: o mesmo conteúdo do menu da TV,
@@ -48,6 +39,8 @@ export function MenuJogos({ vista, enviar, fechar }: { vista: VistaSala; enviar:
         {lista.map((j) => {
           const m = motivo(j, n, vista.semTv);
           const on = aberto === j.id;
+          // opções do jogo (sem TV não há as dos jogos "só com TV")
+          const reg = COM_ECRAS.find((x) => x.id === j.id && !x.soTv);
           return (
             <li key={j.id} class={'cartao item-tel' + (m ? ' esbatido' : '')}>
               <button class="item-tel-cab" onClick={() => setAberto(on ? null : j.id)}>
@@ -60,13 +53,7 @@ export function MenuJogos({ vista, enviar, fechar }: { vista: VistaSala; enviar:
               {on && (
                 <div class="item-tel-corpo">
                   <p class="desc">{descricao(j, vista.idioma)}</p>
-                  {j.id === '5050' && <Definicoes def={vista.def} mudar={(d) => enviar({ tipo: 'definir', id: '', def: d })} />}
-                  {j.id === 'wifi' && <DefinicoesWifi def={vista.defWifi ?? DEF_PADRAO_WIFI} idioma={vista.idioma} mudar={(d) => enviar({ tipo: 'definir_wifi', id: '', def: d })} />}
-                  {j.id === 'mona' && <DefinicoesMona def={vista.defMona ?? DEF_PADRAO_MONA} n={vista.jogadores.filter((x) => x.ligado).length} mudar={(d) => enviar({ tipo: 'definir_mona', id: '', def: d })} />}
-                  {j.id === 'ideias' && <DefinicoesIdeias def={vista.defIdeias ?? DEF_PADRAO_IDEIAS} n={vista.jogadores.filter((x) => x.ligado).length} mudar={(d) => enviar({ tipo: 'definir_ideias', id: '', def: d })} />}
-                  {j.id === 'pirata' && <DefinicoesPirata def={vista.defPirata ?? DEF_PADRAO_PIRATA} n={vista.jogadores.filter((x) => x.ligado).length} mudar={(d) => enviar({ tipo: 'definir_pirata', id: '', def: d })} />}
-                  {j.id === 'maquinas' && <DefinicoesMaquinas def={vista.defMaquinas ?? DEF_PADRAO_MAQUINAS} mudar={(d) => enviar({ tipo: 'definir_maquinas', id: '', def: d })} />}
-                  {j.id === 'pensa' &&<DefinicoesPensa def={vista.defPensa} mudar={(d) => enviar({ tipo: 'definir_pensa', id: '', def: d })} />}
+                  {reg && reg.e.opcoes.render({ def: opcoesNaVista(vista, reg), sala: vista, n, mudar: (d) => enviar(acaoDefinir(reg, d)) })}
                   {!m && (
                     <>
                       <label class="linha">
@@ -89,6 +76,48 @@ export function MenuJogos({ vista, enviar, fechar }: { vista: VistaSala; enviar:
           );
         })}
       </ol>
+    </div>
+  );
+}
+
+/**
+ * Lobby do líder com TV (auditoria E2/E3): escolhe um jogo e vê só as opções dele,
+ * com a mesma caixa "Mostrar tutorial" do menu sem TV e "Começar" daqui.
+ * (OK no comando da TV começa o jogo em destaque na TV, sem tutorial.)
+ */
+export function OpcoesComTv({ vista, enviar }: { vista: VistaSala; enviar: (a: AcaoSala) => void }) {
+  const [id, setId] = useState<string | null>(null);
+  const [tutorial, setTutorial] = useState(false);
+  const n = vista.jogadores.filter((j) => j.ligado).length;
+  const lista = jogosDoLobby();
+  const x = jogoEscolhido(lista, id, n);
+  if (!x) return null;
+  const m = motivo(x.info, n);
+  return (
+    <div class="cartao">
+      <label for="jogo-lobby" style={{ fontWeight: 700 }}>
+        {t('opcoesDe')}
+      </label>
+      <select id="jogo-lobby" value={x.info.id} onChange={(e) => setId(e.currentTarget.value)} style={{ width: '100%', margin: '6px 0 10px' }}>
+        {lista.map((y) => (
+          <option key={y.info.id} value={y.info.id}>
+            {nome(y.info, vista.idioma)}
+          </option>
+        ))}
+      </select>
+      {x.reg.e.opcoes.render({ def: opcoesNaVista(vista, x.reg), sala: vista, n, mudar: (d) => enviar(acaoDefinir(x.reg, d)) })}
+      {m ? (
+        <small class="porque">⚠ {textoMotivo(x.info, n)}</small>
+      ) : (
+        <>
+          <label class="linha">
+            <input type="checkbox" checked={tutorial} onChange={(e) => setTutorial(e.currentTarget.checked)} /> {t('verTutorial')}
+          </label>
+          <button class="botao" style={{ width: '100%' }} onClick={() => enviar({ tipo: 'comecar', id: '', jogo: x.info.id, tutorial })}>
+            ▶ {t('comecar')} · {nome(x.info, vista.idioma)}
+          </button>
+        </>
+      )}
     </div>
   );
 }

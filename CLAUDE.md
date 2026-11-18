@@ -19,10 +19,12 @@ Plataforma de party games, só online: app NOB na Play Store (modos "Ser a TV" e
 - Sem commit, sem mudar de branch, sem build de produção salvo pedido explícito.
 - Outras sessões podem estar na mesma pasta: só os teus ficheiros, edições com Edit, sem formatadores em massa.
 - Testes verdes e lint a 0 antes de dar por feito.
+- Sessões filhas: **não mandar mensagens (`SendMessage`) à sessão-mãe/coordenadora** nem pedir-lhe avisos (gasta muitos tokens). Acabar com um relatório curto; se bloqueado, perguntar ao utilizador na própria sessão.
+- Poupar tokens: tarefa nova que não precisa do contexto da conversa = **sessão nova**. Antes, guardar o que importa nos `.md` (`info/PROXIMA_SESSAO.md`, `info/auditoria/`, `.md` do jogo) e dar-lhe um brief completo (o que fazer, ficheiros, onde está o contexto, quando está feito).
 
 ## Comandos e entrega
 - `npm run dev` · `npm test` · `npm run lint` · `npm run build`.
-- APK (só a pedido): `npx cap sync android` → `android\gradlew assembleDebug` → copiar para `C:\Users\Samuel Henrique\OneDrive - cidadepvc.pt\Ambiente de Trabalho\NOB_vX.Y.Z.apk`; versionCode = X×10000+Y×100+Z.
+- APK (só a pedido): pedir o APK = também commit + push para `main` (o Pages publica sozinho). Depois `npx cap sync android` → `android\gradlew assembleDebug` → copiar para `C:\Users\Samuel Henrique\OneDrive - cidadepvc.pt\Ambiente de Trabalho\NOB_vX.Y.Z.apk`; versionCode = X×10000+Y×100+Z.
 - Prompts das sessões-mãe: `info/PROMPT_SESSAO_MAE_JOGO.md`, `info/PROMPT_SESSAO_MAE_DESIGN.md`.
 
 ## Ficheiros soltos

@@ -22,15 +22,15 @@ Governo secreto numa nave: a Tripulação repara o motor, os Amotinados sabotam 
    - Empate ou mais Não: o Comandante passa ao seguinte e o contador de falhas sobe 1.
    - 3 falhas: a carta do topo entra sem poder e o contador volta a 0.
 3. **Sessão secreta** (🤫): o Comandante recebe 3 cartas e descarta 1; o Piloto recebe 2 e escolhe 1, que entra em jogo.
-   - Baralho: 6 🔧 Reparação + 11 💥 Sabotagem. Quando acaba, volta a baralhar-se com os descartes.
+   - Baralho: 7 🔧 Reparação + 12 💥 Sabotagem (números próprios, decisão de 17/11). Quando acaba, volta a baralhar-se com os descartes.
 4. Discussão livre (pode-se mentir).
 5. O Comandante passa ao seguinte na ordem.
 
 ## Poderes (quando entra uma Sabotagem; quem os usa é o Comandante)
 | Sabotagens | 5–6 | 7–8 | 9–10 |
 |---|---|---|---|
-| 1 | — | — | 🔍 |
-| 2 | — | 🔍 | 🔍 |
+| 1 | — | — | — |
+| 2 | 🔍 | 🔍 | 🔍 |
 | 3 | 👀 | 📢 | 📢 |
 | 4 | 🚀 | 🚀 | 🚀 |
 | 5 | 🚀 | 🚀 | 🚀 |
@@ -38,11 +38,11 @@ Governo secreto numa nave: a Tripulação repara o motor, os Amotinados sabotam 
 - 👀 Espiar: vê as 3 cartas do topo.
 - 📢 Escolher o próximo Comandante.
 - 🚀 Ejetar: o jogador deixa de votar e de falar. Se for a IA, a Tripulação ganha.
-- **Veto** (a partir de 5 Sabotagens): o Piloto propõe descartar as 2 cartas; se o Comandante aceitar, o contador de falhas sobe 1.
+- **Veto** (a partir de 4 Sabotagens): o Piloto propõe descartar as 2 cartas; se o Comandante aceitar, o contador de falhas sobe 1.
 
 ## Vitória
 - 🔵 5 Reparações, ou ejetar a IA.
-- 🔴 6 Sabotagens, ou a IA aprovada como Piloto com ≥3 Sabotagens em jogo.
+- 🔴 6 Sabotagens, ou a IA aprovada como Piloto com ≥4 Sabotagens em jogo.
 
 ## Fim
 - TV: revela tudo + animação da nave + pontos. Telemóveis: Ganhaste/Perdeste + pontos.

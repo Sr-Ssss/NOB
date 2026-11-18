@@ -5,6 +5,8 @@ import { Avatar, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { limiarVigia, type PrivadoPirata, type VistaPirata } from './regras';
 import { Palco, PlacarPirata, Revelacao, SIMBOLO, nomePapel, type PropsPirata } from './comuns';
+import { Progresso } from '../../ui/ecraunico';
+import { chaveSegurar, eventosSegurar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
@@ -33,7 +35,7 @@ function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaP
   return (
     <>
       {estado === 'mostra' && p?.papel && (
-        <div class="pr-identidade" role="dialog">
+        <div class="pr-identidade" role="dialog" aria-live="assertive">
           <div class="pr-simbolo">{SIMBOLO[p.papel]}</div>
           <h2>{nomePapel(p.papel)}</h2>
           {v.fase === 'noite' && p.vivo && <p>{t(('prAcao_' + p.papel) as Chave, { n })}</p>}
@@ -47,14 +49,7 @@ function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaP
           {v.fase === 'noite' && p.bloqueado && <p class="mini">{t('prBloqueado', { nome: nome(p.bloqueado) })}</p>}
         </div>
       )}
-      <button
-        class={'pr-botao-id' + (estado !== 'nada' ? ' on' : '')}
-        onPointerDown={segurar}
-        onPointerUp={largar}
-        onPointerLeave={largar}
-        onPointerCancel={largar}
-        onContextMenu={(e) => e.preventDefault()}
-      >
+      <button class={'pr-botao-id' + (estado !== 'nada' ? ' on' : '')} {...eventosSegurar({ segurar, largar, mostrar: () => setEstado('mostra'), aberto: estado === 'mostra' })}>
         {estado === 'segura' ? t('prSegurando') : t('prIdentidade')}
       </button>
     </>
@@ -136,7 +131,7 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
   if (v.fase === 'carta')
     return (
       <>
-        <Frase texto={t('prSegura')} />
+        <Frase texto={t(chaveSegurar('prSegura'))} />
         <Fechado />
       </>
     );
@@ -204,9 +199,10 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
 
 export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta }: PropsPirata & { eu: string; privado: PrivadoPirata | null; enviar: Enviar; idAberta?: boolean }) {
   const [ajuda, setAjuda] = useState(false);
-  const [painel, setPainel] = useState(false);
   const lider = sala.vipId === eu;
   const fim = v.fase === 'fim';
+  // sem TV, um só ecrã: por baixo da minha parte, o que a TV mostraria (igual para todos os papéis)
+  const comPalco = sala.semTv && (!v.participantes.includes(eu) || !v.vivos.includes(eu) || !['carta', 'noite', 'votar'].includes(v.fase));
   const pirata = v.papeis[eu] === 'pirata';
   const ganhei = fim && (v.vencedor === 'piratas') === pirata;
   return (
@@ -220,20 +216,11 @@ export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta 
       </div>
       {ajuda && (
         <div class="cartao" onClick={() => setAjuda(false)}>
-          <b>{t('prNome')}</b> — {t('ajudaPirata')}
+          <b>{t('prNome')}</b> — {t('ajudaPirata', { segurar: t(chaveSegurar('idSegurar')) })}
         </div>
       )}
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
-      {sala.semTv && !fim && (
-        <div class="separadores">
-          <button class={painel ? '' : 'on'} onClick={() => setPainel(false)}>
-            {t('swEu')}
-          </button>
-          <button class={painel ? 'on' : ''} onClick={() => setPainel(true)}>
-            {t('swPainel')}
-          </button>
-        </div>
-      )}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
       {fim ? (
         <>
           {v.participantes.includes(eu) && (
@@ -256,10 +243,16 @@ export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta 
             </div>
           )}
         </>
-      ) : painel && sala.semTv ? (
-        <Palco sala={sala} v={v} compacto />
       ) : (
-        <Eu sala={sala} v={v} eu={eu} p={privado} enviar={enviar} />
+        <>
+          <Eu sala={sala} v={v} eu={eu} p={privado} enviar={enviar} />
+          {v.fase === 'votar' && <Progresso semTv={sala.semTv} ids={v.vivos} feitos={v.votaram} />}
+          {comPalco && (
+            <div class="palco-tel">
+              <Palco sala={sala} v={v} compacto />
+            </div>
+          )}
+        </>
       )}
       {!fim && v.participantes.includes(eu) && <Identidade sala={sala} v={v} p={privado} aberta={idAberta} />}
     </div>

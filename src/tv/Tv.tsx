@@ -1,70 +1,12 @@
 import qrcode from 'qrcode-generator';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useHost } from '../core/ligacao';
-import { TEMAS, nomeJogo, t, usarIdioma } from '../core/i18n';
+import { t, usarIdioma } from '../core/i18n';
 import { CATALOGO, descricao, filtrar, motivo, nome, type Filtro, type InfoJogo } from '../core/jogos';
-import { jogoAtivo, ligados, podeComecar, vistaSala, type Idioma, type Tecla } from '../core/sala';
+import { jogoAtivo, ligados, podeComecar, vistaSala, type EstadoSala, type Idioma, type Tecla } from '../core/sala';
 import { Boneco } from '../ui/comuns';
-import { OPCOES, type Def5050 } from '../jogos/5050/regras';
-import { Tv5050 } from '../jogos/5050/tv';
-import { TvPensa } from '../jogos/pensa-dores/tv';
-import { TvWifi } from '../jogos/senha-wifi/tv';
-import { TvSevira } from '../jogos/se-vira/tv';
-import { TvMona } from '../jogos/mona-lixa/tv';
-import { TvIdeias } from '../jogos/ideias-mirabolantes/tv';
-import { TvPirata } from '../jogos/pirata/tv';
-import { TvMaquinas } from '../jogos/revolucao-maquinas/tv';
-import { extraTv } from '../jogos/se-vira/regras';
-
-/** opções do 50/50 (no telemóvel do líder) */
-export function Definicoes({ def, mudar }: { def: Def5050; mudar: (d: Partial<Def5050>) => void }) {
-  const grupo = (rotulo: string, chave: 'rondas' | 'escrever' | 'votar', suf = '') => (
-    <div>
-      <label>{rotulo}</label>
-      <div class="opcoes">
-        {OPCOES[chave].map((n) => (
-          <button key={n} class={'opcao' + (def[chave] === n ? ' on' : '')} onClick={() => mudar({ [chave]: n })}>
-            {n}
-            {suf}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-  const temas = def.temas;
-  const alternarTema = (id: string) => mudar({ temas: temas.includes(id) ? temas.filter((x) => x !== id) : [...temas, id] });
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-      {grupo(t('rondas'), 'rondas')}
-      {grupo(t('escrever'), 'escrever', ' s')}
-      {grupo(t('votar'), 'votar', ' s')}
-      <div>
-        <label>{t('mostrarVotos')}</label>
-        <div class="opcoes">
-          <button class={'opcao' + (def.mostrarVotos ? ' on' : '')} onClick={() => mudar({ mostrarVotos: true })}>
-            {t('sim')}
-          </button>
-          <button class={'opcao' + (!def.mostrarVotos ? ' on' : '')} onClick={() => mudar({ mostrarVotos: false })}>
-            {t('nao')}
-          </button>
-        </div>
-      </div>
-      <div>
-        <label>{t('temas')}</label>
-        <div class="opcoes">
-          <button class={'opcao' + (temas.length === 0 ? ' on' : '')} onClick={() => mudar({ temas: [] })}>
-            {t('todos')}
-          </button>
-          {Object.entries(TEMAS).map(([id, n]) => (
-            <button key={id} class={'opcao' + (temas.includes(id) ? ' on' : '')} onClick={() => alternarTema(id)}>
-              {nomeJogo(n)}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+import { emCurso } from '../jogos/ecras';
+import { AvisoSaidasTv } from '../ui/saidas';
 
 function Qr({ texto, tam }: { texto: string; tam: number }) {
   const d = useMemo(() => {
@@ -84,9 +26,10 @@ function Qr({ texto, tam }: { texto: string; tam: number }) {
   );
 }
 
-function linkJogar(codigo: string): string {
+/** `k` = impressão digital da TV: o telemóvel só aceita vistas assinadas por ela */
+function linkJogar(codigo: string, k: string): string {
   const base = (import.meta.env.VITE_LINK_JOGAR as string | undefined) ?? `${location.origin}${location.pathname}`;
-  return `${base}#/jogar?sala=${codigo}`;
+  return `${base}#/jogar?sala=${codigo}&k=${k}`;
 }
 
 export const FILTROS: [Filtro, Parameters<typeof t>[0]][] = [
@@ -105,6 +48,33 @@ export function textoMotivo(j: InfoJogo, n: number, semTv = false): string {
   return t('porqueMuitos', { n: m.max, t: m.tem });
 }
 
+/** tutorial antes do jogo, na TV (auditoria E3): o mesmo dos telemóveis, em grande; OK no comando salta */
+function TutorialTv({ s, agora, saltar }: { s: EstadoSala; agora: () => number; saltar: () => void }) {
+  const [, setT] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setT((x) => x + 1), 500);
+    return () => clearInterval(i);
+  }, []);
+  const j = CATALOGO.find((x) => x.id === s.tutorial?.jogo);
+  // hora do anfitrião (a mesma com que se marcou o fim do tutorial)
+  const seg = Math.max(0, Math.ceil(((s.tutorial?.ate ?? 0) - agora()) / 1000));
+  return (
+    <div class="pag tv centro">
+      <h1 class="pergunta">
+        {t('tutorial')} · {j ? nome(j, s.idioma) : ''}
+      </h1>
+      <div class="video">
+        <span>▶ {t('tutorialEmBreve')}</span>
+      </div>
+      <p class="tempo">{seg}</p>
+      <button class="botao sec" onClick={saltar}>
+        {t('saltar')} · OK
+      </button>
+      <div class="rodape-codigo tv">{s.codigo}</div>
+    </div>
+  );
+}
+
 export function Tv({ idioma }: { idioma: Idioma }) {
   const [pesquisa, setPesquisa] = useState('');
   const [filtros, setFiltros] = useState<Filtro[]>([]);
@@ -113,7 +83,7 @@ export function Tv({ idioma }: { idioma: Idioma }) {
   const [selFiltro, setSelFiltro] = useState(0);
   const [selFim, setSelFim] = useState(0); // 0 = jogar outra vez, 1 = menu
   const tecla = useRef<(k: Tecla) => void>(() => {});
-  const { estado: s, ligado, acao } = useHost(idioma, (k) => tecla.current(k));
+  const { estado: s, ligado, acao, impressao, agora } = useHost(idioma, (k) => tecla.current(k));
   usarIdioma(s.idioma);
 
   const n = ligados(s).length;
@@ -127,6 +97,11 @@ export function Tv({ idioma }: { idioma: Idioma }) {
 
   tecla.current = (k) => {
     if (k === 'recarregar') return location.reload();
+    // tutorial a passar: OK / Voltar = saltar
+    if (s.tutorial) {
+      if (k === 'ok' || k === 'voltar') acao({ tipo: 'saltar', id: '' });
+      return;
+    }
     const ja = jogoAtivo(s);
     if (ja) {
       if (ja.fase !== 'fim') return;
@@ -181,133 +156,16 @@ export function Tv({ idioma }: { idioma: Idioma }) {
   }, []);
 
   if (ligado === false) return <div class="pag tv centro">{t('semLigacao')}</div>;
+  if (s.tutorial) return <TutorialTv s={s} agora={agora} saltar={() => acao({ tipo: 'saltar', id: '' })} />;
 
-  if (s.maquinas) {
+  const ativo = emCurso(s);
+  if (ativo) {
     const vista = vistaSala(s);
     return (
       <>
-        <TvMaquinas sala={vista} v={vista.maquinas!} agora={Date.now} selFim={selFim} onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })} onMenu={() => acao({ tipo: 'menu', id: '' })} />
+        {ativo.j.e.tv({ g: ativo.g, v: emCurso(vista)!.g, sala: vista, agora, selFim, onOutraVez: () => acao({ tipo: 'outra_vez', id: '' }), onMenu: () => acao({ tipo: 'menu', id: '' }), acao })}
         <div class="rodape-codigo tv">{s.codigo}</div>
-      </>
-    );
-  }
-
-  if (s.pirata) {
-    const vista = vistaSala(s);
-    return (
-      <>
-        <TvPirata
-          sala={vista}
-          v={vista.pirata!}
-          agora={Date.now}
-          selFim={selFim}
-          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
-          onMenu={() => acao({ tipo: 'menu', id: '' })}
-        />
-        <div class="rodape-codigo tv">{s.codigo}</div>
-      </>
-    );
-  }
-
-  if (s.ideias) {
-    const vista = vistaSala(s);
-    return (
-      <>
-        <TvIdeias
-          sala={vista}
-          v={vista.ideias!}
-          agora={Date.now}
-          selFim={selFim}
-          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
-          onMenu={() => acao({ tipo: 'menu', id: '' })}
-        />
-        <div class="rodape-codigo tv">{s.codigo}</div>
-      </>
-    );
-  }
-
-  if (s.mona) {
-    const vista = vistaSala(s);
-    return (
-      <>
-        <TvMona
-          sala={vista}
-          v={vista.mona!}
-          agora={Date.now}
-          selFim={selFim}
-          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
-          onMenu={() => acao({ tipo: 'menu', id: '' })}
-        />
-        <div class="rodape-codigo tv">{s.codigo}</div>
-      </>
-    );
-  }
-
-  if (s.sevira) {
-    const vista = vistaSala(s);
-    return (
-      <>
-        <TvSevira
-          sala={vista}
-          v={vista.sevira!}
-          extra={extraTv(s.sevira)}
-          agora={Date.now}
-          selFim={selFim}
-          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
-          onMenu={() => acao({ tipo: 'menu', id: '' })}
-        />
-        <div class="rodape-codigo tv">{s.codigo}</div>
-      </>
-    );
-  }
-
-  if (s.wifi) {
-    const vista = vistaSala(s);
-    return (
-      <>
-        <TvWifi
-          sala={vista}
-          v={vista.wifi!}
-          agora={Date.now}
-          selFim={selFim}
-          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
-          onMenu={() => acao({ tipo: 'menu', id: '' })}
-        />
-        <div class="rodape-codigo tv">{s.codigo}</div>
-      </>
-    );
-  }
-
-  if (s.pensa) {
-    const vista = vistaSala(s);
-    return (
-      <>
-        <TvPensa
-          sala={vista}
-          v={vista.pensa!}
-          agora={Date.now}
-          selFim={selFim}
-          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
-          onMenu={() => acao({ tipo: 'menu', id: '' })}
-        />
-        <div class="rodape-codigo tv">{s.codigo}</div>
-      </>
-    );
-  }
-
-  if (s.jogo) {
-    const vista = vistaSala(s);
-    return (
-      <>
-        <Tv5050
-          sala={vista}
-          v={vista.jogo!}
-          agora={Date.now}
-          selFim={selFim}
-          onOutraVez={() => acao({ tipo: 'outra_vez', id: '' })}
-          onMenu={() => acao({ tipo: 'menu', id: '' })}
-        />
-        <div class="rodape-codigo tv">{s.codigo}</div>
+        <AvisoSaidasTv s={s} />
       </>
     );
   }
@@ -374,10 +232,11 @@ export function Tv({ idioma }: { idioma: Idioma }) {
       </section>
 
       <footer class="faixa">
-        <Qr texto={linkJogar(s.codigo)} tam={150} />
+        <Qr texto={linkJogar(s.codigo, impressao)} tam={150} />
         <div class="faixa-codigo">
           <small>{t('entraNoCelular')}</small>
           <span class="codigo-grande">{s.codigo}</span>
+          {s.fechada && <small>{t('mbFechadaTv')}</small>}
         </div>
         <div class="faixa-bonecos">
           {s.jogadores.length === 0 ? (

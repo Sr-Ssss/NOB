@@ -31,6 +31,20 @@ export function DefinicoesSevira({ def, n, mudar }: { def: DefSevira; n: number;
           ))}
         </div>
       </div>
+      <div>
+        <label>{t('svLinksOpcao')}</label>
+        <p class="mini" style={{ margin: '2px 0 6px' }}>
+          {t('svLinksAviso')}
+        </p>
+        <div class="opcoes">
+          <button class={'opcao' + (def.links ? ' on' : '')} aria-pressed={!!def.links} onClick={() => mudar({ links: true })}>
+            {t('sim')}
+          </button>
+          <button class={'opcao' + (!def.links ? ' on' : '')} aria-pressed={!def.links} onClick={() => mudar({ links: false })}>
+            {t('nao')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

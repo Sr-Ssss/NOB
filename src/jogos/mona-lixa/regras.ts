@@ -1,4 +1,5 @@
 import { baralhar } from '../../core/ids';
+import { irPara, normalizar, pausaPorFalta, podio, quantosLigados, type Podio } from '../../core/jogo';
 import type { Idioma } from '../../core/sala';
 import { limparTracos, type Traco } from '../../ui/tracos';
 
@@ -98,13 +99,7 @@ export type AcaoMona =
   | { tipo: 'ligados'; ids: string[] }
   | { tipo: 'tick' };
 
-export const normal = (s: string) =>
-  s
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+export const normal = normalizar;
 
 export function rondasPadrao(n: number): number {
   return n >= 9 ? 1 : 2;
@@ -118,10 +113,6 @@ function sortear(pool: Titulo[], usadas: string[], k: number, seed: number): Tit
   const out: Titulo[] = [];
   for (let i = 0; i < k && base.length; i++) out.push(base[i % base.length]);
   return out;
-}
-
-function irPara(e: EstadoMona, fase: FaseMona, segundos: number, agora: number): EstadoMona {
-  return { ...e, fase, terminaEm: fase === 'fim' ? 0 : agora + segundos * 1000 };
 }
 
 function prepararRonda(e: EstadoMona, agora: number): EstadoMona {
@@ -326,13 +317,9 @@ export function pausadoMona(e: EstadoMona): boolean {
 export function reduzMona(e: EstadoMona, acao: AcaoMona, agora: number): EstadoMona {
   switch (acao.tipo) {
     case 'ligados': {
-      let s: EstadoMona = { ...e, ligados: acao.ids };
-      const n = todos(s).filter((id) => acao.ids.includes(id)).length;
-      if (s.fase !== 'fim') {
-        if (n < MIN_LIGADOS && s.pausaRestante === null) s = { ...s, pausaRestante: Math.max(0, s.terminaEm - agora) };
-        else if (n >= MIN_LIGADOS && s.pausaRestante !== null) s = { ...s, terminaEm: agora + s.pausaRestante, pausaRestante: null };
-      }
-      return s;
+      const s: EstadoMona = { ...e, ligados: acao.ids };
+      if (s.fase === 'fim') return s;
+      return pausaPorFalta(s, quantosLigados(todos(s), acao.ids) < MIN_LIGADOS, agora);
     }
     case 'ml_desenho': {
       if (e.fase !== 'desenhar' || pausadoMona(e) || !e.participantes.includes(acao.id)) return e;
@@ -369,15 +356,10 @@ export function reduzMona(e: EstadoMona, acao: AcaoMona, agora: number): EstadoM
   }
 }
 
-export interface PodioMona {
-  id: string;
-  pontos: number;
-  lugar: number;
-}
+export type PodioMona = Podio;
 
 export function podioMona(e: Pick<EstadoMona, 'participantes' | 'pontos'>): PodioMona[] {
-  const lista = e.participantes.map((id) => ({ id, pontos: e.pontos[id] ?? 0 })).sort((x, y) => y.pontos - x.pontos);
-  return lista.map((p) => ({ ...p, lugar: lista.findIndex((q) => q.pontos === p.pontos) + 1 }));
+  return podio(e.participantes, e.pontos);
 }
 
 /** vista pública: antes da revelação, os autores só vão como tags secretas ("é a tua") */
@@ -445,7 +427,8 @@ export function vistaMona(e: EstadoMona, tagDe: (id: string) => string | undefin
     autorTag: autor && emDesenho ? tagDe(autor) : undefined,
     autor: e.fase === 'revelar' ? autor : undefined,
     recusados: tags(e.recusados),
-    opcoes: e.fase === 'escolher' ? e.opcoes.map((o) => ({ texto: o.texto, tags: tags(o.autores) })) : [],
+    // o verdadeiro e o da casa levam marcas falsas (iguais às outras): só o autor do falso reconhece a sua placa
+    opcoes: e.fase === 'escolher' ? e.opcoes.map((o, i) => ({ texto: o.texto, tags: o.verdadeiro || o.casa ? tags(['#placa' + i]) : tags(o.autores) })) : [],
     revelacao: e.fase === 'revelar' ? e.revelacao : [],
     pontos: e.pontos,
     podio: podioMona(e),

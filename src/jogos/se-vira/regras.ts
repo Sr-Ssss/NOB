@@ -1,4 +1,5 @@
 import { baralhar } from '../../core/ids';
+import { pausaPorFalta, podio, type Podio } from '../../core/jogo';
 
 /** Se Vira!: regras em info/jogos/apresentacao-surpresa.md */
 
@@ -7,9 +8,11 @@ export interface DefSevira {
   slides: number;
   /** auto = ≤8 todos; >8 sorteados */
   quem: 'auto' | 'todos' | 'sorteados';
+  /** links de imagens colados pelos jogadores: sem filtro (podem mostrar qualquer coisa na TV), por isso desligados por defeito */
+  links?: boolean;
 }
 
-export const DEF_PADRAO_SEVIRA: DefSevira = { tempo: 90, slides: 6, quem: 'auto' };
+export const DEF_PADRAO_SEVIRA: DefSevira = { tempo: 90, slides: 6, quem: 'auto', links: false };
 export const OPCOES_SEVIRA = { tempo: [60, 90, 120], slides: [4, 6, 8] };
 export const MIN_JOGADORES = 3;
 export const MAX_JOGADORES = 16;
@@ -25,6 +28,8 @@ export const MAX_GALERIA = 140_000;
 export const REACOES = ['😂', '👏', '🤯', '😴'];
 /** entre duas reações do mesmo jogador (para não contar "spam") */
 export const T_ENTRE_REACOES = 400;
+/** para os pontos, cada pessoa conta no máximo 1 reação a cada 5 s (senão o teto de +200 chegava sempre) */
+export const T_CONTA_REACAO = 5000;
 export const PONTOS_ESTRELA = 200;
 export const PONTOS_REACAO = 5;
 export const MAX_PONTOS_REACAO = 200;
@@ -100,6 +105,8 @@ export interface EstadoSevira {
   nReacao: number;
   contaReacoes: Record<string, number>;
   ultimaReacao: Record<string, number>;
+  /** última reação de cada um que contou para os pontos */
+  contadas?: Record<string, number>;
   notas: Record<string, Record<string, number>>;
   pontos: Record<string, number>;
   conteudo: Conteudo;
@@ -301,8 +308,9 @@ function faltaGente(e: EstadoSevira): boolean {
   return e.fase !== 'fim' && ligadosDe(e, e.participantes).length < MIN_JOGADORES;
 }
 
-function validaImagem(img: Imagem): boolean {
+function validaImagem(img: Imagem, links: boolean): boolean {
   if (typeof img?.url !== 'string') return false;
+  if (img.tipo === 'link' && !links) return false;
   if (img.tipo === 'galeria') return img.url.startsWith('data:image/') && img.url.length <= MAX_GALERIA;
   if (img.tipo === 'giphy' || img.tipo === 'link') return /^https?:\/\//i.test(img.url) && img.url.length <= MAX_LINK;
   return false;
@@ -311,16 +319,13 @@ function validaImagem(img: Imagem): boolean {
 export function reduzSevira(e: EstadoSevira, acao: AcaoSevira, agora: number): EstadoSevira {
   switch (acao.tipo) {
     case 'ligados': {
-      let s: EstadoSevira = { ...e, ligados: acao.ids };
-      const falta = faltaGente(s);
-      if (falta && s.pausaRestante === null) s = { ...s, pausaRestante: Math.max(0, s.terminaEm - agora) };
-      else if (!falta && s.pausaRestante !== null) s = { ...s, terminaEm: agora + s.pausaRestante, pausaRestante: null };
-      return s;
+      const s: EstadoSevira = { ...e, ligados: acao.ids };
+      return pausaPorFalta(s, faltaGente(s), agora);
     }
     case 'sv_imagem': {
       if (e.fase !== 'preparar' || pausadoSevira(e) || !e.participantes.includes(acao.id) || e.enviaram.includes(acao.id)) return e;
       if (!Number.isInteger(acao.i) || acao.i < 0 || acao.i >= MAX_IMAGENS) return e;
-      if (acao.img && !validaImagem(acao.img)) return e;
+      if (acao.img && !validaImagem(acao.img, !!e.def.links)) return e;
       const r = [...(e.rascunhos[acao.id] ?? [null, null, null])];
       r[acao.i] = acao.img ? { tipo: acao.img.tipo, url: acao.img.url } : null;
       return { ...e, rascunhos: { ...e.rascunhos, [acao.id]: r } };
@@ -342,12 +347,13 @@ export function reduzSevira(e: EstadoSevira, acao: AcaoSevira, agora: number): E
       if (agora - (e.ultimaReacao[acao.id] ?? -Infinity) < T_ENTRE_REACOES) return e;
       const a = apresentador(e)!;
       const n = e.nReacao + 1;
+      const conta = agora - (e.contadas?.[acao.id] ?? -Infinity) >= T_CONTA_REACAO;
       return {
         ...e,
         nReacao: n,
         reacoes: [...e.reacoes, { n, id: acao.id, r: acao.r }].slice(-MAX_FILA_REACOES),
         ultimaReacao: { ...e.ultimaReacao, [acao.id]: agora },
-        contaReacoes: { ...e.contaReacoes, [a]: (e.contaReacoes[a] ?? 0) + 1 },
+        ...(conta ? { contaReacoes: { ...e.contaReacoes, [a]: (e.contaReacoes[a] ?? 0) + 1 }, contadas: { ...e.contadas, [acao.id]: agora } } : {}),
       };
     }
     case 'sv_nota': {
@@ -367,16 +373,11 @@ export function reduzSevira(e: EstadoSevira, acao: AcaoSevira, agora: number): E
   }
 }
 
-export interface PodioSevira {
-  id: string;
-  pontos: number;
-  lugar: number;
-}
+export type PodioSevira = Podio;
 
 /** pódio com empates (mesmos pontos = mesmo lugar) */
 export function podioSevira(e: Pick<EstadoSevira, 'participantes' | 'pontos'>): PodioSevira[] {
-  const l = [...e.participantes].sort((a, b) => (e.pontos[b] ?? 0) - (e.pontos[a] ?? 0));
-  return l.map((id) => ({ id, pontos: e.pontos[id] ?? 0, lugar: 1 + l.filter((o) => (e.pontos[o] ?? 0) > (e.pontos[id] ?? 0)).length }));
+  return podio(e.participantes, e.pontos);
 }
 
 /** o que vai no canal: sem dados da galeria (vão só para a TV) e sem os decks antes de chegarem */
@@ -437,4 +438,20 @@ export function extraTv(e: EstadoSevira): { imagem: string | null; reacoes: Reac
   const a = apresentador(e);
   const s = a && e.fase === 'apresentar' ? e.decks[a]?.slides[e.slide] : null;
   return { imagem: s?.tipo === 'imagem' ? s.img.url : null, reacoes: e.fase === 'apresentar' ? e.reacoes : [] };
+}
+
+/* ---------- saídas a meio (src/core/saidas.ts) ---------- */
+
+/** o apresentador da vez faz falta (passa os slides) */
+export const importanteSevira = (e: EstadoSevira, id: string): boolean => (e.fase === 'tema' || e.fase === 'apresentar') && apresentador(e) === id;
+
+/** o líder decidiu seguir sem ele: sai da lista de apresentadores; se era a vez dele, passa ao seguinte */
+export function sairSevira(e: EstadoSevira, id: string, agora: number): EstadoSevira {
+  const i = e.apresentadores.indexOf(id);
+  if (i < 0 || e.fase === 'fim') return e;
+  const apresentadores = e.apresentadores.filter((x) => x !== id);
+  if (e.fase === 'preparar' || i > e.atual) return { ...e, apresentadores };
+  if (i < e.atual) return { ...e, apresentadores, atual: e.atual - 1 };
+  if (e.atual >= apresentadores.length) return { ...e, apresentadores, fase: 'fim', terminaEm: 0 };
+  return irPara({ ...e, apresentadores, slide: 0, reacoes: [] }, 'tema', T_TEMA, agora);
 }

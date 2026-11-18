@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOGO, motivo } from '../../core/jogos';
-import { PREFIXO_BOT, novaSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
+import { PREFIXO_BOT, minhaMarca, novaSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
 
 function com(n: number, semTv = false): EstadoSala {
   let s: EstadoSala = { ...novaSala('ABCD', 'pt-BR'), semTv };
@@ -15,7 +15,10 @@ describe('Ideias Mirabolantes na sala', () => {
     const s = reduzSala(com(3, true), { tipo: 'comecar', id: 'j1', jogo: 'ideias' }, 100);
     expect(s.ideias?.fase).toBe('problema');
     expect(s.ideias?.conteudo.length).toBeGreaterThanOrEqual(200);
-    expect(Object.keys(vistaSala(s).ideias!.sorteados).sort()).toEqual(['t1', 't2', 't3']);
+    // cada um encontra o seu pela marca (a tag nunca sai)
+    const v = vistaSala(s);
+    expect(Object.keys(v.ideias!.sorteados).sort()).toEqual(['t1', 't2', 't3'].map((t) => minhaMarca(v, t)).sort());
+    expect(JSON.stringify(v)).not.toMatch(/"t[1-3]"/);
     const j = CATALOGO.find((x) => x.id === 'ideias')!;
     expect(motivo(j, 3, true)).toBeNull();
     expect(motivo(j, 20)).toBeNull();

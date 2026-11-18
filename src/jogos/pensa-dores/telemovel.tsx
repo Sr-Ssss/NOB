@@ -2,15 +2,18 @@ import { useState } from 'preact/hooks';
 import type { AcaoSala } from '../../core/sala';
 import { t } from '../../core/i18n';
 import { Estado } from '../5050/tv';
-import { Autor, LETRAS, PlacarPensa, Topo, textoP } from './comuns';
+import { Autor, LETRAS, PlacarPensa, Topo, Votos, textoP } from './comuns';
+import { Progresso } from '../../ui/ecraunico';
+import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 import { MAX_RESPOSTA, VOTOS_FINAL } from './regras';
 import type { PropsPensa } from './tv';
 
 type Enviar = (a: AcaoSala) => void;
 
 /** carteira de madeira: pergunta num balão de pensamento + post-it para escrever */
-function PostIt({ pergunta, max, aoEnviar, seguinte }: { pergunta: string; max: number; aoEnviar: (s: string) => void; seguinte?: () => void }) {
-  const [texto, setTexto] = useState('');
+function PostIt({ pergunta, max, aoEnviar, seguinte, grupo, campo }: { pergunta: string; max: number; aoEnviar: (s: string) => void; seguinte?: () => void; grupo: string; campo: string }) {
+  // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
+  const [texto, setTexto] = useRascunho(grupo, campo, '');
   return (
     <div class="carteira">
       <div class="balao">{pergunta}</div>
@@ -34,8 +37,9 @@ function PostIt({ pergunta, max, aoEnviar, seguinte }: { pergunta: string; max: 
 
 function Escrever({ sala, v, eu, enviar }: Pick<PropsPensa, 'sala' | 'v'> & { eu: string; enviar: Enviar }) {
   const meus = v.duelos.map((d, i) => ({ ...d, i })).filter((d) => d.autores.includes(eu));
-  const [feitos, setFeitos] = useState<number[]>([]);
-  const [pos, setPos] = useState(0);
+  const g = `${sala.codigo}:pensa:${v.ronda}`;
+  const [feitos, setFeitos] = useRascunho<number[]>(g, 'feitos', []);
+  const [pos, setPos] = useRascunho(g, 'pos', 0);
   const falta = meus.filter((d) => !feitos.includes(d.i));
   if (!falta.length || v.enviaram.includes(eu)) return <div class="cartao centro">✅ {t('pdAcabou')}</div>;
   const d = falta[pos % falta.length];
@@ -46,6 +50,8 @@ function Escrever({ sala, v, eu, enviar }: Pick<PropsPensa, 'sala' | 'v'> & { eu
       </p>
       <PostIt
         key={d.i}
+        grupo={g}
+        campo={'texto' + d.i}
         pergunta={textoP(d.pergunta, sala)}
         max={MAX_RESPOSTA}
         seguinte={falta.length > 1 ? () => setPos(pos + 1) : undefined}
@@ -99,6 +105,8 @@ export function TelemovelPensa({ sala, v, agora, eu, tag, enviar }: PropsPensa &
   const chave = `${v.ronda}:${v.atual}`;
   const eAutor = v.opcoes.some((o) => o.tag === tag);
   const meu = voto?.chave === chave ? voto.i : null;
+  const escreve = participa && !v.enviaram.includes(eu);
+  useSoRascunho(escreve && v.fase === 'escrever' ? `${sala.codigo}:pensa:${v.ronda}` : escreve && v.fase === 'final_escrever' ? `${sala.codigo}:pensa:final` : null);
 
   return (
     <div class="pag tel-pensa">
@@ -116,7 +124,8 @@ export function TelemovelPensa({ sala, v, agora, eu, tag, enviar }: PropsPensa &
           <b>{t('pdOpcoesNome')}</b> — {t('ajudaPensa')}
         </div>
       )}
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {v.fase === 'escrever' && (participa ? <Escrever key={v.ronda} sala={sala} v={v} eu={eu} enviar={enviar} /> : <p class="centro">{t('audiencia')}</p>)}
 
@@ -126,7 +135,7 @@ export function TelemovelPensa({ sala, v, agora, eu, tag, enviar }: PropsPensa &
         ) : v.enviaram.includes(eu) ? (
           <div class="cartao centro">✅ {t('enviado')}</div>
         ) : (
-          <PostIt pergunta={pergunta} max={v.maxFinal} aoEnviar={(texto) => enviar({ tipo: 'jogo', acao: { tipo: 'responder', id: '', duelo: 0, texto } })} />
+          <PostIt grupo={`${sala.codigo}:pensa:final`} campo="texto" pergunta={pergunta} max={v.maxFinal} aoEnviar={(texto) => enviar({ tipo: 'jogo', acao: { tipo: 'responder', id: '', duelo: 0, texto } })} />
         ))}
 
       {(v.fase === 'escrever' || v.fase === 'final_escrever') && <Estado sala={sala} ids={v.participantes} feitos={v.enviaram} tam={36} />}
@@ -153,6 +162,7 @@ export function TelemovelPensa({ sala, v, agora, eu, tag, enviar }: PropsPensa &
               ))
             )}
           </div>
+          <Progresso semTv={sala.semTv} ids={v.votantes} feitos={v.votaram} />
         </div>
       )}
 
@@ -164,6 +174,8 @@ export function TelemovelPensa({ sala, v, agora, eu, tag, enviar }: PropsPensa &
               <div key={o.autor} class="giz-caixa">
                 {o.texto} <b>· {o.votos.length}</b>
                 <Autor sala={sala} o={o} tam={36} />
+                {/* sem TV, um só ecrã: também quem votou em quê (como na TV) */}
+                {sala.semTv && <Votos sala={sala} o={o} mostrar={v.def.mostrarVotos} tam={28} />}
               </div>
             ))}
             {v.resultado.semAdversario && <p class="centro mini">{t('pdSemAdversario')}</p>}

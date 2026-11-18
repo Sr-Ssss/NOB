@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOGO, motivo } from '../../core/jogos';
-import { novaSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
+import { minhaMarca, novaSala, reduzSala, vistaSala, type EstadoSala } from '../../core/sala';
 
 function com(n: number, semTv = false): EstadoSala {
   let s: EstadoSala = { ...novaSala('ABCD', 'pt-BR'), semTv };
@@ -15,7 +15,10 @@ describe('Se Vira! na sala', () => {
     const s = reduzSala(com(3), { tipo: 'comecar', id: 'j1', jogo: 'sevira' }, 100);
     expect(s.sevira?.fase).toBe('preparar');
     expect(s.sevira?.conteudo.titulos.length).toBeGreaterThanOrEqual(100);
-    expect(Object.keys(vistaSala(s).sevira!.temas).sort()).toEqual(['t1', 't2', 't3']);
+    // cada um encontra o seu pela marca (a tag nunca sai)
+    const v = vistaSala(s);
+    expect(Object.keys(v.sevira!.temas).sort()).toEqual(['t1', 't2', 't3'].map((t) => minhaMarca(v, t)).sort());
+    expect(JSON.stringify(v)).not.toMatch(/"t[1-3]"/);
     const j = CATALOGO.find((x) => x.id === 'sevira')!;
     expect(motivo(j, 3)).toBeNull();
     expect(motivo(j, 3, true)).toEqual({ tipo: 'tv' });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  T_CONTA_REACAO,
   T_ENTRE_REACOES,
   T_NOTA,
   T_PREPARAR,
@@ -165,8 +166,11 @@ describe('Se Vira! — apresentar', () => {
     e = ap(e, [{ tipo: 'sv_reagir', id: a, r: '😂' }, { tipo: 'sv_reagir', id: x, r: '💩' }, { tipo: 'sv_reagir', id: x, r: '😂' }, { tipo: 'sv_reagir', id: x, r: '👏' }]);
     e = reduzSevira(e, { tipo: 'sv_reagir', id: y, r: '🤯' }, T + 1);
     e = reduzSevira(e, { tipo: 'sv_reagir', id: x, r: '😴' }, T + T_ENTRE_REACOES);
-    expect(e.contaReacoes[a]).toBe(3);
+    // as 3 voam na TV, mas para os pontos cada pessoa só conta 1 a cada 5 s
     expect(extraTv(e).reacoes.map((r) => r.r)).toEqual(['😂', '🤯', '😴']);
+    expect(e.contaReacoes[a]).toBe(2);
+    e = reduzSevira(e, { tipo: 'sv_reagir', id: x, r: '👏' }, T + T_CONTA_REACAO);
+    expect(e.contaReacoes[a]).toBe(3);
     // as reações não vão no canal
     expect(JSON.stringify(vistaSevira(e, () => undefined))).not.toContain('🤯');
   });

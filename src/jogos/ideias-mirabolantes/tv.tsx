@@ -5,7 +5,8 @@ export function TvIdeias({ sala, v, agora, selFim = 0, onOutraVez, onMenu }: Pro
   return (
     <div class="pag tv jogo-ideias">
       <Topo v={v} agora={agora} />
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
       {v.fase !== 'fim' ? (
         <Palco sala={sala} v={v} />
       ) : (

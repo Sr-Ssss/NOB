@@ -1,109 +1,10 @@
-import {
-  DEF_PADRAO,
-  MIN_LIGADOS,
-  novoJogo,
-  reduz5050,
-  vista5050,
-  type Acao5050,
-  type Def5050,
-  type Estado5050,
-  type Vista5050,
-} from '../jogos/5050/regras';
-import {
-  DEF_PADRAO_PENSA,
-  MIN_JOGADORES as MIN_PENSA,
-  novoPensa,
-  reduzPensa,
-  vistaPensa,
-  type AcaoPensa,
-  type DefPensa,
-  type EstadoPensa,
-  type VistaPensa,
-} from '../jogos/pensa-dores/regras';
-import { perguntasPensa } from '../jogos/pensa-dores/conteudo';
-import {
-  DEF_PADRAO_WIFI,
-  MIN_JOGADORES as MIN_WIFI,
-  SO_LIDER_WIFI,
-  TIPOS_WIFI,
-  novoWifi,
-  reduzWifi,
-  vistaWifi,
-  type AcaoWifi,
-  type DefWifi,
-  type EstadoWifi,
-  type VistaWifi,
-} from '../jogos/senha-wifi/regras';
-import { palavrasWifi } from '../jogos/senha-wifi/conteudo';
-import {
-  DEF_PADRAO_SEVIRA,
-  MIN_JOGADORES as MIN_SEVIRA,
-  TIPOS_SEVIRA,
-  novoSevira,
-  reduzSevira,
-  vistaSevira,
-  type AcaoSevira,
-  type DefSevira,
-  type EstadoSevira,
-  type VistaSevira,
-} from '../jogos/se-vira/regras';
-import { conteudoSevira } from '../jogos/se-vira/conteudo';
-import {
-  DEF_PADRAO_MONA,
-  MIN_JOGADORES as MIN_MONA,
-  TIPOS_MONA,
-  novoMona,
-  reduzMona,
-  vistaMona,
-  type AcaoMona,
-  type DefMona,
-  type EstadoMona,
-  type VistaMona,
-} from '../jogos/mona-lixa/regras';
-import { conteudoMona } from '../jogos/mona-lixa/conteudo';
-import {
-  DEF_PADRAO_IDEIAS,
-  MIN_JOGADORES as MIN_IDEIAS,
-  TIPOS_IDEIAS,
-  novoIdeias,
-  reduzIdeias,
-  vistaIdeias,
-  type AcaoIdeias,
-  type DefIdeias,
-  type EstadoIdeias,
-  type VistaIdeias,
-} from '../jogos/ideias-mirabolantes/regras';
-import { conteudoIdeias } from '../jogos/ideias-mirabolantes/conteudo';
-import {
-  DEF_PADRAO_PIRATA,
-  MIN_JOGADORES as MIN_PIRATA,
-  MAX_JOGADORES as MAX_PIRATA,
-  SO_LIDER_PIRATA,
-  TIPOS_PIRATA,
-  novoPirata,
-  privadoPirata,
-  reduzPirata,
-  vistaPirata,
-  type AcaoPirata,
-  type DefPirata,
-  type EstadoPirata,
-  type VistaPirata,
-} from '../jogos/pirata/regras';
-import {
-  DEF_PADRAO_MAQUINAS,
-  MIN_JOGADORES as MIN_MAQUINAS,
-  MAX_JOGADORES as MAX_MAQUINAS,
-  SO_LIDER_MAQUINAS,
-  TIPOS_MAQUINAS,
-  novoMaquinas,
-  privadoMaquinas,
-  reduzMaquinas,
-  vistaMaquinas,
-  type AcaoMaquinas,
-  type DefMaquinas,
-  type EstadoMaquinas,
-  type VistaMaquinas,
-} from '../jogos/revolucao-maquinas/regras';
+import { MIN_LIGADOS } from '../jogos/5050/regras';
+import { LISTA, jogoEmCurso, jogoPorId, type AcaoDefinir, type AcaoJogo, type DefsJogos, type EstadosJogos, type JogoComum, type JogoQualquer, type VistasJogos } from './registo';
+import { marca } from './cripto';
+import { filtrarTextos } from './filtro';
+import { idAleatorio } from './ids';
+import { TOLERANCIA, calcularAusentes, espectadores, jogoDe, seguirSem, trocarJogador, type Ausente } from './saidas';
+import { barrar, expulsar, expulso, fecharParty, porta } from './membros';
 
 export const ID_TV = 'tv';
 export const MAX_NOME = 12;
@@ -134,48 +35,39 @@ export interface Jogador {
   bot?: boolean;
 }
 
-export interface EstadoSala {
+/** os campos de cada jogo (`jogo`, `pensa`… e `def`, `defPensa`…) vêm do registo (src/core/registo.ts) */
+export interface EstadoSala extends EstadosJogos, DefsJogos {
   codigo: string;
   idioma: Idioma;
   jogadores: Jogador[]; // por ordem de entrada
   vipId: string | null;
-  def: Def5050;
-  jogo: Estado5050 | null;
-  defPensa: DefPensa;
-  pensa: EstadoPensa | null;
-  defWifi?: DefWifi;
-  wifi?: EstadoWifi | null;
-  defSevira?: DefSevira;
-  sevira?: EstadoSevira | null;
-  defMona?: DefMona;
-  mona?: EstadoMona | null;
-  defIdeias?: DefIdeias;
-  ideias?: EstadoIdeias | null;
-  defPirata?: DefPirata;
-  pirata?: EstadoPirata | null;
-  defMaquinas?: DefMaquinas;
-  maquinas?: EstadoMaquinas | null;
   /** criada no telemóvel, sem TV */
   semTv?: boolean;
   /** tutorial a passar para todos antes do jogo (null = nenhum) */
   tutorial?: { jogo: string; ate: number } | null;
   /** id do dispositivo → id do jogador */
   aliases: Record<string, string>;
+  /** segredo do host (nunca sai): marcas falsas que não se distinguem das verdadeiras */
+  segredo?: string;
+  /** quem saiu a meio do jogo e ainda conta (src/core/saidas.ts) */
+  ausentes?: Ausente[];
+  /** o líder decidiu seguir sem eles (não voltam a pausar o jogo) */
+  dispensados?: string[];
+  /** o jogo está em pausa porque saiu alguém que faz falta */
+  pausaSaida?: boolean;
+  /** quem pode entrar (src/core/membros.ts): party fechada pelo líder, aparelhos à porta e expulsos */
+  fechada?: boolean;
+  barrados?: string[];
+  expulsos?: string[];
 }
 
 export type AcaoSala =
   | { tipo: 'entrar'; id: string; nome: string; avatar: number; tag: string }
   | { tipo: 'ligados'; ids: string[] }
-  | { tipo: 'definir'; id: string; def: Partial<Def5050> }
+  /** opções de um jogo: 'definir' (50/50), 'definir_pensa'… (ver `definir` no registo) */
+  | AcaoDefinir
   | { tipo: 'idioma'; id: string; idioma: Idioma }
-  | { tipo: 'definir_pensa'; id: string; def: Partial<DefPensa> }
-  | { tipo: 'definir_wifi'; id: string; def: Partial<DefWifi> }
-  | { tipo: 'definir_sevira'; id: string; def: Partial<DefSevira> }
-  | { tipo: 'definir_mona'; id: string; def: Partial<DefMona> }
-  | { tipo: 'definir_ideias'; id: string; def: Partial<DefIdeias> }
-  | { tipo: 'definir_pirata'; id: string; def: Partial<DefPirata> }
-  | { tipo: 'definir_maquinas'; id: string; def: Partial<DefMaquinas> }
-  /** jogo: '5050' (padrão), 'pensa', 'wifi', 'sevira', 'mona', 'ideias' ou 'pirata' */
+  /** jogo: o `id` do registo ('5050' é o padrão) */
   | { tipo: 'comecar'; id: string; jogo?: string; tutorial?: boolean }
   | { tipo: 'outra_vez'; id: string }
   | { tipo: 'menu'; id: string }
@@ -185,137 +77,104 @@ export type AcaoSala =
   | { tipo: 'pronto'; id: string; pronto: boolean }
   /** tecla do comando virtual da TV (só o líder); não muda o estado, a TV trata-a */
   | { tipo: 'comando'; id: string; tecla: Tecla }
-  | { tipo: 'jogo'; acao: Extract<Acao5050 | AcaoPensa | AcaoWifi | AcaoSevira | AcaoMona | AcaoIdeias | AcaoPirata | AcaoMaquinas, { id: string }> }
+  | { tipo: 'jogo'; acao: AcaoJogo }
   /** o líder cria um bot (id e tag gerados no telemóvel do líder, que guarda a tag) */
   | { tipo: 'bot_add'; id: string; bot: string; tag: string }
   | { tipo: 'bot_del'; id: string; bot: string }
   /** o líder age como um bot (só ações de jogo e "Pronto") */
   | { tipo: 'como'; id: string; bot: string; acao: AcaoSala }
+  /** saídas a meio (src/core/saidas.ts), só o líder: seguir sem quem saiu, ou pôr um espectador no lugar dele */
+  | { tipo: 'ausente_seguir'; id: string; alvo: string }
+  | { tipo: 'ausente_trocar'; id: string; alvo: string; por: string }
+  /** o líder acaba o jogo a meio e volta ao menu */
+  | { tipo: 'acabar'; id: string }
+  /** quem pode entrar (src/core/membros.ts), só o líder: fechar/abrir a party e expulsar um jogador */
+  | { tipo: 'fechar'; id: string; fechada: boolean }
+  | { tipo: 'expulsar'; id: string; alvo: string }
   | { tipo: 'tick' };
 
 export const PREFIXO_BOT = 'bot-';
 
 export function novaSala(codigo: string, idioma: Idioma): EstadoSala {
-  return { codigo, idioma, jogadores: [], vipId: null, def: { ...DEF_PADRAO }, jogo: null, defPensa: { ...DEF_PADRAO_PENSA }, pensa: null, defWifi: { ...DEF_PADRAO_WIFI }, wifi: null, defSevira: { ...DEF_PADRAO_SEVIRA }, sevira: null, defMona: { ...DEF_PADRAO_MONA }, mona: null, defIdeias: { ...DEF_PADRAO_IDEIAS }, ideias: null, defPirata: { ...DEF_PADRAO_PIRATA }, pirata: null, defMaquinas: { ...DEF_PADRAO_MAQUINAS }, maquinas: null, aliases: {} };
+  const jogos = Object.fromEntries(LISTA.flatMap((j) => [[j.chaveDef, { ...(j.padrao as object) }], [j.chave, null]]));
+  return { codigo, idioma, jogadores: [], vipId: null, ...(jogos as unknown as DefsJogos), aliases: {}, segredo: idAleatorio() };
 }
 
 export function ligados(s: EstadoSala): string[] {
   return s.jogadores.filter((j) => j.ligado).map((j) => j.id);
 }
 
-function escolherVip(s: EstadoSala): EstadoSala {
+/** se o líder sair, a liderança passa ao membro ligado mais antigo (com `agora`, só depois da tolerância: um ecrã bloqueado não conta) */
+function escolherVip(s: EstadoSala, agora?: number): EstadoSala {
   const atual = s.jogadores.find((j) => j.id === s.vipId);
   if (atual?.ligado && !atual.bot) return s;
+  if (atual && !atual.bot && agora !== undefined && atual.desligadoEm !== null && agora - atual.desligadoEm < TOLERANCIA) return s;
   const prox = s.jogadores.find((j) => j.ligado && !j.bot);
-  return { ...s, vipId: prox ? prox.id : (atual?.id ?? null) };
+  const vipId = prox ? prox.id : (atual?.id ?? null);
+  return vipId === s.vipId ? s : { ...s, vipId };
+}
+
+/** um jogo novo começa sem ninguém "saído" */
+const limparSaidas = (s: EstadoSala): EstadoSala => (s.dispensados?.length || s.ausentes?.length || s.pausaSaida ? { ...s, dispensados: [], ausentes: [], pausaSaida: false } : s);
+
+/**
+ * Quem saiu a meio (src/core/saidas.ts): atualiza a lista e, se alguém que faz falta saiu, pausa o jogo
+ * até ele voltar ou o líder decidir. Devolve o mesmo objeto quando nada muda.
+ */
+function aplicarSaidas(s: EstadoSala, agora: number): EstadoSala {
+  const aus = calcularAusentes(s, agora);
+  let r = JSON.stringify(aus) === JSON.stringify(s.ausentes ?? []) ? s : { ...s, ausentes: aus };
+  const j = jogoDe(r);
+  if (j && aus.some((x) => x.importante)) {
+    if (j.g.pausaRestante === null) r = { ...r, [j.chave]: { ...j.g, pausaRestante: Math.max(0, j.g.terminaEm - agora) } };
+    if (!r.pausaSaida) r = { ...r, pausaSaida: true };
+  } else if (r.pausaSaida) {
+    r = { ...r, pausaSaida: false };
+    // o jogo decide se continua (pode ter a sua própria pausa, ex.: menos de 3 ligados)
+    if (j) r = passarAoJogo(r, { tipo: 'ligados', ids: ligados(r) }, agora);
+  }
+  return r;
 }
 
 function manda(s: EstadoSala, id: string): boolean {
   return id === ID_TV || id === s.vipId;
 }
 
-const SO_PENSA = ['responder', 'votos_final'];
+/** o estado da sala como mapa (para ler/escrever os campos de um jogo pela chave do registo) */
+const campos = (s: EstadoSala) => s as unknown as Record<string, unknown>;
+const com = (s: EstadoSala, chave: string, valor: unknown): EstadoSala => ({ ...s, [chave]: valor });
+const opcoesDe = (s: EstadoSala, j: JogoQualquer) => campos(s)[j.chaveDef] ?? j.padrao;
 
-function passarAoJogo(s: EstadoSala, acao: Acao5050 | AcaoPensa | AcaoWifi | AcaoSevira | AcaoMona | AcaoIdeias | AcaoPirata | AcaoMaquinas, agora: number): EstadoSala {
-  if (s.maquinas) {
-    if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !TIPOS_MAQUINAS.includes(acao.tipo)) return s;
-    if ('id' in acao && SO_LIDER_MAQUINAS.includes(acao.tipo) && !manda(s, acao.id)) return s;
-    return { ...s, maquinas: reduzMaquinas(s.maquinas, acao as AcaoMaquinas, agora) };
-  }
-  if (TIPOS_MAQUINAS.includes(acao.tipo)) return s;
-  if (s.pirata) {
-    if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !TIPOS_PIRATA.includes(acao.tipo)) return s;
-    if ('id' in acao && SO_LIDER_PIRATA.includes(acao.tipo) && !manda(s, acao.id)) return s;
-    return { ...s, pirata: reduzPirata(s.pirata, acao as AcaoPirata, agora) };
-  }
-  if (TIPOS_PIRATA.includes(acao.tipo)) return s;
-  if (s.ideias) {
-    if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !TIPOS_IDEIAS.includes(acao.tipo)) return s;
-    return { ...s, ideias: reduzIdeias(s.ideias, acao as AcaoIdeias, agora) };
-  }
-  if (TIPOS_IDEIAS.includes(acao.tipo)) return s;
-  if (s.mona) {
-    if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !TIPOS_MONA.includes(acao.tipo)) return s;
-    return { ...s, mona: reduzMona(s.mona, acao as AcaoMona, agora) };
-  }
-  if (TIPOS_MONA.includes(acao.tipo)) return s;
-  if (s.sevira) {
-    if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !TIPOS_SEVIRA.includes(acao.tipo)) return s;
-    return { ...s, sevira: reduzSevira(s.sevira, acao as AcaoSevira, agora) };
-  }
-  if (TIPOS_SEVIRA.includes(acao.tipo)) return s;
-  if (s.wifi) {
-    if ('id' in acao && SO_LIDER_WIFI.includes(acao.tipo) && !manda(s, acao.id)) return s;
-    return { ...s, wifi: reduzWifi(s.wifi, acao as AcaoWifi, agora) };
-  }
-  if (TIPOS_WIFI.includes(acao.tipo)) return s;
-  if (s.pensa) return acao.tipo === 'enviar' || 'lado' in acao ? s : { ...s, pensa: reduzPensa(s.pensa, acao as AcaoPensa, agora) };
-  if (s.jogo) return SO_PENSA.includes(acao.tipo) || (acao.tipo === 'votar' && !('lado' in acao)) ? s : { ...s, jogo: reduz5050(s.jogo, acao as Acao5050, agora) };
-  return s;
+/** passa a ação ao jogo em curso (pelo registo: as ações que ele aceita, as que só o líder manda) */
+function passarAoJogo(s: EstadoSala, acao: AcaoJogo | { tipo: 'ligados'; ids: string[] } | { tipo: 'tick' }, agora: number): EstadoSala {
+  const ativo = jogoEmCurso(s);
+  if (!ativo) return s;
+  const { j, g } = ativo;
+  if (acao.tipo !== 'ligados' && acao.tipo !== 'tick' && !j.aceita(acao)) return s;
+  if ('id' in acao && j.soLider?.includes(acao.tipo) && !manda(s, acao.id)) return s;
+  return com(s, j.chave, j.reduz(g, acao, agora));
 }
 
 /** o jogo em curso (qualquer um) */
-export function jogoAtivo(s: Pick<EstadoSala, 'jogo' | 'pensa' | 'wifi' | 'sevira' | 'mona' | 'ideias' | 'pirata' | 'maquinas'>): { fase: string; participantes: string[]; audiencia: string[]; usadas: string[] } | null {
-  return s.maquinas ?? s.pirata ?? s.ideias ?? s.mona ?? s.sevira ?? s.wifi ?? s.pensa ?? s.jogo;
+export function jogoAtivo(s: EstadoSala | VistaSala): JogoComum | null {
+  return jogoEmCurso(s)?.g ?? null;
 }
 
-function comecarPensa(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
-  if (ligados(s).length < MIN_PENSA) return s;
-  const { normais, finais } = perguntasPensa();
-  return { ...s, jogo: null, pensa: novoPensa(ligados(s), s.defPensa, agora, normais, finais, usadas) };
-}
-
-function comecarWifi(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
-  if (ligados(s).length < MIN_WIFI) return s;
-  return { ...s, jogo: null, pensa: null, wifi: novoWifi(ligados(s), s.defWifi ?? DEF_PADRAO_WIFI, agora, palavrasWifi(), s.idioma, usadas) };
-}
-
-/** só com TV (info/arquitetura.md → Modo sem TV) */
-function comecarSevira(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
-  if (s.semTv || ligados(s).length < MIN_SEVIRA) return s;
-  return { ...s, jogo: null, pensa: null, wifi: null, sevira: novoSevira(ligados(s), s.defSevira ?? DEF_PADRAO_SEVIRA, agora, conteudoSevira(), s.idioma, usadas) };
-}
-
-/** com ou sem TV (sem TV, os desenhos aparecem no telemóvel) */
-function comecarMona(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
-  if (ligados(s).length < MIN_MONA) return s;
-  return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: novoMona(ligados(s), s.defMona ?? DEF_PADRAO_MONA, agora, conteudoMona(), s.idioma, usadas) };
-}
-
-/** com ou sem TV (sem TV, os desenhos aparecem no telemóvel) */
-function comecarIdeias(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
-  if (ligados(s).length < MIN_IDEIAS) return s;
-  return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: novoIdeias(ligados(s), s.defIdeias ?? DEF_PADRAO_IDEIAS, agora, conteudoIdeias(), s.idioma, usadas) };
-}
-
-/** com ou sem TV; 5–16 jogadores (os papéis vão pelo canal privado) */
-function comecarPirata(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
+/** começa `j` com os ligados (respeitando os mínimos/máximos e "só com TV" do registo) */
+function comecar(s: EstadoSala, j: JogoQualquer, agora: number, usadas: string[]): EstadoSala {
   const n = ligados(s).length;
-  if (n < MIN_PIRATA || n > MAX_PIRATA) return s;
-  return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, maquinas: null, pirata: novoPirata(ligados(s), s.defPirata ?? DEF_PADRAO_PIRATA, agora, usadas) };
+  if ((j.soTv && s.semTv) || n < j.min || (j.max !== undefined && n > j.max)) return s;
+  return com(s, j.chave, j.novo(ligados(s), opcoesDe(s, j), agora, usadas, s.idioma));
 }
 
-/** com ou sem TV; 5–10 jogadores (papéis pelo canal privado) */
-function comecarMaquinas(s: EstadoSala, agora: number, usadas: string[]): EstadoSala {
-  const n = ligados(s).length;
-  if (n < MIN_MAQUINAS || n > MAX_MAQUINAS) return s;
-  return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, pirata: null, maquinas: novoMaquinas(ligados(s), s.defMaquinas ?? DEF_PADRAO_MAQUINAS, agora, usadas) };
-}
-
-/** começa o jogo pedido */
+/** começa o jogo pedido (desconhecido = o 50/50) */
 function comecarJogo(s: EstadoSala, jogo: string | undefined, agora: number): EstadoSala {
-  if (jogo === 'maquinas') return comecarMaquinas(s, agora, []);
-  if (jogo === 'pirata') return comecarPirata(s, agora, []);
-  if (jogo === 'ideias') return comecarIdeias(s, agora, []);
-  if (jogo === 'pensa') return comecarPensa(s, agora, []);
-  if (jogo === 'wifi') return comecarWifi(s, agora, []);
-  if (jogo === 'sevira') return comecarSevira(s, agora, []);
-  if (jogo === 'mona') return comecarMona(s, agora, []);
-  return { ...s, jogo: novoJogo(ligados(s), s.def, agora, []) };
+  return comecar(s, jogoPorId(jogo) ?? jogoPorId('5050')!, agora, []);
 }
 
 export function podeComecar(s: EstadoSala): boolean {
-  return ligados(s).length >= MIN_LIGADOS;
+  // o mínimo de cada jogo vê-se ao começar (o Ragerob joga-se a 2)
+  return ligados(s).length >= Math.min(MIN_LIGADOS, ...LISTA.map((j) => j.min));
 }
 
 const igual = (x: string, y: string) => x.trim().toLowerCase() === y.trim().toLowerCase();
@@ -331,13 +190,32 @@ function traduzir(s: EstadoSala, a: AcaoSala): AcaoSala {
 }
 
 export function reduzSala(s: EstadoSala, acao: AcaoSala, agora: number): EstadoSala {
+  // texto livre dos jogadores passa pelo filtro de palavrões (src/core/filtro.ts) no host
+  const a = acao.tipo === 'tick' || acao.tipo === 'ligados' ? acao : filtrarTextos(acao);
+  return aplicarSaidas(reduzBase(s, a, agora), agora);
+}
+
+/** quem fez a ação (depois dos aliases); null = o próprio host (tick, presença) */
+const autor = (a: AcaoSala): string | null => (a.tipo === 'jogo' ? a.acao.id : 'id' in a ? a.id : null);
+
+function reduzBase(s: EstadoSala, acao: AcaoSala, agora: number): EstadoSala {
   const a = traduzir(s, acao);
+  // um expulso já não faz nada aqui (o host também deixa de abrir as ações dele: ProtocoloHost.barrar)
+  const quem = autor(a);
+  if (quem !== null && a.tipo !== 'entrar' && (expulso(s, quem) || expulso(s, autor(acao) ?? ''))) return s;
   switch (a.tipo) {
     case 'entrar': {
       let nome = a.nome.trim().slice(0, MAX_NOME) || '?';
       let avatar = Math.abs(Math.floor(a.avatar)) % N_AVATARES;
       const mesmoNome = s.jogadores.find((j) => j.id !== a.id && igual(j.nome, nome));
-      if (mesmoNome && !mesmoNome.ligado && !s.jogadores.some((j) => j.id === a.id)) {
+      // voltar pelo nome só para quem estava desligado, e nunca para o lugar de um expulso
+      const voltaPeloNome = !!mesmoNome && !mesmoNome.ligado && !mesmoNome.bot && !expulso(s, mesmoNome.id) && !s.jogadores.some((j) => j.id === a.id);
+      // party fechada / expulso (src/core/membros.ts): `acao.id` é o aparelho, `a.id` o jogador
+      const aparelho = (acao as typeof a).id;
+      const entrada = porta(s, aparelho, a.id, voltaPeloNome);
+      if (entrada === 'expulso') return s;
+      if (entrada === 'fechada') return barrar(s, aparelho);
+      if (mesmoNome && voltaPeloNome) {
         // voltou pelo nome noutro dispositivo: passa a ser essa pessoa
         const r: EstadoSala = { ...s, aliases: { ...s.aliases, [a.id]: mesmoNome.id } };
         return reduzSala(r, { ...a, nome: mesmoNome.nome, avatar: mesmoNome.avatar }, agora);
@@ -366,77 +244,62 @@ export function reduzSala(s: EstadoSala, acao: AcaoSala, agora: number): EstadoS
         const novo: Jogador = { id: a.id, nome, avatar, tag: a.tag, ligado: true, desligadoEm: null, pronto: false };
         r = { ...s, jogadores: [...s.jogadores, novo] };
         // entrou a meio: vota como audiência
-        if (r.jogo && r.jogo.fase !== 'fim') r = { ...r, jogo: { ...r.jogo, audiencia: [...r.jogo.audiencia, a.id] } };
-        if (r.pensa && r.pensa.fase !== 'fim') r = { ...r, pensa: { ...r.pensa, audiencia: [...r.pensa.audiencia, a.id] } };
-        if (r.wifi && r.wifi.fase !== 'fim') r = { ...r, wifi: { ...r.wifi, audiencia: [...r.wifi.audiencia, a.id] } };
-        if (r.sevira && r.sevira.fase !== 'fim') r = { ...r, sevira: { ...r.sevira, audiencia: [...r.sevira.audiencia, a.id] } };
-        if (r.mona && r.mona.fase !== 'fim') r = { ...r, mona: { ...r.mona, audiencia: [...r.mona.audiencia, a.id] } };
-        if (r.maquinas && r.maquinas.fase !== 'fim') r = { ...r, maquinas: { ...r.maquinas, audiencia: [...r.maquinas.audiencia, a.id] } };
-        if (r.pirata && r.pirata.fase !== 'fim') r = { ...r, pirata: { ...r.pirata, audiencia: [...r.pirata.audiencia, a.id] } };
-        if (r.ideias && r.ideias.fase !== 'fim') r = { ...r, ideias: { ...r.ideias, audiencia: [...r.ideias.audiencia, a.id] } };
+        const ativo = jogoEmCurso(r);
+        if (ativo && ativo.g.fase !== 'fim') r = com(r, ativo.j.chave, { ...ativo.g, audiencia: [...ativo.g.audiencia, a.id] });
       }
-      r = escolherVip(r);
+      r = escolherVip(r, agora);
       return passarAoJogo(r, { tipo: 'ligados', ids: ligados(r) }, agora);
     }
     case 'ligados': {
-      const r = escolherVip({
+      const r = escolherVip(
+        {
         ...s,
         jogadores: s.jogadores.map((j) => {
-          const on = !!j.bot || a.ids.includes(j.id);
+          // um expulso pode continuar no canal (a ver o aviso), mas para a party está desligado
+          const on = !!j.bot || (a.ids.includes(j.id) && !expulso(s, j.id));
           if (on === j.ligado) return j;
           return { ...j, ligado: on, desligadoEm: on ? null : agora };
         }),
-      });
+        },
+        agora,
+      );
       return passarAoJogo(r, { tipo: 'ligados', ids: ligados(r) }, agora);
     }
-    case 'definir':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, def: { ...s.def, ...a.def } };
-    case 'definir_pensa':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, defPensa: { ...s.defPensa, ...a.def } };
-    case 'definir_wifi':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, defWifi: { ...(s.defWifi ?? DEF_PADRAO_WIFI), ...a.def } };
-    case 'definir_sevira':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, defSevira: { ...(s.defSevira ?? DEF_PADRAO_SEVIRA), ...a.def } };
-    case 'definir_mona':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, defMona: { ...(s.defMona ?? DEF_PADRAO_MONA), ...a.def } };
-    case 'definir_ideias':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, defIdeias: { ...(s.defIdeias ?? DEF_PADRAO_IDEIAS), ...a.def } };
-    case 'definir_maquinas':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, defMaquinas: { ...(s.defMaquinas ?? DEF_PADRAO_MAQUINAS), ...a.def } };
-    case 'definir_pirata':
-      if (!manda(s, a.id) || jogoAtivo(s)) return s;
-      return { ...s, defPirata: { ...(s.defPirata ?? DEF_PADRAO_PIRATA), ...a.def } };
     case 'idioma':
       if (!manda(s, a.id) || jogoAtivo(s)) return s;
       return { ...s, idioma: a.idioma };
     case 'comecar':
       if (!manda(s, a.id) || jogoAtivo(s) || s.tutorial || !podeComecar(s)) return s;
       if (a.tutorial) return { ...s, tutorial: { jogo: a.jogo ?? '5050', ate: agora + T_TUTORIAL } };
-      return comecarJogo(s, a.jogo, agora);
+      return limparSaidas(comecarJogo(s, a.jogo, agora));
     case 'outra_vez': {
       const j = jogoAtivo(s);
       if (!manda(s, a.id) || j?.fase !== 'fim' || !podeComecar(s)) return s;
-      if (s.pensa) return comecarPensa(s, agora, s.pensa.usadas);
-      if (s.wifi) return comecarWifi(s, agora, s.wifi.usadas);
-      if (s.sevira) return comecarSevira(s, agora, s.sevira.usadas);
-      if (s.mona) return comecarMona(s, agora, s.mona.usadas);
-      if (s.ideias) return comecarIdeias(s, agora, s.ideias.usadas);
-      if (s.pirata) return comecarPirata(s, agora, s.pirata.usadas);
-      if (s.maquinas) return comecarMaquinas(s, agora, s.maquinas.usadas);
-      return { ...s, jogo: novoJogo(ligados(s), s.def, agora, j.usadas) };
+      s = limparSaidas(s);
+      return comecar(s, jogoEmCurso(s)!.j, agora, j.usadas);
     }
-    case 'menu': {
+    case 'menu':
+    case 'acabar': {
       const j = jogoAtivo(s);
-      if (!manda(s, a.id) || (j && j.fase !== 'fim')) return s;
-      return { ...s, jogo: null, pensa: null, wifi: null, sevira: null, mona: null, ideias: null, pirata: null, maquinas: null, jogadores: s.jogadores.map((j) => ({ ...j, pronto: false })) };
+      // "menu" só no fim; "acabar" é a saída do líder a qualquer momento (ex.: saiu alguém de quem o jogo depende)
+      if (!manda(s, a.id) || (a.tipo === 'menu' && j && j.fase !== 'fim')) return s;
+      const semJogo = Object.fromEntries(LISTA.map((x) => [x.chave, null]));
+      return limparSaidas({ ...s, ...semJogo, jogadores: s.jogadores.map((j) => ({ ...j, pronto: false })) });
     }
+    case 'fechar':
+      return manda(s, a.id) ? fecharParty(s, !!a.fechada) : s;
+    case 'expulsar': {
+      if (!manda(s, a.id) || a.alvo === a.id) return s;
+      const r = expulsar(s, a.alvo, agora);
+      // o jogo sabe já quem ficou (ex.: menos de 3 ligados pausa)
+      return r !== s && jogoAtivo(r) ? passarAoJogo(r, { tipo: 'ligados', ids: ligados(r) }, agora) : r;
+    }
+    case 'ausente_seguir':
+      if (!manda(s, a.id) || !(s.ausentes ?? []).some((x) => x.id === a.alvo && x.podeSeguir)) return s;
+      return seguirSem(s, a.alvo, agora);
+    case 'ausente_trocar':
+      if (!manda(s, a.id) || !(s.ausentes ?? []).some((x) => x.id === a.alvo)) return s;
+      return trocarJogador(s, a.alvo, a.por);
     case 'saltar':
       if (!manda(s, a.id) || !s.tutorial) return s;
       return reduzSala({ ...s, tutorial: { ...s.tutorial, ate: agora } }, { tipo: 'tick' }, agora);
@@ -477,80 +340,95 @@ export function reduzSala(s: EstadoSala, acao: AcaoSala, agora: number): EstadoS
       const ficam = s.jogadores.filter(
         (j) => j.ligado || j.desligadoEm === null || agora - j.desligadoEm < TEMPO_DESLIGADO || emJogo.has(j.id),
       );
-      const r = ficam.length === s.jogadores.length ? s : escolherVip({ ...s, jogadores: ficam });
+      const r = escolherVip(ficam.length === s.jogadores.length ? s : { ...s, jogadores: ficam }, agora);
       if (r.tutorial && agora >= r.tutorial.ate) {
         const jogo = r.tutorial.jogo;
         const sem = { ...r, tutorial: null };
         if (!podeComecar(sem)) return sem;
-        return comecarJogo(sem, jogo, agora);
+        return limparSaidas(comecarJogo(sem, jogo, agora));
       }
       return passarAoJogo(r, { tipo: 'tick' }, agora);
+    }
+    default: {
+      // opções de um jogo (`definir` no registo): só o líder, e só fora do jogo
+      const j = LISTA.find((x) => x.definir === a.tipo);
+      if (!j || !('def' in a) || !manda(s, a.id) || jogoAtivo(s)) return s;
+      return com(s, j.chaveDef, { ...(opcoesDe(s, j) as object), ...a.def });
     }
   }
 }
 
-/** o que a TV publica no canal */
-export interface VistaSala {
+/** o que a TV publica no canal; os campos de cada jogo (opções e vista) vêm do registo */
+export interface VistaSala extends VistasJogos {
   codigo: string;
   idioma: Idioma;
   jogadores: Omit<Jogador, 'tag'>[];
   vipId: string | null;
-  def: Def5050;
-  jogo: Vista5050 | null;
-  defPensa: DefPensa;
-  pensa: VistaPensa | null;
-  defWifi?: DefWifi;
-  wifi?: VistaWifi | null;
-  defSevira?: DefSevira;
-  sevira?: VistaSevira | null;
-  defMona?: DefMona;
-  mona?: VistaMona | null;
-  defIdeias?: DefIdeias;
-  ideias?: VistaIdeias | null;
-  defPirata?: DefPirata;
-  pirata?: VistaPirata | null;
-  defMaquinas?: DefMaquinas;
-  maquinas?: VistaMaquinas | null;
   semTv: boolean;
   tutorial: { jogo: string; ate: number } | null;
   aliases: Record<string, string>;
+  /** saídas a meio: quem saiu, quem pode entrar no lugar (espectadores) e se o jogo está à espera */
+  ausentes?: Ausente[];
+  espectadores?: string[];
+  pausaSaida?: boolean;
+  /** quem pode entrar (src/core/membros.ts): o telemóvel barrado ou expulso mostra o aviso */
+  fechada?: boolean;
+  barrados?: string[];
+  expulsos?: string[];
 }
 
+/**
+ * Contexto das marcas de "és tu": muda a cada fase/ronda/item, por isso uma marca não liga o jogador
+ * a outra fase. O host calcula-o do estado e o telemóvel da vista (os campos são os mesmos).
+ */
+export function contextoMarca(s: Pick<EstadoSala, 'codigo'>): string {
+  const ativo = jogoEmCurso(s);
+  if (!ativo) return `${s.codigo}:lobby`;
+  const g = ativo.g as JogoComum & { ronda?: number; atual?: number };
+  return `${s.codigo}:${ativo.j.id}:${g.fase}:${g.ronda ?? ''}:${g.atual ?? ''}`;
+}
+
+/** a marca que este telemóvel procura na vista (com a sua tag secreta) */
+export const minhaMarca = (v: VistaSala, tag: string): string => (tag ? marca(tag, contextoMarca(v)) : '');
+
 export function vistaSala(s: EstadoSala): VistaSala {
-  const tags = new Map(s.jogadores.map((j) => [j.id, j.tag]));
+  const ctx = contextoMarca(s);
+  const segredo = s.segredo ?? s.codigo;
+  const porId = new Map(s.jogadores.map((j) => [j.id, j.tag]));
+  // a tag nunca sai: só a marca dela neste contexto; ids sem tag (ex.: '#verdadeiro') levam uma marca falsa
+  const tags = { get: (id: string) => marca(porId.get(id) || segredo + '|' + id, ctx) };
   return {
     codigo: s.codigo,
     idioma: s.idioma,
     jogadores: s.jogadores.map(({ id, nome, avatar, ligado, desligadoEm, pronto, bot }) => ({ id, nome, avatar, ligado, desligadoEm, pronto, ...(bot ? { bot } : {}) })),
     vipId: s.vipId,
-    def: s.def,
-    jogo: s.jogo ? vista5050(s.jogo, (id) => tags.get(id)) : null,
-    defPensa: s.defPensa,
-    pensa: s.pensa ? vistaPensa(s.pensa, (id) => tags.get(id)) : null,
-    defWifi: s.defWifi ?? DEF_PADRAO_WIFI,
-    wifi: s.wifi ? vistaWifi(s.wifi, (id) => tags.get(id)) : null,
-    defSevira: s.defSevira ?? DEF_PADRAO_SEVIRA,
-    sevira: s.sevira ? vistaSevira(s.sevira, (id) => tags.get(id)) : null,
-    defMona: s.defMona ?? DEF_PADRAO_MONA,
-    mona: s.mona ? vistaMona(s.mona, (id) => tags.get(id)) : null,
-    defIdeias: s.defIdeias ?? DEF_PADRAO_IDEIAS,
-    ideias: s.ideias ? vistaIdeias(s.ideias, (id) => tags.get(id)) : null,
-    defPirata: s.defPirata ?? DEF_PADRAO_PIRATA,
-    pirata: s.pirata ? vistaPirata(s.pirata) : null,
-    defMaquinas: s.defMaquinas ?? DEF_PADRAO_MAQUINAS,
-    maquinas: s.maquinas ? vistaMaquinas(s.maquinas) : null,
+    // cada jogo: as opções e a sua vista pública (null = não está a ser jogado)
+    ...(Object.fromEntries(
+      LISTA.flatMap((j) => {
+        const g = campos(s)[j.chave] as JogoComum | null | undefined;
+        return [
+          [j.chaveDef, opcoesDe(s, j)],
+          [j.chave, g ? j.vista(g, (id) => tags.get(id)) : null],
+        ];
+      }),
+    ) as VistasJogos),
     semTv: !!s.semTv,
     tutorial: s.tutorial ?? null,
     aliases: s.aliases,
+    ausentes: s.ausentes ?? [],
+    espectadores: espectadores(s),
+    pausaSaida: !!s.pausaSaida,
+    fechada: !!s.fechada,
+    barrados: s.barrados ?? [],
+    expulsos: s.expulsos ?? [],
   };
 }
 
 /**
  * Canal privado (jogos de papéis secretos): o que só o telemóvel do jogador `id` pode receber.
- * null = nada de privado (o host não abre canal). Jogos novos ligam-se aqui.
+ * null = nada de privado (o host não abre canal). Cada jogo diz o seu (`privado` no registo).
  */
 export function privadoSala(s: EstadoSala, id: string): unknown {
-  if (s.pirata) return privadoPirata(s.pirata, id);
-  if (s.maquinas) return privadoMaquinas(s.maquinas, id);
-  return null;
+  const ativo = jogoEmCurso(s);
+  return ativo?.j.privado ? ativo.j.privado(ativo.g, id) : null;
 }

@@ -1,5 +1,108 @@
 # Próxima sessão
 
+## 18/11/2026 — Ragerob (jogo 9)
+- `src/jogos/ragerob/`: `pecas.ts` (carroçarias, locomoções, cabeças, 10 módulos, preços, perigos, cores com nome), `regras.ts` (reducer puro: dinheiro, leilão/loja privada, apostas com entrada, torneio, liga Pilotos, controlar 5 s), `fisica.ts` (Matter.js, só na TV: cabeças, módulos com direção fixa, combos, 7 perigos, 3 eventos, arena a encolher a arder, IA por cabeça), `desenho.tsx` (robôs, arena, poças, efeitos em SVG), `tv.tsx`, `telemovel.tsx`, `comuns.tsx`, `definicoes.tsx`, `ragerob.css`, `demo.tsx`.
+- Ligação: entrada `ragerob` em `src/core/registo.ts` (`soTv`, `rr_vidas`/`rr_fim` só da TV pelo `soLider`) e em `src/jogos/ecras.tsx`; `PropsTv` ganhou `acao` (a TV manda ações; passado em `src/tv/Tv.tsx`); `podeComecar` passou a usar o menor mínimo dos jogos (o Ragerob joga-se a 2); catálogo `feito: true`; textos `rr*` em `src/i18n/`; dependência `matter-js` (+ `@types/matter-js`).
+- A física anda pelo relógio real (rAF + reserva de 100 ms), por isso continua com a TV escondida/abrandada.
+- Decisões do utilizador (17/11): leilão 30 s, apostas 20 s, instalar 20 s, combate 90 s e depois a arena encolhe a arder até sobrar 1 (ou nenhum); colocação = ordem de KO (KO ao mesmo tempo = empate); Pilotos: cada um escolhe carroçaria + locomoção + cabeça (20 s; sem escolha = sorteio), bots e quem larga o comando = IA; 9–10 pilotos = 12 robôs; visual da proposta aprovado.
+- Decisões tomadas sem o utilizador (confirmar):
+  - modo normal: 2, 3 ou 4 rondas (4/8/16 robôs; 12 não dá grupos de 4 a passar 2);
+  - o dinheiro gasto (leilão, trocas, controlar) vai para o bolo (assim conserva-se); no Pilotos desaparece;
+  - sobra do bolo no fim: quem apostou no campeão → quem apostou na final → todos por igual;
+  - trocar um módulo: o antigo perde-se; "Instalar" salta-se quando ninguém tem módulos; ofertas do leilão juntas não podem passar do dinheiro;
+  - passam 2 por combate de 4: ordem de KO, empate pelo dano causado; final sem vencedor = mais dano;
+  - Pilotos: recuperação +100 a todos os empatados em último no fim de cada ronda; a IA licita 1 módulo por ronda (preço + 0–50) e instala logo;
+  - pausa fora do combate com menos de 2 ligados; resultado 8 s; rede de segurança: se a TV não mandar o fim em 200 s, ordena pela vida.
+- Testes: `regras.test.ts` (18) + `fisica.test.ts` (2: o combate acaba sempre; o humano conduz).
+- Capturas: `info/progresso/9-ragerob/` (rota dev `#/demo-ragerob?fase=montar|loja|aposta|instalar|combate|resultado|fim&modo=normal|pilotos&ecra=tv|tel[&eu=j2][&zoom=…]`; Playwright + Edge, script no scratchpad da sessão).
+- Por fazer / limites: sem som; o líder pode mandar `rr_vidas`/`rr_fim` (o `soLider` aceita o líder além da TV); sem ecrã ⓘ de ajuda próprio; IA simples (sem desvio fino de perigos).
+
+## Coordenação (17/11, fim da sessão de auditoria)
+- A sessão de auditoria ficou demasiado longa (~700k tokens) e foi arquivada; uma sessão nova "Auditoria · jogos e app" continua o trabalho.
+- Estado (17/11, tarde, coordenação "Auditoria · jogos e app"):
+  - "Segurança da sala" — ✅ acabada e verificada pela coordenação (284 testes, tsc e lint a 0; browser: código de 5 letras, expulsar, fechar/abrir, barrado com aviso);
+  - "Registo de jogos: tirar o código repetido" — ✅ acabado a 18/11 (secção abaixo) e verificado pela coordenação (296 testes, tsc e lint a 0; Mona Lixa sem TV no browser);
+  - "Textos 'Segure' com tocar para mostrar" — ✅ feito a 18/11: `chaveSegurar()` (`src/ui/acessibilidade.ts`) + chaves `prSeguraTocar`, `rmCartaTocar`, `rmVerTocar`, `idSegurar(Tocar)`; ajudas Pirata/Máquinas/Rei e `rdInfoRegras` com `{segurar}`; aviso "Segure 2 s" do Rei escondido no modo tocar. 298 testes, tsc e lint a 0; demos vistas no browser nos dois modos. Modo desligado: a frase das ajudas passou a ser igual nos 3 jogos ("Segure “Identidade” 3 s para ver quem você é.");
+  - cartão "Auditoria: balanceamento dos jogos" — por começar (à espera do utilizador).
+- Passagem do anfitrião sem TV (`src/core/passagem.ts`) e anfitrião a recarregar: ✅ verificados no browser pela coordenação (detalhes em `info/auditoria/2026-11-17.md` → "Verificado pela coordenação").
+- Testes de rede no browser: `.claude/launch.json` → `nob-semhmr` (Vite sem HMR; config no scratchpad da coordenação, pode desaparecer; **não tem o `define` de `__VERSAO__`** do `vite.config.ts`: a app não arranca lá — usar `nob-5199` ou juntar o `define`). O pane do browser não mostra `confirm()` nativo (ver E6).
+- Por propor/confirmar com o utilizador: decisões "tomadas sem o utilizador" dos jogos 1–8 (secções abaixo).
+- Nada tem commit desde 2c4fe63. O utilizador ainda tem de fazer o que está em `info/auditoria/burocracia-playstore.md` (SQL do keep-alive, nome/e-mail na política, Play Console, chave GIPHY de produção, DPA da Supabase).
+
+## 18/11/2026 — Passagem do anfitrião: relógio, rascunhos; nomes dos bonecos em EN
+- ✅ Relógio: o herdeiro retomava na hora da **última vista** (os ~15 s sem anfitrião não contavam → relógio saltava para cima, 32 → 42 s). Agora retoma na hora que os telemóveis viam ao assumir (`Date.now() + desvio`) mais o tempo até `#/criar` arrancar: `horaRetoma(a, agoraLocal)` em `src/core/passagem.ts`, `guardarAssumir` em `useCliente` (`src/core/ligacao.ts`). Teste do caso real (50/50 a 3) em `passagem.test.ts`.
+- ✅ Rascunhos: `src/ui/rascunho.ts` (`useRascunho` = `useState` guardado no `sessionStorage` por grupo código+jogo+ronda; `useSoRascunho(ativo)` no ecrã do jogo apaga o resto fora das fases de escrever, para o "jogar outra vez" começar limpo). Usado no 50/50 (frase sorteada, trocas, textos), Pensa (post-its + final), Mona (desenho + título; título falso), Ideias (problema; desenho + nome + slogan), Se Vira (título + imagens), Wi-Fi (pistas).
+- ✅ Nomes dos bonecos: chave `nomesBonecos` (18 nomes separados por `|`) em `src/i18n/*.json`, `nomeBoneco(n)` em `src/ui/bonecos.tsx` (grelha de `Jogar.tsx` e `aria-label` do desenho).
+- Verificado no browser (Supabase real, Vite sem HMR `nob-semhmr2` → 5196, config no scratchpad desta sessão): 50/50 Ana + Bruno + bot; fechar Ana → Bruno assume em 93 s e pausa, rascunho/frase/trocas iguais; Ana volta → retoma em ~92 s. Repetido ao contrário (fechar Bruno → Ana assume em 66 s, retoma ~65 s). O `nob-semhmr` antigo já não arranca (falta o `define` de `__VERSAO__`).
+- 311 testes, tsc e lint a 0.
+
+## 18/11/2026 — Auditoria E2, E3, E5, E6, T13 (lobby com TV, tutorial na TV, popups)
+- Lobby do líder com TV: um cartão "Jogo e opções" (escolher jogo → só as opções dele, "Mostrar tutorial", "▶ Começar"): `OpcoesComTv` (`src/jogar/MenuJogos.tsx`) + `src/jogar/lobbyTv.ts`.
+- TV: `TutorialTv` em `src/tv/Tv.tsx` (OK/Voltar = saltar). A TV passa a dar aos ecrãs dos jogos a hora do anfitrião (`agora` do `useHost`) em vez de `Date.now`: depois de recarregar a TV, o relógio dela ficava ~15 s atrás dos telemóveis.
+- Popup da app `src/ui/confirmar.tsx` (`Confirmar`) em vez de `confirm()`; também em `src/ui/saidas.tsx` ("Acabar"). Já não há `confirm()` nativo no `src`.
+- `Jogar.tsx`: 6 s à espera → "Party não encontrada" + Voltar (`useEsgotado`).
+- Versão: `package.json` (0.3.0) → `__VERSAO__` (`vite.config.ts`, `define`). Ao subir a versão do APK, mudar só o `package.json`.
+- CSS: `select` com o estilo dos `input`; checkboxes com tamanho próprio (antes esticavam a 100%).
+- Por fazer: OK na TV sobre o jogo em destaque não sabe da caixa do tutorial (precisava de um campo na sala).
+
+## 18/11/2026 — Registo de jogos (auditoria §9)
+- **Jogo novo, como ligar** (nada mais em `sala.ts`, `Tv.tsx`, `Jogar.tsx`, `MenuJogos.tsx` ou `saidas.ts`):
+  1. pasta `src/jogos/<jogo>/` com `regras.ts` (estado com `fase`, `terminaEm`, `pausaRestante`, `participantes`, `audiencia`, `usadas`), `tv.tsx`, `telemovel.tsx`, `definicoes.tsx`;
+  2. entrada em `JOGOS` de `src/core/registo.ts`: `id`, `chave` (campo na sala), `chaveDef`, `definir` (ação das opções), `padrao`, `min`/`max`, `soTv?`, `novo`, `reduz`, `aceita` (as ações do jogo), `soLider?`, `vista`, `privado?`, `ganchos?` (saídas a meio). Os tipos de `EstadoSala`, `VistaSala` e `AcaoSala` saem daqui sozinhos;
+  3. entrada em `ECRAS` de `src/jogos/ecras.tsx` (o TypeScript obriga): `tv`, `telemovel`, `opcoes` (nome + render), `vibrar`, `versaoPrivado?`;
+  4. linha no menu: `CATALOGO` em `src/core/jogos.ts` (com `feito: true`).
+- O teste `src/core/registo.test.ts` corre para todos os jogos do registo: a vista pública não leva tags nem segredos (papéis do Pirata/Máquinas, cartas do Rei, palavras do Wi-Fi, mão e pontos das Máquinas). Num jogo novo com segredos, juntar uma linha a `SEGREDOS`.
+- Helpers comuns em `src/core/jogo.ts`: `podio`, `irPara`, `pausaPorFalta`, `quantosLigados`, `normalizar` (usados pelos 9 jogos; o `irPara` do Se Vira! e do Wi-Fi ficaram locais, porque tratam o relógio do fim de outra maneira).
+- As opções do 50/50 passaram de `src/tv/Tv.tsx` para `src/jogos/5050/definicoes.tsx` (`Definicoes5050`).
+- O Ragerob ainda não está ligado à sala: entra no registo quando for ligado.
+- 296 testes verdes (12 novos), tsc e lint a 0. Browser: com TV (50/50: opções, enviar, "é a sua", voto de bot) e sem TV (menu, Pirata com papel pelo canal privado). Sem commit.
+
+## 17/11/2026 — Segurança da sala (T8)
+- Código da sala com 5 letras (`codigoSala`, `CODIGO_VALIDO` 4–6 em `src/core/ids.ts`).
+- Fechar party e expulsar: regras puras em `src/core/membros.ts` (chamadas por `reduzSala`: `entrar`, `fechar`, `expulsar`; estado `fechada`/`barrados`/`expulsos`); o host barra id + chave (`ProtocoloHost.barrar`, chamado em `useHost.despachar`); UI em `src/ui/membros.tsx` (popup do jogador no lobby, botão fechar, "👥 Jogadores" em jogo, avisos de expulso/à porta).
+- **Registo de jogos**: ao refazer `sala.ts`, manter o guarda de expulsos no topo de `reduzBase`, a `porta()` no `entrar` e o filtro de expulsos no `ligados`.
+- 284 testes verdes (10 novos); tsc e lint a 0. Verificado no browser (TV + 3 telemóveis): fechar/abrir, barrado com aviso, expulsar no lobby e a meio do 50/50. Sem commit.
+
+## 17/11/2026 — Auditoria + "Segredos e segurança"
+- Relatório: `info/auditoria/2026-11-17.md` (achados por jogo e por tema; topo = o que já foi corrigido).
+- Corrigido: sorteios com sal secreto (`src/core/ids.ts`); vista assinada pela TV, ações cifradas/autenticadas e sem repetição, privados cifrados por aparelho (`src/core/cripto.ts`, `protocolo.ts`, `ligacao.ts`, `privado.ts`; dependências novas `@noble/curves`, `@noble/ciphers`, `@noble/hashes`); marcas em vez de tags nas vistas (`contextoMarca`/`minhaMarca`); Wi-Fi pelo privado; Máquinas sem pontos a meio; Mona sem placa denunciada; 50/50 com o autor anónimo nas caixinhas.
+- O QR da TV leva `&k=<impressão>`; links antigos sem `k` continuam a dar (confia na 1.ª TV).
+- Jogos novos: segredos só em `privadoSala`; "és tu" só por `tagDe` (que já devolve a marca); nunca `agora` como única fonte de sorte (o `baralhar` já tem o sal).
+- 222 testes verdes; tsc e lint a 0. Verificado no browser com o Supabase real. Sem commit.
+- Ecrã único sem TV feito: `src/ui/ecraunico.tsx` (`Espera`, `Progresso`); sem separadores "Eu / Painel" em nenhum jogo. Jogos novos: à espera → `<Espera semTv texto palco>`; com ação → ação + `<Progresso>`; o palco compacto por baixo quando faz sentido.
+- Saídas/entradas a meio feitas: `src/core/saidas.ts` (tolerância 10 s, pausa se faz falta, líder decide: trocar por espectador / seguir sem / acabar) + `src/ui/saidas.tsx`. **Jogo novo**: se alguém lhe faz falta, junta `importanteX`, `sairX` (e `foraX`/`podeSeguirSemX` se precisar) em `GANCHOS` de `saidas.ts`. Encravos do Rei, 50/50, Wi-Fi e Se Vira corrigidos.
+- Acessibilidade feita: `src/ui/acessibilidade.ts` (teclado e "tocar para mostrar" nos botões de segurar, "texto grande"), contraste, foco, movimento reduzido, nomes acessíveis. **Jogo novo com "segurar para ver"**: usar `eventosSegurar`.
+- Burocracia (parte do código) feita: fontes locais, política de privacidade (`app/public/privacidade.html`), links do Se Vira! desligados por defeito, filtro de palavrões (`src/core/filtro.ts`). O resto é do utilizador: `info/auditoria/burocracia-playstore.md`. **Decisão do utilizador (17/11): público-alvo 13+** (fora do programa "Famílias"; a GIPHY pode ficar).
+- Keep-alive: `.github/workflows/keepalive.yml` (seg. e qui.) lê `public.keepalive`; o utilizador tem de criar a tabela (SQL em `info/auditoria/burocracia-playstore.md`) e fazer push.
+- Copyright feito (decisões do utilizador): Máquinas com números próprios (7🔧/12💥, veto e IA-Piloto aos 4💥, poderes novos); Rei com nomes novos (Vidente, Caçador/Fugitivo/Sósia, Sapo Enfeitiçado); "Senha do Wi-Fi" mantém o nome.
+- Próximo (do relatório): balanceamento; segurança do código da sala; registo de jogos.
+
+## 17/11/2026 — O Rei e o Dragão (jogo 8)
+- `src/jogos/rei-dragao/`: `regras.ts` (reducer puro), `tv.tsx`, `telemovel.tsx` (Eu/Painel sem TV; Identidade a segurar 3 s; ℹ️ Informações), `comuns.tsx` (`Castelos` = 2 torres + ponte + relógio; `Segurar` vem da Revolução), `definicoes.tsx`, `rei.css`, `demo.tsx`.
+- Canal privado: o mesmo (`privadoSala` → `privadoRei`: carta, equipa real, batata, pedidos/trocas, voto, reféns do líder). A vista tem `seq` (muda a cada ação) para os telemóveis voltarem a pedir. Pirata e Revolução intactos.
+- Sala: `EstadoSala.rei`/`defRei`, `definir_rei`, `comecar` com `jogo: 'rei'`; ações `rd_*`. Catálogo: `feito: true`, 6–24, com e sem TV. `src/core/jogos.test.ts`: o exemplo "em breve" passou do Rei para o Ragerob.
+- Decisões do utilizador (17/11):
+  - visual: **duas torres** (Sala 1 azul, Sala 2 vermelha) **ligadas por uma ponte**; à meia-noite o boneco do jogador Dragão vira dragão e cospe fogo na torre dele (não há dragão a dormir);
+  - equipas: 🔵 **Corte / Court**, 🔴 **Rebeldes / Rebels**; o papel 😤 Rebelde chama-se **Duque Rebelde / Rebel Duke**;
+  - Rei e Dragão sempre; o resto são membros simples da Corte/Rebeldes; extras ligam/desligam um a um nas opções avançadas; ajuste "Rebeldes a mais/menos" (−2…+2; padrão equilibrado);
+  - Escudeiro/Domador: só objetivo próprio (+500), não decidem a vitória;
+  - **sem troca mútua** (nem botão "Trocar com…"): quem tem a 🥔 segura "Mostrar carta", ao largar escolhe a quem mostrou, e essa pessoa aceita (fica com a batata) ou recusa;
+  - "Mostrar cor" e "Mostrar carta" ficam em baixo; é preciso segurar 2 s (barra de progresso); toque curto = aviso "Segure 2 s para revelar"; a carta some ao largar;
+  - o líder nunca é refém e continua líder; Traidor: carta de uma cor, joga pela outra; Gémeos e Rivais: um 🔵 e um 🔴.
+- Decisões tomadas sem o utilizador (confirmar):
+  - extras até metade dos lugares (sem Rei/Dragão), sorteados entre os ligados; extras de cor livre vão para a equipa a que faltam mais;
+  - salas e líderes sorteados; "Pronto"/"OK" sem limite de tempo (quem desliga deixa de contar); líderes mostrados 6 s;
+  - troca de reféns também na última ronda; fase da troca 30 s ou até todos os reféns carregarem "Cheguei";
+  - votação de líder: pode mudar o voto; maioria absoluta dos que estão na sala; ao trocar de líder, os reféns escolhidos apagam-se;
+  - os 🔵🔴 só ganham o +500 do papel se a equipa ganhou; quem fica com a batata no fim perde tudo (0 pontos);
+  - Arqueiro: +1000 se apontar ao Alvo; aposta/alvo 30 s (acaba cedo); sem Apostador nem Arqueiro, salta direto para a meia-noite;
+  - "Mostrar cor/carta" é só local (não muda o estado); quem pediu para passar a 🥔 pode cancelar; pausa abaixo de 3 ligados; sem sons ainda.
+- Conteúdo: o jogo não precisa (só textos em `src/i18n/`, pt-BR + en).
+- Testes: `regras.test.ts` (16) + `sala.test.ts` (2). 220 verdes; tsc e lint a 0.
+- Verificado no browser (sem TV, Supabase real, líder + 5 bots): Pronto → cartas privadas certas para cada bot → líderes → votação de líder (2 de 3) → reféns nos últimos 30 s → troca com "Cheguei" → rondas seguintes pelo tempo até à meia-noite. A 🥔 só pelos testes e pela demo (não calhou no sorteio).
+- Capturas: `info/progresso/8-rei-dragao/` (rota dev `#/demo-rei?fase=ir|carta|lider|ronda|refens|batata|votar|troca|aposta|fim&ecra=tv|tel[&eu=j1][&id=1][&semtv=1][&zoom=1.2136]`; Edge headless `--screenshot`, 500 px + zoom para o telemóvel).
+- Próximo: jogo 9, Ragerob (visual por decidir: propor 2–3).
+
 ## 16/11/2026 — Revolução das Máquinas (jogo 7)
 - `src/jogos/revolucao-maquinas/`: `regras.ts` (reducer puro), `tv.tsx`, `telemovel.tsx` (Eu/Painel sem TV; Identidade a segurar 3 s), `comuns.tsx` (`Consola`: 2 manómetros + bateria das falhas + fila de postos; `Segurar`), `definicoes.tsx`, `maquinas.css`, `demo.tsx`.
 - Canal privado: o mesmo do Pirata (`privadoSala` → `privadoMaquinas`: papel, aliados, IA, mão de cartas, veto, resultado do 🔍/👀). Pirata intacto.

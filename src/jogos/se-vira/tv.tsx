@@ -42,7 +42,8 @@ export function TvSevira({
         {v.fase === 'apresentar' && <span>{t('svSlideDe', { n: v.slide + 1, t: v.nSlides })}</span>}
         {v.fase !== 'fim' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {v.fase === 'preparar' && (
         <div class="sv-centro">

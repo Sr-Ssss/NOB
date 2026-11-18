@@ -6,6 +6,7 @@ import { Avatar } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { REP_VENCE, SAB_VENCE, poderDe, type PapelM, type Poder, type VistaMaquinas } from './regras';
 import './maquinas.css';
+import { eventosSegurar } from '../../ui/acessibilidade';
 
 export interface PropsMaquinas {
   sala: VistaSala;
@@ -30,21 +31,22 @@ export function Segurar({ rotulo, children, aberta = false }: { rotulo: string; 
   return (
     <>
       {estado === 'mostra' && (
-        <div class="rm-segredo" role="dialog">
+        <div class="rm-segredo" role="dialog" aria-live="assertive">
           {children}
         </div>
       )}
       <button
         class={'rm-botao-id' + (estado !== 'nada' ? ' on' : '')}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          setEstado('segura');
-          tempo.current = window.setTimeout(() => setEstado('mostra'), T_SEGURAR);
-        }}
-        onPointerUp={largar}
-        onPointerLeave={largar}
-        onPointerCancel={largar}
-        onContextMenu={(e) => e.preventDefault()}
+        {...eventosSegurar({
+          segurar: (e) => {
+            e.preventDefault();
+            setEstado('segura');
+            tempo.current = window.setTimeout(() => setEstado('mostra'), T_SEGURAR);
+          },
+          largar,
+          mostrar: () => setEstado('mostra'),
+          aberto: estado === 'mostra',
+        })}
       >
         {estado === 'segura' ? t('rmSegurando') : rotulo}
       </button>

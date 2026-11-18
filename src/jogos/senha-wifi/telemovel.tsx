@@ -5,6 +5,7 @@ import { nomeDe } from '../5050/tv';
 import { Fichas, PlacarWifi, Resultado, Router, Tempo, faseTexto, nomeEquipa, rondaTexto, textoPista } from './comuns';
 import { MAX_PISTA, outro, pistaBloqueada, textoPalavra, type Lado, type PrivadoWifi } from './regras';
 import { Palco, type PropsWifi } from './tv';
+import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
@@ -41,7 +42,8 @@ function Historico({ v, l }: { v: PropsWifi['v']; l: Lado }) {
 
 /** ecrã do Criptógrafo: código grande + 3 campos (número → pista) */
 function Criptografo({ sala, v, p, enviar }: { sala: PropsWifi['sala']; v: PropsWifi['v']; p: PrivadoWifi; enviar: Enviar }) {
-  const [pistas, setPistas] = useState(['', '', '']);
+  // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
+  const [pistas, setPistas] = useRascunho(`${sala.codigo}:wifi:${v.ronda}`, 'pistas', ['', '', ''], (x) => Array.isArray(x) && x.length === 3);
   const codigo = p.codigo!;
   const mal = pistas.map((x) => pistaBloqueada(x, p.palavras, sala.idioma));
   const ok = pistas.every((x) => x.trim()) && mal.every((m) => !m);
@@ -122,8 +124,7 @@ function RespostaPartilhada({ sala, v, eu, enviar }: { sala: PropsWifi['sala']; 
   );
 }
 
-function Eu({ sala, v, eu, tag, enviar }: PropsWifi & { eu: string; tag: string; enviar: Enviar }) {
-  const p = v.privado[tag];
+function Eu({ sala, v, eu, privado: p, enviar }: PropsWifi & { eu: string; privado: PrivadoWifi | null; enviar: Enviar }) {
   const lider = sala.vipId === eu;
 
   if (v.fase === 'equipas') {
@@ -165,7 +166,8 @@ function Eu({ sala, v, eu, tag, enviar }: PropsWifi & { eu: string; tag: string;
     return (
       <>
         <p class="centro">{t('audiencia')}</p>
-        {v.fase !== 'palavras' && (['b', 'p'] as Lado[]).map((l) => <Historico key={l} v={v} l={l} />)}
+        {/* sem TV os routers por baixo já mostram os históricos */}
+        {v.fase !== 'palavras' && !sala.semTv && (['b', 'p'] as Lado[]).map((l) => <Historico key={l} v={v} l={l} />)}
       </>
     );
   }
@@ -215,7 +217,7 @@ function Eu({ sala, v, eu, tag, enviar }: PropsWifi & { eu: string; tag: string;
         </div>
       )}
 
-      {v.fase !== 'palavras' && (
+      {v.fase !== 'palavras' && !sala.semTv && (
         <>
           {!intercetar && <Historico v={v} l={o} />}
           <Historico v={v} l={p.lado} />
@@ -225,11 +227,12 @@ function Eu({ sala, v, eu, tag, enviar }: PropsWifi & { eu: string; tag: string;
   );
 }
 
-export function TelemovelWifi({ sala, v, agora, eu, tag, enviar }: PropsWifi & { eu: string; tag: string; enviar: Enviar }) {
+/** `privado`: as palavras da equipa (e o código, ao Criptógrafo), pelo canal privado */
+export function TelemovelWifi({ sala, v, agora, eu, privado, enviar }: PropsWifi & { eu: string; privado: PrivadoWifi | null; enviar: Enviar }) {
   const [ajuda, setAjuda] = useState(false);
-  const [painel, setPainel] = useState(false);
   const lider = sala.vipId === eu;
-  const p = v.privado[tag];
+  const p = privado;
+  useSoRascunho(v.fase === 'pistas' ? `${sala.codigo}:wifi:${v.ronda}` : null);
 
   if (v.fase === 'fim') {
     return (
@@ -279,18 +282,15 @@ export function TelemovelWifi({ sala, v, agora, eu, tag, enviar }: PropsWifi & {
           <b>{t('swOpcoesNome')}</b> — {t('ajudaWifi')}
         </div>
       )}
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
+      <Eu sala={sala} v={v} agora={agora} eu={eu} privado={privado} enviar={enviar} />
+      {/* sem TV, um só ecrã: os 2 routers (o que a TV mostraria) por baixo */}
       {sala.semTv && v.ronda > 0 && (
-        <div class="separadores">
-          <button class={painel ? '' : 'on'} onClick={() => setPainel(false)}>
-            {t('swEu')}
-          </button>
-          <button class={painel ? 'on' : ''} onClick={() => setPainel(true)}>
-            {t('swPainel')}
-          </button>
+        <div class="palco-tel">
+          <Palco sala={sala} v={v} agora={agora} />
         </div>
       )}
-      {painel && sala.semTv && v.ronda > 0 ? <Palco sala={sala} v={v} agora={agora} /> : <Eu sala={sala} v={v} agora={agora} eu={eu} tag={tag} enviar={enviar} />}
     </div>
   );
 }

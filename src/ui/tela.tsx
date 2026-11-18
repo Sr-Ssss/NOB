@@ -60,7 +60,8 @@ export function Quadro({ tracos, animar = false, ms = 2500, class: c = '', plant
     const cv = ref.current;
     if (!cv) return;
     const total = totalPontos(tracos);
-    const semAnim = (window as unknown as { nobSemAnimacao?: boolean }).nobSemAnimacao;
+    // sem animação: capturas (demo) e quem pediu menos movimento ao sistema
+    const semAnim = (window as unknown as { nobSemAnimacao?: boolean }).nobSemAnimacao || matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (!animar || !total || semAnim) return pintar(cv, tracos, Infinity, planta);
     const t0 = performance.now();
     let id = 0;

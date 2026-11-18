@@ -45,8 +45,8 @@ describe('Revolução das Máquinas', () => {
 
   it('baralho 6 🔧 + 11 💥; a vista nunca leva papéis nem cartas', () => {
     const e = novo(7);
-    expect(e.baralho.filter((c) => c === 'R').length).toBe(6);
-    expect(e.baralho.length).toBe(17);
+    expect(e.baralho.filter((c) => c === 'R').length).toBe(7);
+    expect(e.baralho.length).toBe(19);
     const g = governo(e);
     expect(g.fase).toBe('comandante');
     const txt = JSON.stringify(vistaMaquinas(g));
@@ -124,6 +124,9 @@ describe('Revolução das Máquinas', () => {
     expect(e.descartes.length).toBe(2);
     expect(e.pontos[c]).toBe(e.papeis[c] === 'tripulacao' ? 100 : 0);
     expect(e.pontos[p]).toBe(e.papeis[p] === 'tripulacao' ? 100 : 0);
+    // a meio do jogo a vista não leva pontos (denunciariam a equipa)
+    expect(vistaMaquinas(e).pontos).toEqual({});
+    expect(vistaMaquinas(e).podio).toEqual([]);
   });
 
   it('baralho acaba: volta a baralhar com os descartes', () => {
@@ -137,13 +140,13 @@ describe('Revolução das Máquinas', () => {
   });
 
   it('poderes por tabela', () => {
-    expect([1, 2, 3, 4, 5].map((s) => poderDe(5, s))).toEqual([null, null, 'espiar', 'ejetar', 'ejetar']);
+    expect([1, 2, 3, 4, 5].map((s) => poderDe(5, s))).toEqual([null, 'investigar', 'espiar', 'ejetar', 'ejetar']);
     expect([1, 2, 3, 4, 5].map((s) => poderDe(8, s))).toEqual([null, 'investigar', 'eleger', 'ejetar', 'ejetar']);
-    expect([1, 2, 3, 4, 5].map((s) => poderDe(9, s))).toEqual(['investigar', 'investigar', 'eleger', 'ejetar', 'ejetar']);
+    expect([1, 2, 3, 4, 5].map((s) => poderDe(9, s))).toEqual([null, 'investigar', 'eleger', 'ejetar', 'ejetar']);
   });
 
   it('🔍 investigar: só o Comandante vê a equipa; 📢 eleger: o eleito é o próximo e a rotação continua', () => {
-    let e = novo(9);
+    let e = { ...novo(9), sabotagens: 1 };
     e = { ...e, papeis: Object.fromEntries(e.participantes.map((id, i) => [id, i === 8 ? 'ia' : 'tripulacao'])) };
     e = tick(meter(e, 'S'));
     expect(e.fase).toBe('poder');
@@ -195,12 +198,12 @@ describe('Revolução das Máquinas', () => {
     }
   });
 
-  it('veto (≥5 Sabotagens): aceite = falha +1; recusado = o Piloto escolhe', () => {
-    let e = { ...novo(7), sabotagens: 4 };
-    e = governo(e, sem(e, 'ia').find((id) => id !== e.participantes[1]));
+  it('veto (≥4 Sabotagens): aceite = falha +1; recusado = o Piloto escolhe', () => {
+    let e = { ...novo(7), sabotagens: 3 };
+    e = governo(e, sem(e, 'ia').find((id) => id !== e.participantes[0] && id !== e.participantes[1]));
     e = r(e, { tipo: 'rm_descartar', id: e.comandante, i: 0 });
     expect(privadoMaquinas(e, e.piloto!)!.podeVetar).toBe(false);
-    e = { ...e, sabotagens: 5 };
+    e = { ...e, sabotagens: 4 };
     expect(privadoMaquinas(e, e.piloto!)!.podeVetar).toBe(true);
     const v = r(e, { tipo: 'rm_vetar', id: e.piloto! });
     expect(v.fase).toBe('veto');
@@ -210,11 +213,11 @@ describe('Revolução das Máquinas', () => {
     const ac = r(v, { tipo: 'rm_veto', id: v.comandante, aceita: true });
     expect(ac.fase).toBe('discussao');
     expect(ac.falhas).toBe(1);
-    expect(ac.sabotagens).toBe(5);
+    expect(ac.sabotagens).toBe(4);
     expect(tick(v).fase).toBe('piloto'); // sem resposta = recusado
   });
 
-  it('vitórias e pontos: 5 🔧, 6 💥, IA Piloto com ≥3 💥', () => {
+  it('vitórias e pontos: 5 🔧, 6 💥, IA Piloto com ≥4 💥', () => {
     let e = { ...novo(6), reparacoes: 4 };
     e = meter(e, 'R');
     expect(e.vencedor).toBe('tripulacao');
@@ -227,8 +230,12 @@ describe('Revolução das Máquinas', () => {
     expect(s.pontos[ia]).toBeGreaterThanOrEqual(1500);
     expect(vistaMaquinas(s).papeis[ia]).toBe('ia');
 
+    // com 3 💥 a IA como Piloto ainda não ganha; com 4 sim
     let a = { ...novo(6), sabotagens: 3 };
     a = tick(a);
+    const iaB = a.participantes.find((id) => a.papeis[id] === 'ia')!;
+    if (iaB !== a.comandante) expect(governo(a, iaB).motivo).toBeNull();
+    a = { ...a, sabotagens: 4 };
     const iaA = a.participantes.find((id) => a.papeis[id] === 'ia')!;
     if (iaA !== a.comandante) {
       a = governo(a, iaA);

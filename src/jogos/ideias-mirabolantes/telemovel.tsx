@@ -7,14 +7,17 @@ import type { Traco } from '../../ui/tracos';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { ETAPAS, MAX_NOME, MAX_PROBLEMA, MAX_SLOGAN, NOTAS, VALOR_NOTA, type Problema } from './regras';
 import { ETAPAS_TXT, Palco, PlacarIdeias, type PropsIdeias } from './comuns';
+import { Espera, Progresso } from '../../ui/ecraunico';
+import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
 
 /** problema sorteado, editável */
-function EscreverProblema({ sorteado, idioma, enviar }: { sorteado: Problema | undefined; idioma: string; enviar: Enviar }) {
+function EscreverProblema({ sorteado, idioma, enviar, grupo }: { sorteado: Problema | undefined; idioma: string; enviar: Enviar; grupo: string }) {
   const original = sorteado ? (idioma === 'en' ? sorteado.en : sorteado.pt) : '';
-  const [texto, setTexto] = useState(original);
+  // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
+  const [texto, setTexto] = useRascunho(grupo, 'texto', original);
   return (
     <div class="cartao im-tel">
       <label>{t('imProblema')}</label>
@@ -30,10 +33,10 @@ function EscreverProblema({ sorteado, idioma, enviar }: { sorteado: Problema | u
 }
 
 /** canvas sobre papel quadriculado + nome + slogan */
-function Inventar({ problema, enviar }: { problema: string; enviar: Enviar }) {
-  const [tracos, setTracos] = useState<Traco[]>([]);
-  const [nome, setNome] = useState('');
-  const [slogan, setSlogan] = useState('');
+function Inventar({ problema, enviar, grupo }: { problema: string; enviar: Enviar; grupo: string }) {
+  const [tracos, setTracos] = useRascunho<Traco[]>(grupo, 'tracos', []);
+  const [nome, setNome] = useRascunho(grupo, 'nome', '');
+  const [slogan, setSlogan] = useRascunho(grupo, 'slogan', '');
   const [aviso, setAviso] = useState(false);
   return (
     <div class="im-tel">
@@ -149,22 +152,25 @@ function Investir({ sala, v, eu, enviar }: Omit<PropsIdeias, 'agora'> & { eu: st
 
 function Eu({ sala, v, eu, tag, enviar }: Omit<PropsIdeias, 'agora'> & { eu: string; tag: string; enviar: Enviar }) {
   const participa = v.participantes.includes(eu);
-  const espero = (txt: string) => <div class="cartao centro">{txt}</div>;
-  const palco = sala.semTv && <Palco sala={sala} v={v} compacto />;
+  // sem TV, à espera vê-se o que a TV mostraria (um só ecrã)
+  const palco = <Palco sala={sala} v={v} compacto />;
+  const espero = (txt: string) => <Espera semTv={sala.semTv} texto={txt} palco={palco} />;
+  const progresso = <Progresso semTv={sala.semTv} ids={v.espera} feitos={v.enviaram} />;
 
   if (v.fase === 'problema') {
     if (!participa) return espero(t('imPlateia'));
     if (v.enviaram.includes(eu)) return espero('✅ ' + t('imEnviado'));
-    return <EscreverProblema sorteado={v.sorteados[tag]} idioma={sala.idioma} enviar={enviar} />;
+    return <>{progresso}<EscreverProblema grupo={`${sala.codigo}:ideias:p`} sorteado={v.sorteados[tag]} idioma={sala.idioma} enviar={enviar} /></>;
   }
   if (v.fase === 'inventar') {
     if (!v.apresentadores.includes(eu)) return espero(participa ? t('imNaoApresenta') : t('imPlateia'));
     if (v.enviaram.includes(eu)) return espero('✅ ' + t('imEnviado'));
-    return <Inventar problema={v.recebidos[tag] ?? '?'} enviar={enviar} />;
+    return <>{progresso}<Inventar grupo={`${sala.codigo}:ideias:i`} problema={v.recebidos[tag] ?? '?'} enviar={enviar} /></>;
   }
   if (v.fase === 'pitch' && v.pitch) {
-    if (v.pitch.inventor === eu) return <Comando key={v.atual} etapa={v.etapa} enviar={enviar} />;
-    return palco || espero(t('imOuvir', { nome: nomeDe(sala, v.pitch.inventor) }));
+    // o inventor vê, por baixo dos botões, o que os outros estão a ver
+    if (v.pitch.inventor === eu) return <><Comando key={v.atual} etapa={v.etapa} enviar={enviar} />{sala.semTv && palco}</>;
+    return espero(t('imOuvir', { nome: nomeDe(sala, v.pitch.inventor) }));
   }
   if (v.fase === 'investir') {
     if (v.enviaram.includes(eu)) return espero('✅ ' + t('imConfirmado'));
@@ -173,6 +179,7 @@ function Eu({ sala, v, eu, tag, enviar }: Omit<PropsIdeias, 'agora'> & { eu: str
       <>
         {!participa && <p class="centro mini">{t('imPlateia')}</p>}
         <Investir sala={sala} v={v} eu={eu} enviar={enviar} />
+        {progresso}
       </>
     );
   }
@@ -182,9 +189,12 @@ function Eu({ sala, v, eu, tag, enviar }: Omit<PropsIdeias, 'agora'> & { eu: str
 
 export function TelemovelIdeias({ sala, v, agora, eu, tag, enviar }: PropsIdeias & { eu: string; tag: string; enviar: Enviar }) {
   const [ajuda, setAjuda] = useState(false);
-  const [painel, setPainel] = useState(false);
   const lider = sala.vipId === eu;
   const fim = v.fase === 'fim';
+  const escreve = !v.enviaram.includes(eu);
+  useSoRascunho(
+    escreve && v.fase === 'problema' && v.participantes.includes(eu) ? `${sala.codigo}:ideias:p` : escreve && v.fase === 'inventar' && v.apresentadores.includes(eu) ? `${sala.codigo}:ideias:i` : null,
+  );
   return (
     <div class="pag jogo-ideias">
       <div class="topo">
@@ -199,17 +209,8 @@ export function TelemovelIdeias({ sala, v, agora, eu, tag, enviar }: PropsIdeias
           <b>{t('imOpcoesNome')}</b> — {t('ajudaIdeias')}
         </div>
       )}
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
-      {sala.semTv && !fim && (
-        <div class="separadores">
-          <button class={painel ? '' : 'on'} onClick={() => setPainel(false)}>
-            {t('swEu')}
-          </button>
-          <button class={painel ? 'on' : ''} onClick={() => setPainel(true)}>
-            {t('swPainel')}
-          </button>
-        </div>
-      )}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
       {fim ? (
         <>
           <h1 class="pergunta">{t('fim')}</h1>
@@ -227,8 +228,6 @@ export function TelemovelIdeias({ sala, v, agora, eu, tag, enviar }: PropsIdeias
             </div>
           )}
         </>
-      ) : painel && sala.semTv ? (
-        <Palco sala={sala} v={v} compacto />
       ) : (
         <Eu sala={sala} v={v} eu={eu} tag={tag} enviar={enviar} />
       )}

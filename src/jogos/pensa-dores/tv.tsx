@@ -29,7 +29,8 @@ export function TvPensa({ sala, v, agora, selFim = 0, onOutraVez, onMenu }: Prop
   return (
     <div class="pag tv jogo-pensa">
       <Topo v={v} agora={agora} />
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {(v.fase === 'escrever' || v.fase === 'final_escrever') && (
         <Quadro>

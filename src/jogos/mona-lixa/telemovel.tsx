@@ -6,15 +6,21 @@ import { Tela } from '../../ui/tela';
 import type { Traco } from '../../ui/tracos';
 import { MAX_TITULO, type Titulo } from './regras';
 import { Moldura, Palco, PlacarMona, type PropsMona } from './comuns';
+import { Espera, Progresso } from '../../ui/ecraunico';
+import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
 
+/** rascunhos (src/ui/rascunho.ts): o desenho é por ronda, o título falso por obra */
+const grupoMona = (codigo: string, v: PropsMona['v'], qual: 'd' | 'i') => (qual === 'd' ? `${codigo}:mona:${v.ronda}:d` : `${codigo}:mona:${v.ronda}:${v.atual}:i`);
+
 /** tela branca 4:3 + título sorteado (editável) + Enviar */
-function Desenhar({ sorteado, idioma, enviar }: { sorteado: Titulo | undefined; idioma: string; enviar: Enviar }) {
+function Desenhar({ sorteado, idioma, enviar, grupo }: { sorteado: Titulo | undefined; idioma: string; enviar: Enviar; grupo: string }) {
   const original = sorteado ? (idioma === 'en' ? sorteado.en : sorteado.pt) : '';
-  const [tracos, setTracos] = useState<Traco[]>([]);
-  const [titulo, setTitulo] = useState(original);
+  // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
+  const [tracos, setTracos] = useRascunho<Traco[]>(grupo, 'tracos', []);
+  const [titulo, setTitulo] = useRascunho(grupo, 'titulo', original);
   const [editar, setEditar] = useState(false);
   const [aviso, setAviso] = useState(false);
   return (
@@ -51,8 +57,8 @@ function Desenhar({ sorteado, idioma, enviar }: { sorteado: Titulo | undefined; 
   );
 }
 
-function Inventar({ recusado, enviar }: { recusado: boolean; enviar: Enviar }) {
-  const [texto, setTexto] = useState('');
+function Inventar({ recusado, enviar, grupo }: { recusado: boolean; enviar: Enviar; grupo: string }) {
+  const [texto, setTexto] = useRascunho(grupo, 'texto', '');
   return (
     <div class="cartao mona-tel">
       <label>{t('mlInventar')}</label>
@@ -74,23 +80,25 @@ function Eu({ sala, v, eu, tag, enviar }: Omit<PropsMona, 'agora'> & { eu: strin
   const souAutor = v.autorTag === tag;
   const chave = `${v.ronda}:${v.atual}`;
   const meu = escolha?.chave === chave ? escolha.i : null;
-  const espero = (txt: string) => <div class="cartao centro">{txt}</div>;
+  // sem TV, à espera vê-se o que a TV mostraria (um só ecrã)
+  const espero = (txt: string) => <Espera semTv={sala.semTv} texto={txt} palco={<Palco sala={sala} v={v} compacto />} />;
 
   if (v.fase === 'desenhar') {
     if (!participa) return espero(t('mlPlateia'));
     if (v.enviaram.includes(eu)) return espero('✅ ' + t('mlEnviado'));
-    return <Desenhar key={v.ronda} sorteado={v.sorteados[tag]} idioma={sala.idioma} enviar={enviar} />;
+    return <><Progresso semTv={sala.semTv} ids={v.espera} feitos={v.enviaram} /><Desenhar key={v.ronda} grupo={grupoMona(sala.codigo, v, 'd')} sorteado={v.sorteados[tag]} idioma={sala.idioma} enviar={enviar} /></>;
   }
   if (v.fase === 'inventar' || v.fase === 'escolher') {
     const obra = sala.semTv && <Moldura v={v} animar={false} />;
-    if (souAutor) return <>{obra}{espero('🎨 ' + t('mlTeuDesenho'))}</>;
+    if (souAutor) return espero('🎨 ' + t('mlTeuDesenho'));
     if (v.fase === 'inventar') {
-      if (!participa) return <>{obra}{espero(t('mlPlateia'))}</>;
-      if (v.enviaram.includes(eu)) return <>{obra}{espero('✅ ' + t('mlEnviado'))}</>;
+      if (!participa) return espero(t('mlPlateia'));
+      if (v.enviaram.includes(eu)) return espero('✅ ' + t('mlEnviado'));
       return (
         <>
           {obra}
-          <Inventar key={chave} recusado={v.recusados.includes(tag)} enviar={enviar} />
+          <Progresso semTv={sala.semTv} ids={v.espera} feitos={v.enviaram} />
+          <Inventar key={chave} grupo={grupoMona(sala.codigo, v, 'i')} recusado={v.recusados.includes(tag)} enviar={enviar} />
         </>
       );
     }
@@ -123,6 +131,7 @@ function Eu({ sala, v, eu, tag, enviar }: Omit<PropsMona, 'agora'> & { eu: strin
           })}
         </div>
         {ja && <p class="centro mini">{t('mlEscolheu')}</p>}
+        <Progresso semTv={sala.semTv} ids={v.espera} feitos={v.enviaram} />
       </>
     );
   }
@@ -132,9 +141,10 @@ function Eu({ sala, v, eu, tag, enviar }: Omit<PropsMona, 'agora'> & { eu: strin
 
 export function TelemovelMona({ sala, v, agora, eu, tag, enviar }: PropsMona & { eu: string; tag: string; enviar: Enviar }) {
   const [ajuda, setAjuda] = useState(false);
-  const [painel, setPainel] = useState(false);
   const lider = sala.vipId === eu;
   const fimOuPlacar = v.fase === 'placar' || v.fase === 'fim';
+  const escreve = v.participantes.includes(eu) && !v.enviaram.includes(eu);
+  useSoRascunho(escreve && v.fase === 'desenhar' ? grupoMona(sala.codigo, v, 'd') : escreve && v.fase === 'inventar' && v.autorTag !== tag ? grupoMona(sala.codigo, v, 'i') : null);
   return (
     <div class="pag jogo-mona">
       <div class="topo">
@@ -149,17 +159,8 @@ export function TelemovelMona({ sala, v, agora, eu, tag, enviar }: PropsMona & {
           <b>{t('mlOpcoesNome')}</b> — {t('ajudaMona')}
         </div>
       )}
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
-      {sala.semTv && !fimOuPlacar && (
-        <div class="separadores">
-          <button class={painel ? '' : 'on'} onClick={() => setPainel(false)}>
-            {t('swEu')}
-          </button>
-          <button class={painel ? 'on' : ''} onClick={() => setPainel(true)}>
-            {t('swPainel')}
-          </button>
-        </div>
-      )}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
       {fimOuPlacar ? (
         <>
           {v.fase === 'fim' && <h1 class="pergunta">{t('fim')}</h1>}
@@ -177,8 +178,6 @@ export function TelemovelMona({ sala, v, agora, eu, tag, enviar }: PropsMona & {
             </div>
           )}
         </>
-      ) : painel && sala.semTv ? (
-        <Palco sala={sala} v={v} compacto />
       ) : (
         <Eu sala={sala} v={v} eu={eu} tag={tag} enviar={enviar} />
       )}

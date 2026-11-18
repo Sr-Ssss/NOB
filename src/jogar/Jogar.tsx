@@ -1,33 +1,15 @@
 import { useEffect, useState } from 'preact/hooks';
 import { useCliente, type Entrada } from '../core/ligacao';
-import { usePrivados } from '../core/privado';
-import { idAleatorio, meuId, paramsHash } from '../core/ids';
+import { CODIGO_VALIDO, idAleatorio, meuId, paramsHash } from '../core/ids';
 import { t, usarIdioma } from '../core/i18n';
-import { MAX_NOME, N_AVATARES, PREFIXO_BOT, type AcaoSala, type Tecla, type VistaSala } from '../core/sala';
+import { MAX_NOME, N_AVATARES, PREFIXO_BOT, minhaMarca, type AcaoSala, type Tecla, type VistaSala } from '../core/sala';
 import { Avatar, Boneco } from '../ui/comuns';
-import { Telemovel5050 } from '../jogos/5050/telemovel';
-import { TelemovelPensa } from '../jogos/pensa-dores/telemovel';
-import { DefinicoesPensa } from '../jogos/pensa-dores/definicoes';
-import { TelemovelWifi } from '../jogos/senha-wifi/telemovel';
-import { DefinicoesWifi } from '../jogos/senha-wifi/definicoes';
-import { DEF_PADRAO_WIFI } from '../jogos/senha-wifi/regras';
-import { TelemovelSevira } from '../jogos/se-vira/telemovel';
-import { DefinicoesSevira } from '../jogos/se-vira/definicoes';
-import { DEF_PADRAO_SEVIRA } from '../jogos/se-vira/regras';
-import { TelemovelMona } from '../jogos/mona-lixa/telemovel';
-import { DefinicoesMona } from '../jogos/mona-lixa/definicoes';
-import { DEF_PADRAO_MONA } from '../jogos/mona-lixa/regras';
-import { TelemovelIdeias } from '../jogos/ideias-mirabolantes/telemovel';
-import { DefinicoesIdeias } from '../jogos/ideias-mirabolantes/definicoes';
-import { DEF_PADRAO_IDEIAS } from '../jogos/ideias-mirabolantes/regras';
-import { TelemovelPirata } from '../jogos/pirata/telemovel';
-import { DefinicoesPirata } from '../jogos/pirata/definicoes';
-import { DEF_PADRAO_PIRATA, type PrivadoPirata } from '../jogos/pirata/regras';
-import { TelemovelMaquinas } from '../jogos/revolucao-maquinas/telemovel';
-import { DEF_PADRAO_MAQUINAS, type PrivadoMaquinas } from '../jogos/revolucao-maquinas/regras';
-import { DefinicoesMaquinas } from '../jogos/revolucao-maquinas/definicoes';
-import { Definicoes } from '../tv/Tv';
-import { MenuJogos, Tutorial } from './MenuJogos';
+import { emCurso } from '../jogos/ecras';
+import { MenuJogos, OpcoesComTv, Tutorial } from './MenuJogos';
+import { Confirmar } from '../ui/confirmar';
+import { AvisosSaidas } from '../ui/saidas';
+import { BotaoFecharParty, GerirJogadores, PopupJogador, avisoPorta } from '../ui/membros';
+import { nomeBoneco } from '../ui/bonecos';
 
 /** tags dos bots que este aparelho criou (o líder precisa delas para "és tu o autor") */
 function tagsBots(): Record<string, string> {
@@ -47,6 +29,21 @@ function novoBot(enviar: (a: AcaoSala) => void) {
     /* sem armazenamento: só perde o "és tu o autor" do bot */
   }
   enviar({ tipo: 'bot_add', id: '', bot, tag });
+}
+
+/** quanto se espera por uma party que não responde antes de dizer "não encontrada" */
+const ESPERA_PARTY = 6000;
+
+/** true quando `esperando` já dura `ms` seguidos (volta a false assim que deixa de esperar) */
+function useEsgotado(esperando: boolean, ms: number): boolean {
+  const [esgotou, setEsgotou] = useState(false);
+  useEffect(() => {
+    setEsgotou(false);
+    if (!esperando) return;
+    const id = setTimeout(() => setEsgotou(true), ms);
+    return () => clearTimeout(id);
+  }, [esperando, ms]);
+  return esperando && esgotou;
 }
 
 const chaveEu = () => 'nob.eu' + (paramsHash().get('eu') ?? '');
@@ -79,6 +76,7 @@ function GrelhaBonecos({ escolhido, ocupados, aoEscolher }: { escolhido: number;
             class={'escolha-boneco' + (escolhido === i ? ' on' : '')}
             disabled={ocupado}
             aria-pressed={escolhido === i}
+            aria-label={nomeBoneco(i)}
             onClick={() => aoEscolher(i)}
           >
             <Avatar n={i} tam={64} />
@@ -107,6 +105,11 @@ export function EscolherBoneco({ vista, eu, aoEntrar }: { vista: VistaSala; eu: 
       <h2 class="centro" style={{ margin: 0 }}>
         {t('escolherBoneco')}
       </h2>
+      {vista.fechada && (
+        <p class="aviso" role="status">
+          {t('mbFechadaAviso')}
+        </p>
+      )}
       <GrelhaBonecos escolhido={avatar} ocupados={ocupados} aoEscolher={setAvatar} />
       <div>
         <label>{t('nome')}</label>
@@ -127,6 +130,9 @@ const TECLAS: { tecla: Tecla; rotulo: string; area: string }[] = [
   { tecla: 'dir', rotulo: '▶', area: 'd' },
   { tecla: 'baixo', rotulo: '▼', area: 'b' },
 ];
+
+/** nome das setas para leitores de ecrã */
+const NOME_TECLA: Partial<Record<Tecla, string>> = { cima: '↑', baixo: '↓', esq: '←', dir: '→', ok: 'OK' };
 
 /** comando virtual da TV (só o líder) */
 function Comando({ enviar, fechar, codigo }: { enviar: (a: AcaoSala) => void; fechar: () => void; codigo: string }) {
@@ -151,7 +157,7 @@ function Comando({ enviar, fechar, codigo }: { enviar: (a: AcaoSala) => void; fe
       <div class="comando">
         <div class="dpad">
           {TECLAS.map((k) => (
-            <button key={k.tecla} class={'tecla' + (k.tecla === 'ok' ? ' ok' : '')} style={{ gridArea: k.area }} onClick={() => tecla(k.tecla)}>
+            <button key={k.tecla} class={'tecla' + (k.tecla === 'ok' ? ' ok' : '')} style={{ gridArea: k.area }} aria-label={NOME_TECLA[k.tecla]} onClick={() => tecla(k.tecla)}>
               {k.rotulo}
             </button>
           ))}
@@ -180,11 +186,10 @@ function Lobby({ vista, eu, entrada, mudar, enviar }: { vista: VistaSala; eu: st
   const souLider = vista.vipId === eu;
   const lider = vista.jogadores.find((j) => j.id === vista.vipId);
   const outros = vista.jogadores.filter((j) => j.id !== eu);
-  const tocar = (j: (typeof outros)[number]) => {
-    if (j.bot) {
-      if (confirm(t('botRemover', { nome: j.nome }))) enviar({ tipo: 'bot_del', id: '', bot: j.id });
-    } else if (confirm(t('passarA', { nome: j.nome }))) enviar({ tipo: 'lideranca', id: '', para: j.id });
-  };
+  /** jogador humano em que o líder tocou: passar a liderança ou expulsar (src/ui/membros.tsx) */
+  const [tocado, setTocado] = useState<string | null>(null);
+  const tocar = (j: (typeof outros)[number]) => setTocado(j.id);
+  const jTocado = souLider ? outros.find((j) => j.id === tocado) : undefined;
 
   if (menu) return <MenuJogos vista={vista} enviar={enviar} fechar={() => setMenu(false)} />;
   if (comando) return <Comando enviar={enviar} fechar={() => setComando(false)} codigo={vista.codigo} />;
@@ -224,19 +229,24 @@ function Lobby({ vista, eu, entrada, mudar, enviar }: { vista: VistaSala; eu: st
           <button
             key={j.id}
             class="escolha-boneco"
-            disabled={!souLider || !j.ligado}
+            disabled={!souLider}
             onClick={() => tocar(j)}
           >
             <Boneco j={j} tam={52} marca={j.id === vista.vipId ? '👑' : j.bot ? '🤖' : j.pronto ? '✓' : undefined} />
           </button>
         ))}
       </div>
-      {souLider && outros.length > 0 && <p class="centro mini">{t('passarLideranca')}</p>}
+      {souLider && outros.some((j) => !j.bot) && <p class="centro mini">{t('mbTocarJogador')}</p>}
       {souLider && (
         <button class="botao sec" onClick={() => novoBot(enviar)}>
           🤖 {t('botMais')}
         </button>
       )}
+      {souLider ? <BotaoFecharParty vista={vista} enviar={enviar} /> : vista.fechada && <p class="centro mini">{t('mbFechadaDica')}</p>}
+      {jTocado?.bot && (
+        <Confirmar texto={t('botRemover', { nome: jTocado.nome })} aoSim={() => enviar({ tipo: 'bot_del', id: '', bot: jTocado.id })} fechar={() => setTocado(null)} />
+      )}
+      {jTocado && !jTocado.bot && <PopupJogador j={jTocado} enviar={enviar} fechar={() => setTocado(null)} />}
 
       <button class={'botao grande' + (meu?.pronto ? ' sec' : '')} onClick={() => enviar({ tipo: 'pronto', id: '', pronto: !meu?.pronto })}>
         {meu?.pronto ? t('prontoOk') : t('pronto')}
@@ -251,38 +261,7 @@ function Lobby({ vista, eu, entrada, mudar, enviar }: { vista: VistaSala; eu: st
           <button class="botao sec" onClick={() => setComando(true)}>
             🎮 {t('comandoTv')}
           </button>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · 50/50</summary>
-            <Definicoes def={vista.def} mudar={(d) => enviar({ tipo: 'definir', id: '', def: d })} />
-          </details>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('pdOpcoesNome')}</summary>
-            <DefinicoesPensa def={vista.defPensa} mudar={(d) => enviar({ tipo: 'definir_pensa', id: '', def: d })} />
-          </details>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('swOpcoesNome')}</summary>
-            <DefinicoesWifi def={vista.defWifi ?? DEF_PADRAO_WIFI} idioma={vista.idioma} mudar={(d) => enviar({ tipo: 'definir_wifi', id: '', def: d })} />
-          </details>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('svOpcoesNome')}</summary>
-            <DefinicoesSevira def={vista.defSevira ?? DEF_PADRAO_SEVIRA} n={vista.jogadores.filter((j) => j.ligado).length} mudar={(d) => enviar({ tipo: 'definir_sevira', id: '', def: d })} />
-          </details>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('mlOpcoesNome')}</summary>
-            <DefinicoesMona def={vista.defMona ?? DEF_PADRAO_MONA} n={vista.jogadores.filter((j) => j.ligado).length} mudar={(d) => enviar({ tipo: 'definir_mona', id: '', def: d })} />
-          </details>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('imOpcoesNome')}</summary>
-            <DefinicoesIdeias def={vista.defIdeias ?? DEF_PADRAO_IDEIAS} n={vista.jogadores.filter((j) => j.ligado).length} mudar={(d) => enviar({ tipo: 'definir_ideias', id: '', def: d })} />
-          </details>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('prNome')}</summary>
-            <DefinicoesPirata def={vista.defPirata ?? DEF_PADRAO_PIRATA} n={vista.jogadores.filter((j) => j.ligado).length} mudar={(d) => enviar({ tipo: 'definir_pirata', id: '', def: d })} />
-          </details>
-          <details class="cartao">
-            <summary style={{ fontWeight: 700 }}>{t('opcoesJogo')} · {t('rmNome')}</summary>
-            <DefinicoesMaquinas def={vista.defMaquinas ?? DEF_PADRAO_MAQUINAS} mudar={(d) => enviar({ tipo: 'definir_maquinas', id: '', def: d })} />
-          </details>
+          <OpcoesComTv vista={vista} enviar={enviar} />
         </>
       ) : (
         <p class="centro mini">{t('esperaVip', { nome: lider?.nome ?? '…' })}</p>
@@ -315,35 +294,28 @@ export function Jogar() {
   const codigo = (paramsHash().get('sala') ?? '').toUpperCase();
   const dispositivo = meuId();
   const [entrada, setEntrada] = useState<Entrada | null>(null);
-  const { vista, estado, agoraTv, acao } = useCliente(codigo, dispositivo, entrada);
+  // impressão digital da TV, vinda do link do QR: só se aceita essa TV
+  const impressao = paramsHash().get('k');
+  const { vista, estado, agoraTv, acao, privados, pedirPrivado } = useCliente(codigo, dispositivo, entrada, impressao && /^[0-9a-f]{12}$/.test(impressao) ? impressao : null);
   const eu = vista?.aliases[dispositivo] ?? dispositivo;
   const dentro = vista?.jogadores.find((j) => j.id === eu);
   if (vista) usarIdioma(vista.idioma);
-  // canal privado (papéis secretos): o meu e, se for o líder, o dos meus bots
-  const souLider = !!vista && vista.vipId === eu;
-  const tags: Record<string, string> = (vista?.pirata || vista?.maquinas) && entrada ? { [eu]: entrada.tag, ...(souLider ? tagsBots() : {}) } : {};
-  const privados = usePrivados(codigo, tags, vista?.pirata ? `${vista.pirata.fase}:${vista.pirata.noite}` : vista?.maquinas ? `${vista.maquinas.fase}:${vista.maquinas.comandante}:${vista.maquinas.sabotagens}` : '');
+  // canal privado (papéis secretos, palavras da equipa): chega cifrado só para este aparelho
+  // (o meu e, no líder, o dos bots). Se uma mensagem se perder, volta-se a pedir quando a fase muda.
+  const ativo = vista ? emCurso(vista) : null;
+  const versao = ativo?.j.e.versaoPrivado?.(ativo.g) ?? '';
+  useEffect(() => {
+    if (!versao) return;
+    const t = setTimeout(pedirPrivado, 700);
+    return () => clearTimeout(t);
+  }, [versao]);
 
   // já estava nesta party (recarregou a página): volta a entrar sozinho
   useEffect(() => {
     if (dentro && !entrada) setEntrada({ nome: dentro.nome, avatar: dentro.avatar, tag: idAleatorio() });
   }, [!!dentro]);
 
-  const fase = vista?.maquinas
-    ? `rm:${vista.maquinas.fase}:${vista.maquinas.comandante}`
-    : vista?.pirata
-    ? `r:${vista.pirata.fase}:${vista.pirata.noite}`
-    : vista?.ideias
-    ? `i:${vista.ideias.fase}:${vista.ideias.atual}`
-    : vista?.mona
-    ?`m:${vista.mona.fase}:${vista.mona.ronda}:${vista.mona.atual}`
-    : vista?.sevira
-    ? `s:${vista.sevira.fase}:${vista.sevira.atual}`
-    : vista?.wifi
-    ? `w:${vista.wifi.fase}:${vista.wifi.ronda}:${vista.wifi.turno}:${vista.wifi.passo}`
-    : vista?.pensa
-    ? `p:${vista.pensa.fase}:${vista.pensa.ronda}:${vista.pensa.atual}`
-    : vista?.jogo ? `${vista.jogo.fase}:${vista.jogo.ronda}:${vista.jogo.dilema?.texto ?? ''}` : 'lobby';
+  const fase = ativo ? ativo.j.e.vibrar(ativo.g) : 'lobby';
   useEffect(() => {
     try {
       navigator.vibrate?.(60);
@@ -352,22 +324,27 @@ export function Jogar() {
     }
   }, [fase]);
 
+  // à espera de uma party que não responde (não existe, a TV recarregou com outro código, acabou): ao fim de 6 s, avisa (auditoria E5)
+  const esgotou = useEsgotado((!vista && estado === 'a_ligar') || (!!vista && !!entrada && !dentro), ESPERA_PARTY);
+
   const entrar = (e: Entrada) => {
     guardar(e);
     setEntrada(e);
   };
 
-  if (!/^[A-Z0-9]{4}$/.test(codigo)) {
+  if (!CODIGO_VALIDO.test(codigo)) {
     location.hash = '#/';
     return null;
   }
 
-  if (!vista) {
-    const msg = estado === 'sem_sala' ? t('salaNaoEncontrada') : estado === 'erro' ? t('semLigacao') : t('aLigar');
+  if (!vista || (esgotou && entrada && !dentro)) {
+    const msg = esgotou ? t('partyNaoEncontrada') : estado === 'sem_sala' ? t('salaNaoEncontrada') : estado === 'erro' ? t('semLigacao') : t('aLigar');
     return (
       <div class="pag centro">
-        <p style={{ marginTop: 80, fontSize: 24 }}>{msg}</p>
-        {estado !== 'a_ligar' && (
+        <p style={{ marginTop: 80, fontSize: 24 }} role={esgotou ? 'alert' : 'status'}>
+          {msg}
+        </p>
+        {(esgotou || estado !== 'a_ligar') && (
           <a href="#/" class="botao sec" style={{ textDecoration: 'none' }}>
             ← {t('voltar')}
           </a>
@@ -375,6 +352,10 @@ export function Jogar() {
       </div>
     );
   }
+
+  // expulso, ou à porta de uma party fechada (src/core/membros.ts)
+  const porta = avisoPorta(vista, dispositivo, eu);
+  if (porta) return porta;
 
   if (!entrada || !dentro) {
     if (entrada && !dentro) return <div class="pag centro"><p style={{ marginTop: 80 }}>{t('aLigar')}</p></div>;
@@ -421,9 +402,24 @@ function TrocaJogador({ vista, eu, como, trocar }: { vista: VistaSala; eu: strin
 export function EcraJogador(p: PropsEcra) {
   const { vista, eu, enviar } = p;
   const [como, setComo] = useState<string | null>(null);
-  const emJogo = !!(vista.tutorial || vista.maquinas || vista.pirata || vista.ideias || vista.mona || vista.sevira || vista.wifi || vista.pensa || vista.jogo);
+  const emJogo = !!(vista.tutorial || emCurso(vista));
   const temBots = vista.vipId === eu && vista.jogadores.some((j) => j.bot);
-  if (!emJogo || !temBots) return <Ecra {...p} />;
+  // quem saiu a meio (o líder decide) e "és espectador": sempre com o eu verdadeiro, mesmo a agir como bot
+  // + "👥 Jogadores" do líder: expulsar a meio (src/ui/membros.tsx)
+  const avisos =
+    emJogo && !vista.tutorial ? (
+      <>
+        <AvisosSaidas vista={vista} eu={eu} enviar={enviar} />
+        <GerirJogadores vista={vista} eu={eu} enviar={enviar} />
+      </>
+    ) : null;
+  if (!emJogo || !temBots)
+    return (
+      <>
+        {avisos}
+        <Ecra {...p} />
+      </>
+    );
   const bot = vista.jogadores.find((j) => j.id === como && j.bot);
   const ecra = bot ? (
     <Ecra
@@ -439,6 +435,7 @@ export function EcraJogador(p: PropsEcra) {
   return (
     <>
       <TrocaJogador vista={vista} eu={eu} como={bot ? bot.id : null} trocar={setComo} />
+      {avisos}
       {ecra}
     </>
   );
@@ -446,62 +443,11 @@ export function EcraJogador(p: PropsEcra) {
 
 function Ecra({ vista, eu, entrada, mudar, enviar, agora, privadoDe }: PropsEcra) {
   if (vista.tutorial) return <Tutorial vista={vista} eu={eu} enviar={enviar} agora={agora} />;
-  if (vista.maquinas) {
+  const ativo = emCurso(vista);
+  if (ativo) {
     return (
       <>
-        <TelemovelMaquinas key={eu} sala={vista} v={vista.maquinas} agora={agora} eu={eu} privado={(privadoDe?.(eu) as PrivadoMaquinas | null) ?? null} enviar={enviar} />
-        <div class="rodape-codigo">{vista.codigo}</div>
-      </>
-    );
-  }
-  if (vista.pirata) {
-    return (
-      <>
-        <TelemovelPirata key={eu} sala={vista} v={vista.pirata} agora={agora} eu={eu} privado={(privadoDe?.(eu) as PrivadoPirata | null) ?? null} enviar={enviar} />
-        <div class="rodape-codigo">{vista.codigo}</div>
-      </>
-    );
-  }
-  if (vista.ideias) {
-    return (
-      <>
-        <TelemovelIdeias sala={vista} v={vista.ideias} agora={agora} eu={eu} tag={entrada.tag} enviar={enviar} />
-        <div class="rodape-codigo">{vista.codigo}</div>
-      </>
-    );
-  }
-  if (vista.mona) {
-    return (
-      <>
-        <TelemovelMona sala={vista} v={vista.mona} agora={agora} eu={eu} tag={entrada.tag} enviar={enviar} />
-        <div class="rodape-codigo">{vista.codigo}</div>
-      </>
-    );
-  }
-  if (vista.sevira) {
-    return (
-      <>
-        <TelemovelSevira sala={vista} v={vista.sevira} agora={agora} eu={eu} tag={entrada.tag} enviar={enviar} />
-        <div class="rodape-codigo">{vista.codigo}</div>
-      </>
-    );
-  }
-  if (vista.wifi) {
-    return (
-      <>
-        <TelemovelWifi sala={vista} v={vista.wifi} agora={agora} eu={eu} tag={entrada.tag} enviar={enviar} />
-        <div class="rodape-codigo">{vista.codigo}</div>
-      </>
-    );
-  }
-  if (vista.pensa || vista.jogo) {
-    return (
-      <>
-        {vista.pensa ? (
-          <TelemovelPensa sala={vista} v={vista.pensa} agora={agora} eu={eu} tag={entrada.tag} enviar={enviar} />
-        ) : (
-          <Telemovel5050 sala={vista} v={vista.jogo!} agora={agora} eu={eu} tag={entrada.tag} enviar={enviar} />
-        )}
+        {ativo.j.e.telemovel({ v: ativo.g, sala: vista, agora, eu, marca: () => minhaMarca(vista, entrada.tag), privado: privadoDe?.(eu) ?? null, enviar })}
         <div class="rodape-codigo">{vista.codigo}</div>
       </>
     );

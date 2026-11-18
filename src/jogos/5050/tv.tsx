@@ -125,8 +125,8 @@ function ordemQueda(r: Resultado): { id: string; lado: 'a' | 'b' }[] {
   return out;
 }
 
-/** Balança grande "meio 3D": SIM e NÃO nos pratos, relógio no eixo, bonecos caem um a um */
-function Balanca({
+/** Balança grande "meio 3D": SIM e NÃO nos pratos, relógio no eixo, bonecos caem um a um (também no telemóvel sem TV) */
+export function Balanca({
   sala,
   a,
   b,
@@ -234,7 +234,8 @@ export function Tv5050({
   return (
     <div class="pag tv jogo-5050">
       <Cabecalho v={v} agora={agora} comTempo={v.fase === 'escrever' || v.fase === 'placar'} />
-      {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
+      {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
+      {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {v.fase === 'escrever' && (
         <>
