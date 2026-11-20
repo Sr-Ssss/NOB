@@ -2,13 +2,16 @@ import { paramsHash } from '../../core/ids';
 import { usarIdioma } from '../../core/i18n';
 import type { VistaSala } from '../../core/sala';
 import { PRECO } from './pecas';
-import { DEF_PADRAO_RAGEROB, grupoAtual, novoRagerob, reduzRagerob, vistaRagerob, type AcaoRagerob, type EstadoRagerob } from './regras';
+import { DEF_PADRAO_RAGEROB, T_COMBATE, grupoAtual, novoRagerob, reduzRagerob, vistaRagerob, type AcaoRagerob, type EstadoRagerob } from './regras';
+import { Combate } from './fisica';
+import { quadroDe } from './quadro';
 import { TelemovelRagerob } from './telemovel';
 import { TvRagerob } from './tv';
 
 /**
  * só em dev (para as capturas):
- * `#/demo-ragerob?fase=montar|loja|aposta|instalar|combate|resultado|fim&modo=normal|pilotos&ecra=tv|tel[&eu=j1][&zoom=1.2136]`
+ * `#/demo-ragerob?fase=montar|loja|aposta|instalar|combate|resultado|fim&modo=normal|pilotos&ecra=tv|tel[&eu=j1][&semtv=1][&zoom=1.2136]`
+ * (sem TV, no combate, um quadro da arena já calculado: src/jogos/ragerob/quadro.ts)
  */
 const NOMES = ['Rita', 'Beto', 'Caio', 'Duda', 'Edu'];
 
@@ -66,13 +69,14 @@ export function DemoRagerob() {
   usarIdioma('pt-BR');
   const modo = p.get('modo') === 'pilotos' ? 'pilotos' : 'normal';
   const e = estado(p.get('fase') ?? 'loja', modo);
-  const g = { ...e, terminaEm: Date.now() + 17_000 };
+  const g0 = { ...e, terminaEm: Date.now() + 17_000 };
+  const g = p.get('semtv') === '1' && g0.combate ? { ...g0, combate: { ...g0.combate, quadro: quadroDemo(g0) } } : g0;
   const sala = {
     codigo: 'KQTZ',
     idioma: 'pt-BR',
     jogadores: NOMES.map((nome, i) => ({ id: `j${i + 1}`, nome, avatar: i * 3, ligado: true, desligadoEm: null, pronto: false })),
     vipId: 'j1',
-    semTv: false,
+    semTv: p.get('semtv') === '1',
     tutorial: null,
     aliases: {},
   } as unknown as VistaSala;
@@ -88,4 +92,12 @@ export function DemoRagerob() {
       <div class="rodape-codigo tv">KQTZ</div>
     </>
   );
+}
+
+/** sem TV: a arena 3 s depois do início (o que o host mandaria) */
+function quadroDemo(e: EstadoRagerob) {
+  const c = e.combate!;
+  const sim = new Combate(c.robos.map((id) => e.robos.find((r) => r.id === id)!), c.perigos, c.seed, T_COMBATE);
+  for (let n = 0; n < 60 * 3; n++) sim.passo({});
+  return quadroDe(sim);
 }

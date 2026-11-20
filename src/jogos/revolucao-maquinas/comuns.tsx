@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { VistaSala } from '../../core/sala';
 import { t, type Chave } from '../../core/i18n';
-import { Avatar } from '../../ui/comuns';
+import { Avatar, BarraSegurar } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { REP_VENCE, SAB_VENCE, poderDe, type PapelM, type Poder, type VistaMaquinas } from './regras';
 import './maquinas.css';
@@ -20,8 +20,12 @@ export const nomePapel = (p: PapelM) => t(('rmPapel_' + p) as Chave);
 export const T_SEGURAR = 3000;
 
 /** botão que só mostra o conteúdo enquanto se segura 3 s (Identidade e resultados de poderes) */
-export function Segurar({ rotulo, children, aberta = false }: { rotulo: string; children: ComponentChildren; aberta?: boolean }) {
+export function Segurar({ rotulo, children, aberta = false, aoMostrar }: { rotulo: string; children: ComponentChildren; aberta?: boolean; aoMostrar?: () => void }) {
   const [estado, setEstado] = useState<'nada' | 'segura' | 'mostra'>(aberta ? 'mostra' : 'nada');
+  const mostrar = () => {
+    setEstado('mostra');
+    aoMostrar?.();
+  };
   const tempo = useRef<number | undefined>(undefined);
   const largar = () => {
     clearTimeout(tempo.current);
@@ -36,19 +40,20 @@ export function Segurar({ rotulo, children, aberta = false }: { rotulo: string; 
         </div>
       )}
       <button
-        class={'rm-botao-id' + (estado !== 'nada' ? ' on' : '')}
+        class={'rm-botao-id' + (estado === 'mostra' ? ' on' : '')}
         {...eventosSegurar({
           segurar: (e) => {
             e.preventDefault();
             setEstado('segura');
-            tempo.current = window.setTimeout(() => setEstado('mostra'), T_SEGURAR);
+            tempo.current = window.setTimeout(mostrar, T_SEGURAR);
           },
           largar,
-          mostrar: () => setEstado('mostra'),
+          mostrar,
           aberto: estado === 'mostra',
         })}
       >
-        {estado === 'segura' ? t('rmSegurando') : rotulo}
+        {estado === 'segura' && <BarraSegurar ms={T_SEGURAR} />}
+        <span class="rotulo-segurar">{estado === 'segura' ? t('rmSegurando') : rotulo}</span>
       </button>
     </>
   );
@@ -117,7 +122,7 @@ export function Postos({ sala, v, compacto = false }: { sala: VistaSala; v: Vist
           <div key={id} class={'rm-posto' + (fora ? ' fora' : '') + (bloq ? ' bloq' : '')}>
             {id === v.comandante && <span class="rm-cargo cmd">{t('rmComandante')}</span>}
             {id === v.piloto && <span class="rm-cargo pil">{t('rmPiloto')}</span>}
-            {v.fase === 'votar' && v.votaram.includes(id) && <span class="rm-voto">✅</span>}
+            {((v.fase === 'votar' && v.votaram.includes(id)) || (v.fase === 'carta' && v.viram.includes(id))) && <span class="rm-voto">✅</span>}
             {v.fase !== 'votar' && id in votos && <span class={'rm-voto ' + (votos[id] ? 'sim' : 'nao')}>{votos[id] ? t('rmSim') : t('rmNao')}</span>}
             <Avatar n={avatarDe(sala, id)} tam={compacto ? 36 : 96} />
             <span>
@@ -157,14 +162,39 @@ export function narracao(sala: VistaSala, v: VistaMaquinas): string {
     case 'discussao':
       if (v.poder === 'ejetar' && v.alvoPoder) return t('rmEjetadoTv', { nome: nome(v.alvoPoder) });
       if (v.poder === 'eleger' && v.alvoPoder) return t('rmEleitoTv', { nome: nome(v.alvoPoder) });
-      return t('rmDiscussao');
+      return sala.semTv ? t('conversem') : t('rmDiscussao');
     case 'fim':
       return v.vencedor ? t(('rmVence_' + v.vencedor) as Chave) + ' · ' + t(('rmMotivo_' + v.motivo) as Chave) : '';
   }
 }
 
+/** fases em que os medidores interessam (conversar/votar/carta a entrar); nas outras ficam numa barra fina */
+const MEDIDORES_GRANDES: VistaMaquinas['fase'][] = ['nomear', 'votar', 'votos', 'entrou', 'discussao', 'fim'];
+
+/** medidores em ponto pequeno: 3 barras de lado (🔧 · 🔋 · 💥) */
+function PainelFino({ v }: { v: VistaMaquinas }) {
+  const barra = (n: number, max: number, cls: string, rotulo: string) => (
+    <div class={'rm-fino ' + cls} role="img" aria-label={`${rotulo} ${n}/${max}`}>
+      <span>{rotulo}</span>
+      <div class="rm-fino-trilho">
+        <div style={{ width: (n / max) * 100 + '%' }} />
+      </div>
+      <b>
+        {n}/{max}
+      </b>
+    </div>
+  );
+  return (
+    <div class="rm-painel fino">
+      {barra(v.reparacoes, REP_VENCE, 'rep', '🔧')}
+      {barra(v.falhas, 3, 'fal', '🔋')}
+      {barra(v.sabotagens, SAB_VENCE, 'sab', '💥')}
+    </div>
+  );
+}
+
 /** a consola da nave (TV, ou o "Painel" sem TV) */
-export function Consola({ sala, v, compacto = false }: { sala: VistaSala; v: VistaMaquinas; compacto?: boolean }) {
+export function Consola({ sala, v, compacto = false, semNarra = false }: { sala: VistaSala; v: VistaMaquinas; compacto?: boolean; semNarra?: boolean }) {
   const n = v.participantes.length;
   const icones = Array.from({ length: SAB_VENCE + 1 }, (_, k) => {
     const p = k > 0 ? poderDe(n, k) : null;
@@ -172,12 +202,16 @@ export function Consola({ sala, v, compacto = false }: { sala: VistaSala; v: Vis
   });
   return (
     <div class={'rm-consola' + (compacto ? ' compacto' : '')}>
-      <h1 class="rm-narra">{narracao(sala, v)}</h1>
-      <div class="rm-painel">
-        <Manometro n={v.reparacoes} max={REP_VENCE} cor="#185FA5" rotulo={'🔧 ' + t('rmReparacao')} />
-        <Bateria falhas={v.falhas} />
-        <Manometro n={v.sabotagens} max={SAB_VENCE} cor="#C0392B" rotulo={'💥 ' + t('rmSabotagem')} icones={icones} />
-      </div>
+      {!semNarra && <h1 class="rm-narra">{narracao(sala, v)}</h1>}
+      {!MEDIDORES_GRANDES.includes(v.fase) ? (
+        <PainelFino v={v} />
+      ) : (
+        <div class="rm-painel">
+          <Manometro n={v.reparacoes} max={REP_VENCE} cor="#185FA5" rotulo={'🔧 ' + t('rmReparacao')} />
+          <Bateria falhas={v.falhas} />
+          <Manometro n={v.sabotagens} max={SAB_VENCE} cor="#C0392B" rotulo={'💥 ' + t('rmSabotagem')} icones={icones} />
+        </div>
+      )}
       <Postos sala={sala} v={v} compacto={compacto} />
     </div>
   );

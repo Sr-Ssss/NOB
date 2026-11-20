@@ -13,7 +13,10 @@ import { aplicarTextoGrande } from './ui/acessibilidade';
 import { Logo } from './ui/logo';
 import { idiomaDispositivo, t, usarIdioma } from './core/i18n';
 import type { Idioma } from './core/sala';
-import { CODIGO_VALIDO } from './core/ids';
+import { CODIGO_VALIDO, paramsHash } from './core/ids';
+import { PalcoTv } from './ui/palco';
+import { manterEcraLigado } from './ui/ecraLigado';
+import type { JSX } from 'preact';
 import { Tv } from './tv/Tv';
 import { Jogar } from './jogar/Jogar';
 import { Criar } from './jogar/Criar';
@@ -29,16 +32,27 @@ import { DemoRagerob } from './jogos/ragerob/demo';
 import { Definicoes } from './ui/Definicoes';
 import { NpnTeste } from './npn/Npn';
 import { Avatar } from './ui/comuns';
+import { CHAVE_AVISO } from './core/ligacao';
 
 function rota(): string {
   return location.hash.replace(/^#/, '').split('?')[0] || '/';
 }
 
-/** Ecrã inicial do telemóvel (B, "código em destaque") */
+/** aviso deixado para o ecrã inicial (ex.: esta TV foi substituída por outra); lê-se uma vez */
+function tirarAviso(): string {
+  try {
+    const a = sessionStorage.getItem(CHAVE_AVISO) ?? '';
+    sessionStorage.removeItem(CHAVE_AVISO);
+    return a;
+  } catch {
+    return '';
+  }
+}
+
+/** Ecrã inicial do telemóvel (B, "código em destaque"); 20/11: ⚙️ no canto, "Criar party" cria logo (a TV escolhe-se no lobby) */
 function Inicio() {
   const [codigo, setCodigo] = useState('');
-  const [aviso, setAviso] = useState('');
-  const [criar, setCriar] = useState(false);
+  const [aviso, setAviso] = useState(() => (tirarAviso() === 'avisoOutraTv' ? t('avisoOutraTv') : ''));
   const ok = CODIGO_VALIDO.test(codigo);
   const entrar = () => {
     if (ok) location.hash = `#/jogar?sala=${codigo}`;
@@ -49,6 +63,14 @@ function Inicio() {
   };
   return (
     <div class="pag inicio">
+      <div class="topo">
+        <a class="botao-icone" href="#/definicoes" aria-label={t('definicoes')} title={t('definicoes')}>
+          ⚙️
+        </a>
+        <button class="botao-icone livro" onClick={emBreve} aria-label={t('comoJogar')} title={t('comoJogar')}>
+          📖<span aria-hidden="true">?</span>
+        </button>
+      </div>
       <div class="logo-nob">
         <div class="bonecos-logo">
           <Avatar n={0} tam={54} />
@@ -85,42 +107,41 @@ function Inicio() {
 
       <div class="ou">{t('ou')}</div>
 
-      {!criar ? (
-        <button class="botao sec centro" onClick={() => setCriar(true)}>
-          {t('criarParty')}
-        </button>
-      ) : (
-        <div class="linha">
-          <a href="#/tv" class="botao sec centro cresce" style={{ textDecoration: 'none' }}>
-            📺 {t('tenhoTv')}
-            <div class="mini" style={{ fontWeight: 600 }}>{t('tenhoTvDica')}</div>
-          </a>
-          <a href="#/criar" class="botao sec centro cresce" style={{ textDecoration: 'none' }}>
-            📱 {t('semTv')}
-            <div class="mini" style={{ fontWeight: 600 }}>{t('semTvDica')}</div>
-          </a>
+      <a href="#/criar" class="botao sec centro" style={{ textDecoration: 'none' }}>
+        {t('criarParty')}
+      </a>
+
+      {aviso && (
+        <div class="aviso" role="status">
+          {aviso}
         </div>
       )}
-
-      {aviso && <div class="aviso">{aviso}</div>}
 
       <nav class="rodape-inicio">
         <button class="link" onClick={emBreve}>
           🕘 {t('historico')}
         </button>
-        <button class="link" onClick={emBreve}>
-          ❓ {t('comoJogar')}
-        </button>
-        <a class="link" href="#/definicoes">
-          ⚙️ {t('definicoes')}
-        </a>
       </nav>
     </div>
   );
 }
 
+/** só em dev: `#/demo-<jogo>?fase=…&ecra=tv|tel` (capturas e testes Playwright) */
+const DEMOS: Record<string, () => JSX.Element> = {
+  '/demo-pensa': DemoPensa,
+  '/demo-wifi': DemoWifi,
+  '/demo-sevira': DemoSevira,
+  '/demo-mona': DemoMona,
+  '/demo-ideias': DemoIdeias,
+  '/demo-pirata': DemoPirata,
+  '/demo-maquinas': DemoMaquinas,
+  '/demo-rei': DemoRei,
+  '/demo-ragerob': DemoRagerob,
+};
+
 function App() {
   const [r, setR] = useState(rota());
+  useEffect(() => manterEcraLigado(), []);
   const [idioma, setIdioma] = useState<Idioma>(idiomaDispositivo());
   useEffect(() => {
     const f = () => setR(rota());
@@ -135,15 +156,12 @@ function App() {
   if (r === '/tv') return <Tv idioma={idioma} />;
   if (r === '/jogar') return <Jogar />;
   if (r === '/criar') return <Criar />;
-  if (import.meta.env.DEV && r === '/demo-pensa') return <DemoPensa />;
-  if (import.meta.env.DEV && r === '/demo-wifi') return <DemoWifi />;
-  if (import.meta.env.DEV && r === '/demo-sevira') return <DemoSevira />;
-  if (import.meta.env.DEV && r === '/demo-mona') return <DemoMona />;
-  if (import.meta.env.DEV && r === '/demo-ideias') return <DemoIdeias />;
-  if (import.meta.env.DEV && r === '/demo-pirata') return <DemoPirata />;
-  if (import.meta.env.DEV && r === '/demo-maquinas') return <DemoMaquinas />;
-  if (import.meta.env.DEV && r === '/demo-rei') return <DemoRei />;
-  if (import.meta.env.DEV && r === '/demo-ragerob') return <DemoRagerob />;
+  if (import.meta.env.DEV && r.startsWith('/demo-')) {
+    const Demo = DEMOS[r];
+    if (!Demo) return <Inicio />;
+    // as demos de TV (ecra≠tel) passam pelo mesmo palco que a TV a sério
+    return paramsHash().get('ecra') === 'tel' ? <Demo /> : <PalcoTv><Demo /></PalcoTv>;
+  }
   if (r === '/definicoes') return <Definicoes idioma={idioma} mudar={mudar} />;
   if (r === '/npn') return <NpnTeste />;
   return <Inicio />;

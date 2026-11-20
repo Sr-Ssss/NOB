@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { VistaSala } from '../../core/sala';
 import { t } from '../../core/i18n';
-import { Avatar, Boneco, COR_NAO, COR_SIM, CORAL, Temporizador } from '../../ui/comuns';
+import { Avatar, Boneco, COR_NAO, COR_SIM, CORAL, Feito, Temporizador } from '../../ui/comuns';
 import { T_REVELAR, type Resultado, type Vista5050 } from './regras';
 
 export interface PropsJogo {
@@ -40,13 +40,13 @@ export function Cabecalho({ v, agora, comTempo = true }: Omit<PropsJogo, 'sala'>
   );
 }
 
-/** linha de bonecos com ✅/❌ */
+/** linha de bonecos com ✅ / balão de pensamento */
 export function Estado({ sala, ids, feitos, tam }: { sala: VistaSala; ids: string[]; feitos: string[]; tam?: number }) {
   return (
     <div class="estado">
       {ids.map((id) => {
         const j = sala.jogadores.find((x) => x.id === id);
-        return j ? <Boneco key={id} j={j} tam={tam} marca={feitos.includes(id) ? '✅' : '❌'} /> : null;
+        return j ? <Boneco key={id} j={j} tam={tam} marca={<Feito ok={feitos.includes(id)} />} /> : null;
       })}
     </div>
   );

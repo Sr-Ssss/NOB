@@ -6,6 +6,7 @@ import reserva from './conteudo.json';
 import { MAX_RESPOSTA, MAX_TEXTO, type Lado } from './regras';
 import { Balanca, Cabecalho, Placar, Premios, nomeDe, type PropsJogo } from './tv';
 import { Progresso } from '../../ui/ecraunico';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 interface Frase {
@@ -191,6 +192,7 @@ export function Telemovel5050({
         <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
           ⓘ
         </button>
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
       </div>
       {ajuda && (
         <div class="cartao" onClick={() => setAjuda(false)}>

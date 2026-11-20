@@ -27,6 +27,7 @@
   "devDependencies": {
     "@capacitor/cli": "^8.6.2",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@preact/preset-vite": "^2.10.6",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",

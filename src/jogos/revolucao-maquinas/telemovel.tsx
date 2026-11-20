@@ -1,10 +1,11 @@
 import { useState } from 'preact/hooks';
 import type { AcaoSala, VistaSala } from '../../core/sala';
 import { t, type Chave } from '../../core/i18n';
-import { Avatar, Temporizador } from '../../ui/comuns';
+import { Avatar, Feito, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { equipaDe, type Carta, type PrivadoMaquinas, type VistaMaquinas } from './regras';
 import { COR, Consola, PlacarMaquinas, Segurar, nomePapel, narracao, type PropsMaquinas } from './comuns';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { chaveSegurar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
@@ -54,14 +55,15 @@ function Cartas({ mao, tipo, enviar }: { mao: Carta[]; tipo: 'rm_descartar' | 'r
 }
 
 function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaMaquinas; eu: string; p: PrivadoMaquinas | null; enviar: Enviar }) {
-  if (!v.participantes.includes(eu)) return <Frase texto={t('rmOlheTv')} />;
+  // sem TV, a consola por baixo já conta o que se passa
+  if (!v.participantes.includes(eu)) return sala.semTv ? null : <Frase texto={t('rmOlheTv')} />;
   if (!v.vivos.includes(eu)) return <div class="rm-ejetado"><h2>🚀</h2><p>{t('rmEjetado')}</p></div>;
   const cmd = eu === v.comandante;
   const pil = eu === v.piloto;
   const nome = (id: string | null) => (id ? nomeDe(sala, id) : '');
   switch (v.fase) {
     case 'carta':
-      return <Frase texto={t(chaveSegurar('rmCarta'))} />;
+      return <Frase texto={v.viram.includes(eu) ? t('rmEsperaVer') : t(chaveSegurar('rmCarta'))} />;
     case 'nomear':
       if (!cmd) return <Frase texto={t('rmNomear', { nome: nome(v.comandante) })} />;
       return (
@@ -85,7 +87,9 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaMaquinas; eu:
             </button>
           </div>
           <p class="centro">
-            {t('rmVotaram', { n: v.votaram.length, t: vivos })} {v.vivos.map((id) => (v.votaram.includes(id) ? '✅' : '❌')).join('')}
+            {t('rmVotaram', { n: v.votaram.length, t: vivos })} {v.vivos.map((id) => (
+              <Feito key={id} ok={v.votaram.includes(id)} />
+            ))}
           </p>
         </>
       );
@@ -171,7 +175,6 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaMaquinas; eu:
       return (
         <>
           <Frase texto={narracao(sala, v)} />
-          {v.poder === null && <Frase texto={t('rmDiscussao')} />}
           {sala.vipId === eu && (
             <button class="botao sec" onClick={() => jogo(enviar, { tipo: 'rm_seguir' })}>
               {t('rmSeguir')}
@@ -185,11 +188,11 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaMaquinas; eu:
 }
 
 /** Identidade: bolinha de cor + papel; Amotinados veem aliados e a IA; IA (5–6) vê os Amotinados */
-function Identidade({ sala, p, aberta }: { sala: VistaSala; p: PrivadoMaquinas | null; aberta?: boolean }) {
+function Identidade({ sala, p, aberta, aoMostrar }: { sala: VistaSala; p: PrivadoMaquinas | null; aberta?: boolean; aoMostrar?: () => void }) {
   if (!p) return null;
   const nomes = (l: string[]) => l.map((id) => nomeDe(sala, id)).join(', ');
   return (
-    <Segurar rotulo={t('rmIdentidade')} aberta={aberta}>
+    <Segurar rotulo={t('rmIdentidade')} aberta={aberta} aoMostrar={aoMostrar}>
       <div class="rm-bola">{COR[p.papel]}</div>
       <h2>{nomePapel(p.papel)}</h2>
       <p class="mini">{t(('rmObj_' + p.papel) as Chave)}</p>
@@ -211,7 +214,9 @@ export function TelemovelMaquinas({ sala, v, agora, eu, privado, enviar, idAbert
         <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
           ⓘ
         </button>
-        {!fim && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
+        {/* 'carta' não tem tempo: espera que todos vejam a identidade */}
+        {!fim && v.fase !== 'carta' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
       {ajuda && (
         <div class="cartao" onClick={() => setAjuda(false)}>
@@ -245,15 +250,17 @@ export function TelemovelMaquinas({ sala, v, agora, eu, privado, enviar, idAbert
       ) : (
         <>
           <Eu sala={sala} v={v} eu={eu} p={privado} enviar={enviar} />
-          {/* sem TV, um só ecrã: a consola (o que a TV mostraria) fica sempre por baixo */}
+          {/* sem TV, um só ecrã: a consola (o que a TV mostraria) fica sempre por baixo; sem a narração, que a frase de cima já diz (vivos) */}
           {sala.semTv && (
             <div class="palco-tel">
-              <Consola sala={sala} v={v} compacto />
+              <Consola sala={sala} v={v} compacto semNarra={v.vivos.includes(eu)} />
             </div>
           )}
         </>
       )}
-      {!fim && v.participantes.includes(eu) && v.fase !== 'ver' && <Identidade sala={sala} p={privado} aberta={idAberta} />}
+      {!fim && v.participantes.includes(eu) && v.fase !== 'ver' && (
+        <Identidade sala={sala} p={privado} aberta={idAberta} aoMostrar={() => v.fase === 'carta' && !v.viram.includes(eu) && jogo(enviar, { tipo: 'rm_vi' })} />
+      )}
     </div>
   );
 }

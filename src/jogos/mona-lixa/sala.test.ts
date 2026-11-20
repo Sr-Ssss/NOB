@@ -38,7 +38,7 @@ describe('Mona Lixa na sala', () => {
 
   it('o líder joga pelos bots; outra vez e menu no fim', () => {
     let s = com(1);
-    for (const b of ['1', '2']) s = reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0);
+    for (const b of ['1', '2']) s = reduzSala(reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0), { tipo: 'bot_ia', id: 'j1', bot: PREFIXO_BOT + b, ia: false }, 0); // IA desligada: o líder joga por eles
     s = reduzSala(s, { tipo: 'comecar', id: 'j1', jogo: 'mona' }, 100);
     expect(s.mona?.participantes).toHaveLength(3);
     for (const id of ['bot-1', 'bot-2']) s = reduzSala(s, { tipo: 'como', id: 'j1', bot: id, acao: { tipo: 'jogo', acao: { tipo: 'ml_desenho', id: '', tracos: TR } } }, 100);

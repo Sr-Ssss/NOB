@@ -7,6 +7,7 @@ import type { Traco } from '../../ui/tracos';
 import { MAX_TITULO, type Titulo } from './regras';
 import { Moldura, Palco, PlacarMona, type PropsMona } from './comuns';
 import { Espera, Progresso } from '../../ui/ecraunico';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 type Enviar = (a: AcaoSala) => void;
@@ -152,6 +153,7 @@ export function TelemovelMona({ sala, v, agora, eu, tag, enviar }: PropsMona & {
         <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
           ⓘ
         </button>
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
         {v.fase !== 'fim' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
       {ajuda && (

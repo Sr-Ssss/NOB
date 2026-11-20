@@ -13,14 +13,14 @@ Problemas parvos → invenções desenhadas → pitch → a sala investe.
 
 ## Fluxo
 1. **Problema**: sorteado por defeito, editável. Enviar + caixinha ✅/❌. Quem não enviar fica com o sorteado.
-2. **Inventar**: cada apresentador recebe o problema de outra pessoa (derangement) e faz desenho (canvas dos Rabiscos) + nome (≤40) + slogan (≤80). Quem não enviar não apresenta.
+2. **Inventar**: cada apresentador recebe o problema de outra pessoa (derangement) e faz desenho (canvas dos Rabiscos) + nome (≤40) + slogan (≤80). Quem não enviar não apresenta: aos 15 s do fim o telemóvel avisa "Faltam 15 s!".
 3. **Pitch**: problema → desenho → nome + slogan; o inventor passa as etapas no telemóvel.
 4. **Investir**: 3 notas de 100 € para as invenções dos outros (pode pôr todas na mesma; não pode investir na sua).
 5. **Revelar**: ranking com barras de dinheiro.
 
 ## Pontos
 - Inventor: € × 10. A mais financiada: +1000.
-- Autor do problema da vencedora: +300.
+- Autor do problema da vencedora: **+500** (decisão do utilizador, 18/11; antes +300).
 - Investidores: 0.
 
 ## Visual — "planta de inventor"
@@ -29,3 +29,6 @@ Problemas parvos → invenções desenhadas → pitch → a sala investe.
 
 ## Conteúdo
 - 200 problemas família.
+
+## Pausa
+- Pausa abaixo de 3 participantes ligados; a audiência não conta (18/11).

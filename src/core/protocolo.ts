@@ -55,7 +55,16 @@ export interface CopiaHost {
   chaves: ChavesHost;
   /** a cadeia até às chaves novas (a última passagem está assinada pelo anfitrião atual) */
   cadeia: Passagem[];
+  /** o líder escolheu este aparelho para ser a TV: assume já, como TV (não espera que o anfitrião se cale) */
+  tv?: boolean;
 }
+
+/**
+ * `prox` com este sufixo = o anfitrião está a passar a party AGORA (para a TV escolhida pelo líder):
+ * os telemóveis aceitam o herdeiro anunciado sem esperar `SILENCIO_TROCA`. Vai dentro da assinatura.
+ */
+export const PASSA_JA = '!';
+const semPassa = (prox: string | null) => (prox && prox.endsWith(PASSA_JA) ? prox.slice(0, -PASSA_JA.length) : prox);
 
 export interface MsgCopia extends Cifrado {
   para: string;
@@ -244,8 +253,12 @@ export class ProtocoloCliente {
     let trocou = false;
     if (this.host && (this.host.assina !== h.assina || this.host.ecdh !== h.ecdh)) {
       const i = seguirCadeia(this.codigo, this.host.assina, m.cadeia, h);
-      if (i < 0 || agora - this.ultima < SILENCIO_TROCA) return null;
-      if (this.prox && impressao(m.cadeia![i].para.assina) !== this.prox) return null;
+      const ja = !!this.prox?.endsWith(PASSA_JA);
+      if (i < 0 || (!ja && agora - this.ultima < SILENCIO_TROCA)) return null;
+      const prox = semPassa(this.prox);
+      if (prox && impressao(m.cadeia![i].para.assina) !== prox) return null;
+      // a passar já: só para o herdeiro anunciado (sem anúncio, espera o silêncio como antes)
+      if (ja && !prox) return null;
       trocou = true;
     } else if (!this.host && this.esperado && impressao(h.assina) !== this.esperado) {
       // entrou pelo QR de um anfitrião que entretanto passou a party

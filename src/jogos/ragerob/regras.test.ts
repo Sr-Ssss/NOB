@@ -71,9 +71,24 @@ describe('Ragerob — modo normal', () => {
     s = fimTv(s); // ganha o 1.º do grupo = a
     expect(s.resultado!.vencedor).toBe(a);
     expect(s.carteira.j1).toBe(1650);
-    expect(s.resultado!.ganhos).toEqual({ j1: 150, j2: -100, j3: -50 });
+    // j2 apostou no 2.º (antepenúltimo): recebe 30% de metade do bolo (225) = 67, dinheiro novo
+    expect(s.resultado!.ganhos).toEqual({ j1: 150, j2: -100 + 67, j3: -50 });
     expect(s.resultado!.passam).toHaveLength(2);
-    expect(total(s)).toBe(3 * CAPITAL);
+    expect(total(s)).toBe(3 * CAPITAL + 67);
+  });
+
+  it('consolação: último 10%, penúltimo 20%, antepenúltimo 30% de metade do bolo, pelo valor apostado', () => {
+    let s = tempo(novo(4));
+    const [, b, c, d] = grupoAtual(s);
+    s = r(s, { tipo: 'rr_apostar', id: 'j1', robo: b, valor: 300 });
+    s = r(s, { tipo: 'rr_apostar', id: 'j2', robo: c, valor: 100 });
+    s = r(s, { tipo: 'rr_apostar', id: 'j3', robo: d, valor: 100 });
+    s = r(s, { tipo: 'rr_apostar', id: 'j4', robo: d, valor: 300 });
+    s = tempo(s);
+    expect(s.bolo).toBe(800);
+    s = fimTv(s); // a ganha; ninguém apostou nele: o bolo acumula
+    expect(s.bolo).toBe(800);
+    expect(s.resultado!.ganhos).toEqual({ j1: -300 + 120, j2: -100 + 80, j3: -100 + 10, j4: -300 + 30 });
   });
 
   it('ninguém acertou: o bolo acumula para o combate seguinte', () => {

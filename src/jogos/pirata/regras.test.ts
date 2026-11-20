@@ -54,8 +54,9 @@ describe('Pirata', () => {
     expect(e.audiencia).toEqual(['j17', 'j18']);
   });
 
-  it('limiar da vigia: 2 com 5–6, senão 3; a definição manda', () => {
+  it('limiar da vigia: 2 com 6, senão 3; a definição manda', () => {
     expect(limiarVigia(DEF_PADRAO_PIRATA, 6)).toBe(2);
+    expect(limiarVigia({ ...DEF_PADRAO_PIRATA, vigiar: 2 }, 5)).toBe(2);
     expect(limiarVigia(DEF_PADRAO_PIRATA, 7)).toBe(3);
     expect(limiarVigia({ ...DEF_PADRAO_PIRATA, vigiar: 5 }, 6)).toBe(5);
   });
@@ -128,6 +129,21 @@ describe('Pirata', () => {
     for (const id of ['j1', 'j3', 'j4', 'j5']) expect(privadoPirata(e, id)!.resultado).toBeNull();
     expect(JSON.stringify(vistaPirata(e))).not.toContain('"pirata":true');
     expect(privadoPirata(fimFase(e), 'j2')!.resultado).toBeNull();
+    // mas fica no histórico privado ("Noite 1: …"), só do próprio
+    expect(privadoPirata(fimFase(e), 'j2')!.diario).toEqual([{ tipo: 'vigia', alvo: 'j1', pirata: true, n: 1 }]);
+    expect(privadoPirata(fimFase(e), 'j4')!.diario).toEqual([]);
+    expect(JSON.stringify(vistaPirata(fimFase(e)))).not.toContain('diario');
+  });
+
+  it('limiar da vigia: nenhuma em jogos de 5; com 6 → 2; conta pelos vivos', () => {
+    expect(limiarVigia(DEF_PADRAO_PIRATA, 5)).toBeNull();
+    expect(limiarVigia(DEF_PADRAO_PIRATA, 8, 6)).toBe(2);
+    expect(limiarVigia(DEF_PADRAO_PIRATA, 8, 7)).toBe(3);
+    // 5 jogadores: 2 marinheiros no mesmo alvo não descobrem nada
+    let e = com(['pirata', 'vigia', 'medico', 'marinheiro', 'marinheiro']);
+    for (const id of ['j4', 'j5']) e = r(e, { tipo: 'pr_noite', id, alvo: 'j1' });
+    e = fimFase(e);
+    expect(privadoPirata(e, 'j4')!.resultado).toBeNull();
   });
 
   it('vigia dos marinheiros: só com ≥ N no mesmo alvo, só esses sabem; pode haver 2 alvos', () => {

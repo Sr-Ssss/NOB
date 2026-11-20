@@ -1,7 +1,7 @@
 # 🤖 Rinha de Robôs (Robot Brawl) — v2 em planeamento
 Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jogadores apostam, compram módulos em leilão e podem pagar para controlar o seu robô durante uns segundos.
 
-- Jogadores: 2–10. **Precisa de TV.**
+- Jogadores: 2–10. Com ou sem TV (sem TV desde 20/11: arena pequena em cada telemóvel).
 - Assets das locomoções: reaproveitar do projeto `../Rob/assets/sprites/robot/loco_*.svg`. Carroçarias e cabeças são novas.
 
 ## Robô = Carroçaria + Locomoção + Cabeça + Módulos
@@ -29,7 +29,7 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
 | 🐊 Crocodilo | morde e agarra | persegue e agarra |
 | 🦏 Rinoceronte | pico; muito dano em investida | investe de longe |
 | 🐐 Bode | estica a cabeça e recolhe-a, empurrando forte | atira os outros contra perigos |
-| 🦔 Ouriço | **mangual**: bola de espinhos (ouriço enrolado) presa por corrente, gira à volta do robô (só a bola gira, o corpo não); demora a ganhar velocidade; no impacto projeta os 2 robôs, com mais dano no inimigo (16/11: trocado do tambor, para não repetir a serra do Galo) | ganha rotação longe, depois ataca |
+| 🦔 Ouriço | **tambor pequeno** à frente: o ouriço enrolado, deitado, gira como um rolo de espinhos; demora a ganhar velocidade; no impacto projeta os 2 robôs, com mais dano no inimigo; área pequena e dano moderado (20/11: o mangual era forte demais e passou a tambor, a pedido do utilizador) | ganha rotação longe, depois ataca |
 
 ### Módulos (10)
 | Módulo | Efeito |
@@ -76,7 +76,7 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
   - Trocar um módulo que já existe custa +50%.
 - **Controlar**: paga-se para conduzir durante 5 s **o robô em que se apostou**; 1 pessoa de cada vez por robô (fila).
 - **Módulos**: ficam no inventário de quem os compra. Só se instalam no robô em que esse jogador apostou no combate atual (ordem: comprar → apostar → instalar).
-- **O dinheiro conserva-se**: nunca aparece dinheiro novo. Só sai do bolso de alguém em compras ou numa aposta perdida, e só entra no bolso de alguém vindo do bolo de apostas.
+- **O dinheiro conserva-se** (exceção desde 20/11: a consolação, ver abaixo): nunca aparece dinheiro novo. Só sai do bolso de alguém em compras ou numa aposta perdida, e só entra no bolso de alguém vindo do bolo de apostas.
 - **Proposta: Entrada obrigatória** (para quem aposta ganhar mais do que quem não aposta):
   - Em cada combate, todos põem automaticamente uma **entrada** (padrão 50) no bolo.
   - Quem escolhe um robô: a entrada conta como aposta, mas tem de juntar **pelo menos +50** (aposta mínima num robô = 100). Pode juntar mais.
@@ -84,6 +84,7 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
   - Quem não escolhe: perde a entrada para o bolo.
   - O bolo é dividido por quem apostou no **vencedor** do combate, proporcionalmente.
   - Se ninguém acertou, o bolo passa para o combate seguinte (acumula).
+  - ✅ **Consolação** (decidido 20/11/2026): em cada combate, quem apostou num robô que perdeu recebe de volta uma parte calculada sobre **metade do bolo**, contando do fim: último 10%, penúltimo 20%, antepenúltimo 30% (num combate de 4: 4.º 10%, 3.º 20%, 2.º 30%; na final, o perdedor 10%). É **dinheiro novo** (não sai do bolo, que vai inteiro para quem acertou). Vários apostadores no mesmo robô dividem pelo valor apostado (para baixo; o resto para quem apostou mais). Paga-se mesmo quando ninguém acertou (o bolo acumula na mesma). KO ao mesmo tempo = os robôs empatados ficam no lugar mais alto do grupo.
   - No fim do torneio, se ainda sobrar bolo, vai para quem apostou no campeão; se ninguém, divide-se pelos que apostaram na final.
 - **Preços propostos** (usados na partida simulada):
   - capital inicial **1500** (decidido);
@@ -121,7 +122,7 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
   3. **Leilão / loja**: topo "Leilão · tempo" + o meu dinheiro; 5 cartões de módulo, cada um com o campo da oferta (esbatido se não dá para pagar); botão **Enviar ofertas** + caixinha ✅/❌ de quem já enviou;
   4. **Instalar**: o meu robô com os encaixes vazios; tocar num módulo do inventário → encaixe;
   5. **Fim do combate**: ganhaste/perdeste + dinheiro + "Olha para a TV".
-- Sem TV: o Painel mostra a arena em pequeno + tabela.
+- Sem TV (feito 20/11, Fase 10): a física corre no host (o telemóvel que tem a sala, `MotorRagerob` montado no `src/jogar/Criar.tsx`), que manda ~8 quadros/s (`rr_quadro`, só o host; `src/jogos/ragerob/quadro.ts`); cada telemóvel desenha a arena pequena por cima dos controlos, interpolando entre os 2 últimos quadros. No resultado e no fim, o telemóvel mostra a ordem/classificação; no fim o líder tem "Jogar outra vez" / "Menu".
 - Boa prática: cada robô tem **nome com cor** (ex.: "Galo Pimenta", "Rino Couve"), para se distinguir também sem ver cores.
 - Boa prática: o chão de terra é claro e os robôs têm contorno preto, o que dá contraste à distância na TV; os perigos distinguem-se também pela forma, não só pela cor.
 - Boa prática: os botões do comando têm ≥ 72 dp e ficam fixos nos cantos, para se conduzir sem olhar.
@@ -144,7 +145,9 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
   - **Rinoceronte** ✅: cunha cinzenta blindada em 2 camadas; **lança** comprida creme à frente + pico pequeno; olhos pequenos pretos com sobrancelha zangada.
   - **Bode** ✅: **rampa** larga creme (lança os outros, como um *flipper*) num pistão; chifres castanhos enrolados nos cantos; olhos amarelos com pupila retangular deitada.
   - **Crocodilo** ✅: **visto de cima**, com 2 estados: à espera, a mandíbula de cima fica levantada e vê-se só a de baixo (boca rosa, dentes brancos nas bordas); ao bater, **fecha** e vê-se o focinho verde com narinas e escamas + linhas de impacto. Olhos amarelos com pupila em fenda, em saliências.
-  - **Ouriço** ✅: **ouriço enrolado** numa bola castanha de espinhos (focinho creme pequeno + olhos pretos com brilho), presa à frente por uma **corrente** — um **mangual**. Ganha rotação à volta do robô (círculo tracejado no chão mostra o alcance) e projeta quem apanha. Mecânica diferente da serra do Galo.
+  - **Ouriço** ✅ (20/11): **ouriço enrolado** deitado à frente, como um **tambor** castanho de espinhos (focinho creme pequeno + olhos pretos), num suporte de metal; os espinhos correm conforme gira; um arco laranja mostra quando está carregado. Projeta quem toca.
+- **Crocodilo** (20/11): depois de morder, procura o perigo mais perto (serra, parede com picos, espinhos, fogo, água eletrificada) e arrasta a presa até lá (até 3 s); aí atira-a para dentro.
+- **Perigos sólidos** (20/11): a serra e a parede com picos têm colisão; serra, parede, espinhos, pistão de parede e martelo que cai dão **knockback** (como ferro a tocar num disco).
 - **Módulos** ✅ (16/11) — cada um numa **base cinzenta aparafusada** que tapa o encaixe; peça em metal + **1 cor de destaque** (a mesma no cartão da loja):
   - **Direção fixa**: cada encaixe aponta do centro do robô para fora (nos cantos, na diagonal). O módulo dispara/atua sempre para esse lado, **sem mira automática**: quem mira é o robô, ao rodar. Todos os módulos têm algo a apontar para fora;
   - seta vermelha da direção só na loja/instalação e no tutorial, nunca no combate (boa prática: ecrã limpo);
@@ -159,8 +162,74 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
   - **Prato giratório**: disco de metal com setas curvas; roda o robô e estraga a mira (joga com a direção fixa dos módulos);
   - ❌ Buraco (rejeitado: "caiu, morreu"). Jato de ar (atira para trás, sem dano) ficou de fora, não foi escolhido.
   - **Poças**: óleo (preto com brilho), óleo a arder (labaredas laranja/vermelhas), água (azul), água eletrificada (azul + raios amarelos), vapor (nuvem creme, só tapa a vista);
-  - **Eventos**: placa creme no topo da TV durante 3 s (ícone + nome):
+  - **Eventos**: aviso **por baixo da arena** (fora da zona do combate) durante 3 s: caixa com riscas vermelhas e amarelas, ⚠️ dos dois lados, ícone + nome, pisca 3 vezes (20/11; antes era uma placa creme no topo):
     - **Íman da grua**: grua com um íman vermelho; puxa todos os robôs para um ponto durante 4 s;
     - **Chuva de parafusos**: parafusos caem do céu;
     - **Arena a encolher**: borda vermelha tracejada que avança;
     - ❌ Gravidade baixa (rejeitada: não faz sentido aqui).
+
+## Estado da implementação e próximo passo (20/11/2026)
+Para continuar numa sessão nova: ler isto, `info/arquitetura.md` (Ecrãs, Design) e a secção "Ragerob" de `info/PROXIMA_SESSAO.md`.
+
+### Onde está
+- Código em `src/jogos/ragerob/`:
+  - `pecas.ts`: as peças, preços, cores com nome e direção dos encaixes;
+  - `regras.ts`: o reducer puro (dinheiro, leilão/loja privada, apostas com entrada e consolação, torneio, liga Pilotos, controlar 5 s);
+  - `fisica.ts`: Matter.js, só na TV (cabeças, módulos, combos, perigos sólidos com knockback, eventos, arena a encolher, IA);
+  - `desenho.tsx`: robôs, arena e efeitos em SVG;
+  - `tv.tsx`, `telemovel.tsx`, `comuns.tsx`, `definicoes.tsx`, `ragerob.css`;
+  - `demo.tsx`: rota dev `#/demo-ragerob?fase=montar|loja|aposta|instalar|combate|resultado|fim&modo=normal|pilotos&ecra=tv|tel[&eu=j2]`.
+- Ligações ao núcleo:
+  - a entrada `ragerob` em `src/core/registo.ts` e em `src/jogos/ecras.tsx`;
+  - `PropsTv.acao`, pela qual a TV manda `rr_vidas`/`rr_fim`;
+  - `podeComecar`, que agora usa o mínimo de jogadores mais baixo entre os jogos (o Ragerob joga-se a 2);
+  - os textos `rr*` em `src/i18n/`;
+  - a dependência `matter-js`.
+- A física anda pelo relógio real (rAF + `setInterval` de reserva), por isso continua a correr com a TV escondida.
+- IA (`fisica.ts` → `ia()`): é uma máquina de estados que passa por rodear (vai para o flanco ou as costas do alvo), alinhar (pára e aponta a arma com o corpo), atacar e recuar (troca de lado). Também esquiva cargas de frente e larga o empurra-empurra ao fim de 0,45 s (o Galo aguenta 0,9 s).
+  - Cada robô tem uma personalidade sorteada: agressividade, paciência, distância, flanco preferido, gosto por módulos e se prefere o alvo mais fraco.
+  - Comportamento por cabeça:
+    - Rino: carrega de longe;
+    - Ouriço: espera que o tambor ganhe rotação;
+    - Bode: põe o alvo entre si e um perigo;
+    - Crocodilo: arrasta a presa até um perigo.
+  - Quem leva um golpe forte fica "atordoado": perde aderência uns instantes, para o knockback se ver.
+- Testes:
+  - `regras.test.ts` (19);
+  - `fisica.test.ts` (4): o combate acaba sempre; a IA passa por todos os estados sem ficar presa; o Crocodilo arrasta até à serra e a serra é sólida; o humano conduz.
+  - O projeto inteiro tinha 322 testes verdes, com lint e tsc a 0.
+- Verificado no browser (TV + líder + 1 bot):
+  - modo Apostas: partida inteira, ainda antes da consolação;
+  - modo Pilotos: liga inteira (2 rondas), já com a IA nova mas antes das mudanças de 20/11 à tarde;
+  - o aviso de evento (riscas, ⚠️, por baixo da arena) foi visto numa luta da demo.
+- Capturas em `info/progresso/9-ragerob/`, feitas com Playwright + Edge (o script `cap-ragerob.mjs` ficou no scratchpad de uma sessão antiga). São anteriores às mudanças de 20/11 (IA nova, tambor do Ouriço, aviso de evento).
+
+### Decisões tomadas sem o utilizador (por confirmar)
+- Modo normal com 2, 3 ou 4 rondas (4/8/16 robôs).
+- O dinheiro gasto vai para o bolo; no modo Pilotos desaparece.
+- A sobra do bolo no fim vai para quem apostou no campeão; se ninguém, para quem apostou na final; se ninguém, para todos por igual.
+- Ao trocar um módulo, o antigo perde-se.
+- A fase "Instalar" salta-se quando ninguém tem módulos.
+- Passam os 2 primeiros na ordem de KO; os empates desfazem-se pelo dano causado.
+- No Pilotos, a IA licita 1 módulo por ronda.
+- A pausa (fora do combate) acontece com menos de 2 jogadores ligados.
+- Rede de segurança: se a TV não mandar o fim do combate em 200 s, a ordem fica pela vida.
+- A serra trava também os robôs de pernas (mas não lhes tira vida).
+
+### Verificação de 20/11 (sessão seguinte)
+- 23 testes do ragerob verdes; eslint e tsc a 0.
+- Demo `fase=combate`: luta corre sem erros na consola, aviso "Arena encolhendo" visível.
+- Demo `fase=resultado`: ecrã de dinheiro mostra perdas parciais (consolação) e entradas perdidas.
+- Falta: o utilizador avaliar força/equilíbrio a jogar; capturas novas (precisa de refazer o script Playwright).
+
+### Próximo passo
+1. Ver no browser, a jogar, as mudanças de 20/11: o Crocodilo a arrastar até à serra, o knockback dos perigos e o tambor do Ouriço. Perguntar ao utilizador se a força e o equilíbrio estão bons.
+2. Voltar a fazer as capturas em `info/progresso/9-ragerob/` com a IA e o Ouriço novos.
+3. Jogar outra vez uma partida no modo Apostas no browser, para ver a consolação no ecrã de resultado.
+4. Por fazer:
+   - som;
+   - ⓘ de ajuda própria do jogo;
+   - ~~`rr_vidas`/`rr_fim` aceites do líder~~ — feito: novo campo `soTvManda` no registo (só `ID_TV`);
+   - ~~fundo~~ — feito: fundo do jogo (fora da arena) em `--noite`, texto claro; cartões mantêm texto escuro;
+   - nos cartões da loja e da instalação não se vê o tambor do Ouriço carregado (só na arena).
+5. Confirmar com o utilizador as decisões acima.

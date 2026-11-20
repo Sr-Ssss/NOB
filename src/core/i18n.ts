@@ -18,8 +18,14 @@ export function usarIdioma(i: Idioma): void {
   document.documentElement.lang = i;
 }
 
+/** textos trocados enquanto vale um modo (torneio: "Jogar outra vez" → "Placar do torneio" no fim de todos os jogos) */
+let trocas: Partial<Record<Chave, Chave>> = {};
+export function trocarTextos(m: Partial<Record<Chave, Chave>>): void {
+  trocas = m;
+}
+
 export function t(chave: Chave, vars: Record<string, string | number> = {}): string {
-  return DIC[atual][chave].replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
+  return DIC[atual][trocas[chave] ?? chave].replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
 }
 
 /** nomes dos jogos (ver info/arquitetura.md) */

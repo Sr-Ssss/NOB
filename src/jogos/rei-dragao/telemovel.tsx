@@ -4,8 +4,9 @@ import { t, type Chave } from '../../core/i18n';
 import { Avatar, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { T_REFENS, type CartaR, type PapelR, type PrivadoRei, type VistaRei } from './regras';
-import { BOLA, Castelos, ICONE, PlacarRei, Segurar, narracao, nomeEquipa, nomePapel, nomeSala, textoCarta, type PropsRei } from './comuns';
-import { chaveSegurar, eventosSegurar, tocarParaMostrar } from '../../ui/acessibilidade';
+import { BOLA, Castelos, ICONE, PlacarRei, narracao, nomeEquipa, nomePapel, nomeSala, textoCarta, type PropsRei } from './comuns';
+import { AcabarPartida } from '../../ui/acabarPartida';
+import { eventosSegurar, tocarParaMostrar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
@@ -37,7 +38,7 @@ function Info({ fechar }: { fechar: () => void }) {
   return (
     <div class="rd-info" role="dialog">
       <h3>{t('rdNome')}</h3>
-      <p>{t('rdInfoRegras', { segurar: t(chaveSegurar('idSegurar')) })}</p>
+      <p>{t('rdInfoRegras', { segurar: t('rdVerCarta') })}</p>
       <h3>{t('rdInfoPapeis')}</h3>
       <ul>
         {PAPEIS_INFO.map((p) => (
@@ -354,17 +355,8 @@ function Eu({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei; e
   }
 }
 
-/** Identidade: texto igual para todos + botão a segurar 3 s */
-function Identidade({ p, aberta }: { p: PrivadoRei | null; aberta?: boolean }) {
-  if (!p) return null;
-  return (
-    <Segurar rotulo={t('rdIdentidade')} aberta={aberta}>
-      <Carta c={p.carta} p={p} />
-    </Segurar>
-  );
-}
-
-export function TelemovelRei({ sala, v, agora, eu, privado, enviar, idAberta }: PropsRei & { eu: string; privado: PrivadoRei | null; enviar: Enviar; idAberta?: boolean }) {
+/** sem botão de identidade (Fase 11): na ronda, "Mostrar carta" já a revela */
+export function TelemovelRei({ sala, v, agora, eu, privado, enviar }: PropsRei & { eu: string; privado: PrivadoRei | null; enviar: Enviar }) {
   const [ajuda, setAjuda] = useState(false);
   const [, setT] = useState(0);
   useEffect(() => {
@@ -381,11 +373,12 @@ export function TelemovelRei({ sala, v, agora, eu, privado, enviar, idAberta }: 
         <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
           ⓘ
         </button>
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
         {!fim && v.fase !== 'ir' && v.fase !== 'carta' && (v.fase !== 'ronda' || !minha) && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
       {ajuda && (
         <div class="cartao" onClick={() => setAjuda(false)}>
-          <b>{t('rdNome')}</b> — {t('ajudaRei', { segurar: t(chaveSegurar('idSegurar')) })}
+          <b>{t('rdNome')}</b> — {t('ajudaRei', { segurar: t('rdVerCarta') })}
         </div>
       )}
       {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
@@ -422,16 +415,15 @@ export function TelemovelRei({ sala, v, agora, eu, privado, enviar, idAberta }: 
       ) : (
         <>
           <Eu sala={sala} v={v} eu={eu} p={privado} enviar={enviar} agora={agora} />
-          {/* sem TV, um só ecrã: as torres (o que a TV mostraria) por baixo; na carta não, o ecrã fica escuro */}
-          {sala.semTv && v.fase !== 'carta' && (
+          {/* sem TV, um só ecrã: as torres (o que a TV mostraria) por baixo, sem a narração (a frase de cima já a diz);
+              na carta não (o ecrã fica escuro) e na ronda de quem joga também não (é tempo de conversar; Fase 11) */}
+          {sala.semTv && v.fase !== 'carta' && !(v.fase === 'ronda' && minha) && (
             <div class="palco-tel">
-              <h2 class="centro">{narracao(sala, v)}</h2>
               <Castelos sala={sala} v={v} agora={agora} compacto />
             </div>
           )}
         </>
       )}
-      {!fim && minha && v.fase !== 'ir' && v.fase !== 'carta' && <Identidade p={privado} aberta={idAberta} />}
     </div>
   );
 }

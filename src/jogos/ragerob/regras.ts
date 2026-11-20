@@ -1,9 +1,10 @@
 import { baralhar } from '../../core/ids';
 import { CABECAS, CORES, CORPOS, ENCAIXES, LOCOS, MODULOS, PERIGOS, PRECO, type Cabeca, type Corpo, type Loco, type Modulo, type Perigo, type Robo } from './pecas';
+import { quadroValido, type Quadro } from './quadro';
 
 /**
- * Ragerob: regras em info/jogos/rinha-de-robos.md. Precisa de TV: a física corre só na TV (host),
- * que manda o fim do combate (`rr_fim`) e as vidas (`rr_vidas`). Este reducer só trata dinheiro, loja, apostas,
+ * Ragerob: regras em info/jogos/rinha-de-robos.md. A física corre só no host (a TV ou, sem TV, o telemóvel que tem a sala),
+ * que manda o fim do combate (`rr_fim`), as vidas (`rr_vidas`) e, sem TV, os quadros da arena (`rr_quadro`). Este reducer só trata dinheiro, loja, apostas,
  * torneio/liga e quem conduz.
  * Decisões do utilizador (17/11): leilão 30 s, apostas 20 s, instalar 20 s, combate 90 s; depois a arena encolhe
  * a arder até sobrar um (ou nenhum); colocação = ordem de KO (KO ao mesmo tempo = empate); Pilotos: cada um escolhe
@@ -48,10 +49,12 @@ export const P_KO = 100;
 export const TETO_DANO = 300;
 export const P_COLOCACAO = [300, 200, 100, 0];
 export const PONTOS = [3, 2, 1, 0];
+/** modo normal: devolução a quem apostou num robô que perdeu, em fração de metade do bolo, a contar do fim (último, penúltimo, antepenúltimo) */
+export const CONSOLACAO = [0.1, 0.2, 0.3];
 export const P_RECUPERACAO = 100;
-export const TIPOS_RAGEROB = ['rr_montar', 'rr_ofertas', 'rr_comprar', 'rr_apostar', 'rr_instalar', 'rr_pronto', 'rr_controlar', 'rr_conduzir', 'rr_vidas', 'rr_fim'];
-/** só a TV (host) as manda */
-export const SO_TV_RAGEROB = ['rr_vidas', 'rr_fim'];
+export const TIPOS_RAGEROB = ['rr_montar', 'rr_ofertas', 'rr_comprar', 'rr_apostar', 'rr_instalar', 'rr_pronto', 'rr_controlar', 'rr_conduzir', 'rr_vidas', 'rr_quadro', 'rr_fim'];
+/** só o host (a TV ou, sem TV, o telemóvel que tem a sala) as manda */
+export const SO_TV_RAGEROB = ['rr_vidas', 'rr_quadro', 'rr_fim'];
 
 export interface Comando {
   /** 1 = frente, −1 = trás */
@@ -73,6 +76,8 @@ export type AcaoRagerob =
   | { tipo: 'rr_controlar'; id: string }
   | { tipo: 'rr_conduzir'; id: string; f: number; r: number }
   | { tipo: 'rr_vidas'; id: string; vidas: Record<string, number> }
+  /** sem TV: a arena num instante, para os telemóveis a desenharem (src/jogos/ragerob/quadro.ts) */
+  | { tipo: 'rr_quadro'; id: string; q: Quadro }
   /** ordem = grupos por colocação (o 1.º grupo é o vencedor; KO ao mesmo tempo = mesmo grupo) */
   | { tipo: 'rr_fim'; id: string; ordem: string[][]; dano: Record<string, number>; kos: Record<string, number> }
   | { tipo: 'ligados'; ids: string[] }
@@ -94,6 +99,8 @@ export interface Combate {
   condutor: Record<string, { id: string; ate: number }>;
   fila: Record<string, string[]>;
   comandos: Record<string, Comando>;
+  /** sem TV: o último quadro da arena mandado pelo host */
+  quadro?: Quadro;
 }
 
 export interface Resultado {
@@ -372,6 +379,17 @@ function fecharCombate(s: EstadoRagerob, ordemTv: string[][], dano: Record<strin
   if (s.def.modo === 'normal') {
     for (const [j, v] of Object.entries(s.pago)) ganhos[j] = -v;
     const noVencedor = vencedor ? Object.fromEntries(Object.entries(s.apostas).filter(([, a]) => a.robo === vencedor).map(([j, a]) => [j, a.valor])) : {};
+    // consolação (dinheiro novo, não sai do bolo): sobre metade do bolo, contando do fim — último 10%, penúltimo 20%, antepenúltimo 30%
+    const metade = r.bolo / 2;
+    for (const robo of c.robos) {
+      const doFim = c.robos.length - 1 - pos[robo];
+      const pct = CONSOLACAO[doFim];
+      if (!pct || robo === vencedor) continue;
+      const nele = Object.fromEntries(Object.entries(s.apostas).filter(([, a]) => a.robo === robo).map(([j, a]) => [j, a.valor]));
+      const parte = repartir(Math.floor(metade * pct), nele);
+      r = { ...r, carteira: somar(r.carteira, parte) };
+      for (const [j, v] of Object.entries(parte)) ganhos[j] = (ganhos[j] ?? 0) + v;
+    }
     if (Object.keys(noVencedor).length) {
       const premio = repartir(r.bolo, noVencedor);
       r = { ...r, carteira: somar(r.carteira, premio), bolo: 0 };
@@ -616,6 +634,11 @@ export function reduzRagerob(s: EstadoRagerob, a: AcaoRagerob, agora: number): E
       const vidas = { ...c.vidas };
       for (const r of c.robos) if (typeof a.vidas[r] === 'number') vidas[r] = Math.max(0, Math.min(100, Math.round(a.vidas[r])));
       return { ...s, combate: { ...c, vidas } };
+    }
+    case 'rr_quadro': {
+      const c = s.combate;
+      if (s.fase !== 'combate' || !c || !quadroValido(a.q)) return s;
+      return { ...s, combate: { ...c, quadro: a.q } };
     }
     case 'rr_fim':
       if (s.fase !== 'combate' || !s.combate) return s;

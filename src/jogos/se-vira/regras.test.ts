@@ -11,6 +11,7 @@ import {
   novoSevira,
   plateia,
   podioSevira,
+  privadoSevira,
   pontosDe,
   quantosApresentam,
   reduzSevira,
@@ -97,7 +98,7 @@ describe('Se Vira! — preparar', () => {
     expect(e.terminaEm).toBe(T + 5 + T_TEMA * 1000);
     const quem = Object.keys(e.dono).find((a) => e.dono[a] === 'j1')!;
     expect(e.decks[quem].titulo).toBe('Patos no escritório');
-    expect(e.decks[quem].slides.filter((s) => s.tipo === 'imagem')).toHaveLength(1);
+    expect(e.decks[quem].slides.filter((s) => s.visual.tipo === 'jogador')).toHaveLength(1);
     const outro = Object.keys(e.dono).find((a) => e.dono[a] === 'j2')!;
     expect(e.decks[outro].titulo).toBe(e.temas.j2.pt);
   });
@@ -109,7 +110,7 @@ describe('Se Vira! — preparar', () => {
     expect(e.fase).toBe('tema');
     const quem = Object.keys(e.dono).find((a) => e.dono[a] === 'j2')!;
     expect(e.decks[quem].titulo).toBe(e.temas.j2.pt);
-    expect(e.decks[quem].slides.some((s) => s.tipo === 'imagem')).toBe(false);
+    expect(e.decks[quem].slides.some((s) => s.visual.tipo === 'jogador')).toBe(false);
   });
 
   it('em inglês o tema sorteado vem em inglês', () => {
@@ -125,22 +126,50 @@ describe('Se Vira! — slides', () => {
       const s = gerarSlides(n, [GIF, GIF, GIF], C, new Set(), 42 + n);
       expect(s).toHaveLength(n);
       expect(s[n - 1].tipo).toBe('conclusao');
-      expect(s.filter((x) => x.tipo === 'imagem')).toHaveLength(3);
+      expect(s.filter((x) => x.visual.tipo === 'jogador')).toHaveLength(3);
+      // a conclusão nunca leva a imagem do jogador
+      expect(s[n - 1].visual.tipo).toBe('auto');
     }
   });
 
   it('as posições das imagens são sorteadas', () => {
     const pos = new Set<number>();
-    for (let seed = 1; seed < 30; seed++) pos.add(gerarSlides(6, [GIF], C, new Set(), seed).findIndex((x) => x.tipo === 'imagem'));
+    for (let seed = 1; seed < 30; seed++) pos.add(gerarSlides(6, [GIF], C, new Set(), seed).findIndex((x) => x.visual.tipo === 'jogador'));
     expect(pos.size).toBeGreaterThan(2);
   });
 
-  it('lista tem 3 tópicos; gráfico tem valores', () => {
-    const s = gerarSlides(8, [], C, new Set(), 7);
-    const lista = s.find((x) => x.tipo === 'lista');
-    if (lista?.tipo === 'lista') expect(lista.itens).toHaveLength(3);
-    const g = s.find((x) => x.tipo === 'grafico');
-    if (g?.tipo === 'grafico') expect(g.valores.every((v) => v > 0)).toBe(true);
+  it('todos os slides têm imagem: sem as do jogador, todos automáticos (termos diferentes no mesmo deck)', () => {
+    const s = gerarSlides(8, [], C, new Set(), 3);
+    expect(s.every((x) => x.visual.tipo === 'auto' && x.visual.busca && x.visual.emoji)).toBe(true);
+    const buscas = s.map((x) => (x.visual.tipo === 'auto' ? x.visual.busca : ''));
+    expect(new Set(buscas).size).toBe(8);
+  });
+
+  it('pelo menos 1 de cada tipo (com 4 slides: conclusão + 3 diferentes); o resto varia', () => {
+    const todos = ['foto', 'grafico', 'citacao', 'lista', 'conclusao'];
+    const vistos = new Set<string>();
+    for (let seed = 1; seed < 40; seed++) {
+      for (const n of [5, 6, 8]) {
+        const tipos = gerarSlides(n, [GIF], C, new Set(), seed).map((x) => x.tipo);
+        expect(new Set(tipos)).toEqual(new Set(todos));
+        expect(tipos.filter((t) => t === 'conclusao')).toHaveLength(1);
+        vistos.add(tipos.join());
+      }
+      const quatro = gerarSlides(4, [], C, new Set(), seed).map((x) => x.tipo);
+      expect(new Set(quatro).size).toBe(4);
+      expect(quatro[3]).toBe('conclusao');
+    }
+    expect(vistos.size).toBeGreaterThan(20);
+  });
+
+  it('lista tem 1 tópico; gráfico tem valores', () => {
+    for (let seed = 1; seed < 10; seed++) {
+      const s = gerarSlides(8, [], C, new Set(), seed);
+      const lista = s.find((x) => x.tipo === 'lista');
+      expect(lista?.tipo === 'lista' && lista.itens).toHaveLength(1);
+      const g = s.find((x) => x.tipo === 'grafico');
+      expect(g?.tipo === 'grafico' && g.valores.every((v) => v > 0)).toBe(true);
+    }
   });
 });
 
@@ -159,6 +188,27 @@ describe('Se Vira! — apresentar', () => {
     expect(e.slide).toBe(3);
   });
 
+  it('"Terminar apresentação": só o apresentador, só no último slide → Nota logo', () => {
+    let e = tick(preparado(3, { tempo: 120, slides: 4 }));
+    const a = apresentador(e)!;
+    const outro = e.participantes.find((x) => x !== a)!;
+    const agora = T + 5000;
+    // ainda no 1.º slide: recusa
+    expect(reduzSevira(e, { tipo: 'sv_terminar', id: a }, agora)).toBe(e);
+    e = ap(e, Array.from({ length: 3 }, () => ({ tipo: 'sv_slide' as const, id: a, dir: 1 })));
+    expect(e.slide).toBe(3);
+    // outro jogador: recusa
+    expect(reduzSevira(e, { tipo: 'sv_terminar', id: outro }, agora)).toBe(e);
+    // em pausa: recusa
+    const pausado = { ...e, pausaRestante: 1000 };
+    expect(reduzSevira(pausado, { tipo: 'sv_terminar', id: a }, agora)).toBe(pausado);
+    e = reduzSevira(e, { tipo: 'sv_terminar', id: a }, agora);
+    expect(e.fase).toBe('nota');
+    expect(e.terminaEm).toBe(agora + T_NOTA * 1000);
+    // fora de "apresentar": nada
+    expect(reduzSevira(e, { tipo: 'sv_terminar', id: a }, agora)).toBe(e);
+  });
+
   it('reações: o apresentador não reage; spam não conta; só emojis válidos', () => {
     let e = tick(preparado(3));
     const a = apresentador(e)!;
@@ -171,8 +221,8 @@ describe('Se Vira! — apresentar', () => {
     expect(e.contaReacoes[a]).toBe(2);
     e = reduzSevira(e, { tipo: 'sv_reagir', id: x, r: '👏' }, T + T_CONTA_REACAO);
     expect(e.contaReacoes[a]).toBe(3);
-    // as reações não vão no canal
-    expect(JSON.stringify(vistaSevira(e, () => undefined))).not.toContain('🤯');
+    // as reações vão no canal (sem TV aparecem nos telemóveis, Fase 10), mas sem quem reagiu
+    expect(vistaSevira(e, () => undefined).reacoes.every((r) => !('id' in r))).toBe(true);
   });
 
   it('a galeria não vai no canal, só para a TV', () => {
@@ -186,7 +236,7 @@ describe('Se Vira! — apresentar', () => {
     expect(extraTv(e).imagem).toBe(dados);
     const v = vistaSevira(e, () => undefined);
     expect(JSON.stringify(v)).not.toContain('QUJD');
-    expect(v.slideAtual?.tipo).toBe('imagem');
+    expect(v.slideAtual?.visual).toEqual({ tipo: 'jogador', img: { tipo: 'galeria', url: '' } });
   });
 });
 
@@ -281,5 +331,27 @@ describe('Se Vira! — conteúdo', () => {
     expect(c.citacoes.length).toBeGreaterThan(50);
     expect(c.rotulos.length).toBeGreaterThan(50);
     expect(c.conclusoes.length).toBeGreaterThanOrEqual(20);
+  });
+});
+
+describe('Se Vira! — sem TV (Fase 10)', () => {
+  it('a imagem da galeria do slide atual vai pelo privado (só sem TV, nunca a bots); as reações vão na vista', () => {
+    const e0 = tick(preparado(3, { slides: 4 }));
+    const a = apresentador(e0)!;
+    const deck = e0.decks[a];
+    const slides = deck.slides.map((s, i) => (i === 1 ? { ...s, visual: { tipo: 'jogador' as const, img: { tipo: 'galeria' as const, url: 'data:image/webp;base64,AAA' } } } : s));
+    let e: EstadoSevira = { ...e0, decks: { ...e0.decks, [a]: { ...deck, slides } } };
+    const semTv = { semTv: true, bot: false };
+    // slide 0 sem imagem da galeria: nada
+    expect(privadoSevira(e, 'j1', semTv)).toBeNull();
+    e = ap(e, [{ tipo: 'sv_slide', id: a, dir: 1 }]);
+    expect(privadoSevira(e, 'j1', semTv)).toEqual({ chave: `${a}:1`, imagem: 'data:image/webp;base64,AAA' });
+    expect(privadoSevira(e, 'j1', { semTv: false, bot: false })).toBeNull();
+    expect(privadoSevira(e, 'j1', { semTv: true, bot: true })).toBeNull();
+    // a vista nunca leva a imagem da galeria
+    expect(JSON.stringify(vistaSevira(e, () => undefined))).not.toContain('base64');
+    const outro = e.participantes.find((x) => x !== a)!;
+    e = ap(e, [{ tipo: 'sv_reagir', id: outro, r: '😂' }]);
+    expect(vistaSevira(e, () => undefined).reacoes.map((r) => r.r)).toEqual(['😂']);
   });
 });

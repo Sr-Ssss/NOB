@@ -87,7 +87,7 @@ describe('Pirata na sala + canal privado', () => {
 
   it('bots: o líder age por eles e recebe o papel deles; só o líder encurta a discussão', () => {
     let s = com(1);
-    for (const b of ['1', '2', '3', '4']) s = reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0);
+    for (const b of ['1', '2', '3', '4']) s = reduzSala(reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0), { tipo: 'bot_ia', id: 'j1', bot: PREFIXO_BOT + b, ia: false }, 0); // IA desligada: o líder joga por eles
     s = reduzSala(s, { tipo: 'comecar', id: 'j1', jogo: 'pirata' }, 100);
     expect((privadoSala(s, 'bot-1') as PrivadoPirata).papel).toBe(s.pirata!.papeis['bot-1']);
     s = reduzSala(s, { tipo: 'tick' }, s.pirata!.terminaEm);

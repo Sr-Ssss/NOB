@@ -10,7 +10,7 @@ import { DEF_PADRAO_PENSA, MIN_JOGADORES as MIN_PENSA, novoPensa, reduzPensa, vi
 import { perguntasPensa } from '../jogos/pensa-dores/conteudo';
 import { DEF_PADRAO_WIFI, MIN_JOGADORES as MIN_WIFI, SO_LIDER_WIFI, TIPOS_WIFI, importanteWifi, novoWifi, privadoWifi, reduzWifi, sairWifi, vistaWifi } from '../jogos/senha-wifi/regras';
 import { palavrasWifi } from '../jogos/senha-wifi/conteudo';
-import { DEF_PADRAO_SEVIRA, MIN_JOGADORES as MIN_SEVIRA, TIPOS_SEVIRA, importanteSevira, novoSevira, reduzSevira, sairSevira, vistaSevira } from '../jogos/se-vira/regras';
+import { DEF_PADRAO_SEVIRA, MIN_JOGADORES as MIN_SEVIRA, TIPOS_SEVIRA, importanteSevira, novoSevira, privadoSevira, reduzSevira, sairSevira, vistaSevira } from '../jogos/se-vira/regras';
 import { conteudoSevira } from '../jogos/se-vira/conteudo';
 import { DEF_PADRAO_MONA, MIN_JOGADORES as MIN_MONA, TIPOS_MONA, novoMona, reduzMona, vistaMona } from '../jogos/mona-lixa/regras';
 import { conteudoMona } from '../jogos/mona-lixa/conteudo';
@@ -64,10 +64,12 @@ import {
   MIN_JOGADORES as MIN_RAGEROB,
   SO_TV_RAGEROB,
   TIPOS_RAGEROB,
+  classificacao as classificacaoRagerob,
   novoRagerob,
   reduzRagerob,
   vistaRagerob,
 } from '../jogos/ragerob/regras';
+import { BOT_5050, BOT_IDEIAS, BOT_MAQUINAS, BOT_MONA, BOT_PENSA, BOT_PIRATA, BOT_RAGEROB, BOT_REI, BOT_SEVIRA, BOT_WIFI, type BotJogo } from './ia';
 
 /** o que todos os estados de jogo têm (a sala e as saídas a meio contam com isto) */
 export interface JogoComum {
@@ -111,9 +113,16 @@ export interface DefJogo<I extends string, C extends string, CD extends string, 
   reduz(g: G, a: A, agora: number): G;
   aceita(a: { tipo: string }): boolean;
   soLider?: readonly string[];
+  /** ações que só a TV manda (nem o líder) */
+  soTvManda?: readonly string[];
   vista(g: G, marca: (id: string) => string): V;
-  privado?(g: G, id: string): unknown;
+  /** `semTv`: a party não tem TV (o Se Vira! manda então a imagem da galeria do slide atual a cada telemóvel); `bot`: `id` é um bot */
+  privado?(g: G, id: string, ctx: { semTv: boolean; bot: boolean }): unknown;
   ganchos?: Ganchos<G>;
+  /** "IA jogável" dos bots (src/core/ia.ts) */
+  bot?: BotJogo<G, A>;
+  /** torneio (src/core/modos.ts): os pontos finais por jogador (maior = melhor); por defeito `g.pontos` */
+  resultado?(g: G): Record<string, number>;
 }
 
 const jogo = <I extends string, C extends string, CD extends string, T extends string, G extends JogoComum, D, V, A>(d: DefJogo<I, C, CD, T, G, D, V, A>) => d;
@@ -132,6 +141,7 @@ export const JOGOS = [
     // o "votar" do 50/50 leva um lado (o do Pensa-Dores leva um autor)
     aceita: (a) => a.tipo === 'enviar' || (a.tipo === 'votar' && 'lado' in a),
     vista: vista5050,
+    bot: BOT_5050,
   }),
   jogo({
     id: 'pensa',
@@ -147,6 +157,7 @@ export const JOGOS = [
     reduz: reduzPensa,
     aceita: (a) => a.tipo === 'responder' || a.tipo === 'votos_final' || (a.tipo === 'votar' && !('lado' in a)),
     vista: vistaPensa,
+    bot: BOT_PENSA,
   }),
   jogo({
     id: 'wifi',
@@ -162,6 +173,7 @@ export const JOGOS = [
     vista: (g) => vistaWifi(g),
     privado: privadoWifi,
     ganchos: { importante: importanteWifi, seguirSem: sairWifi },
+    bot: BOT_WIFI,
   }),
   jogo({
     id: 'sevira',
@@ -170,12 +182,13 @@ export const JOGOS = [
     definir: 'definir_sevira',
     padrao: DEF_PADRAO_SEVIRA,
     min: MIN_SEVIRA,
-    soTv: true,
     novo: (ids, def, agora, usadas, idioma) => novoSevira(ids, def, agora, conteudoSevira(), idioma, usadas),
     reduz: reduzSevira,
     aceita: de(TIPOS_SEVIRA),
     vista: vistaSevira,
+    privado: privadoSevira,
     ganchos: { importante: importanteSevira, seguirSem: sairSevira },
+    bot: BOT_SEVIRA,
   }),
   jogo({
     id: 'mona',
@@ -188,6 +201,7 @@ export const JOGOS = [
     reduz: reduzMona,
     aceita: de(TIPOS_MONA),
     vista: vistaMona,
+    bot: BOT_MONA,
   }),
   jogo({
     id: 'ideias',
@@ -200,6 +214,7 @@ export const JOGOS = [
     reduz: reduzIdeias,
     aceita: de(TIPOS_IDEIAS),
     vista: vistaIdeias,
+    bot: BOT_IDEIAS,
   }),
   jogo({
     id: 'pirata',
@@ -216,6 +231,7 @@ export const JOGOS = [
     vista: (g) => vistaPirata(g),
     privado: privadoPirata,
     ganchos: { importante: importantePirata, fora: foraPirata, seguirSem: sairPirata },
+    bot: BOT_PIRATA,
   }),
   jogo({
     id: 'maquinas',
@@ -232,6 +248,7 @@ export const JOGOS = [
     vista: (g) => vistaMaquinas(g),
     privado: privadoMaquinas,
     ganchos: { importante: importanteMaquinas, fora: foraMaquinas, seguirSem: sairMaquinas },
+    bot: BOT_MAQUINAS,
   }),
   jogo({
     id: 'rei',
@@ -248,6 +265,7 @@ export const JOGOS = [
     vista: (g) => vistaRei(g),
     privado: privadoRei,
     ganchos: { importante: importanteRei, podeSeguir: podeSeguirSemRei, seguirSem: sairRei },
+    bot: BOT_REI,
   }),
   jogo({
     id: 'ragerob',
@@ -257,14 +275,15 @@ export const JOGOS = [
     padrao: DEF_PADRAO_RAGEROB,
     min: MIN_RAGEROB,
     max: MAX_RAGEROB,
-    // a física corre na TV (host): sem TV não dá
-    soTv: true,
     novo: (ids, def, agora, usadas) => novoRagerob(ids, def, agora, usadas),
     reduz: reduzRagerob,
     aceita: de(TIPOS_RAGEROB),
-    // as vidas e o fim do combate só vêm da TV
-    soLider: SO_TV_RAGEROB,
+    // as vidas, os quadros da arena e o fim do combate só vêm do host (a TV ou, sem TV, o telemóvel que tem a sala)
+    soTvManda: SO_TV_RAGEROB,
     vista: (g) => vistaRagerob(g),
+    bot: BOT_RAGEROB,
+    // os pontos são dos robôs: vale a classificação dos jogadores (dinheiro, ou a ordem do robô de cada um no modo Pilotos)
+    resultado: (g) => Object.fromEntries(classificacaoRagerob(g).map((c, i, l) => [c.id, g.def.modo === 'normal' ? c.valor : l.length - i])),
   }),
 ] as const;
 

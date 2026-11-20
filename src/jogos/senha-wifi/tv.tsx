@@ -24,17 +24,24 @@ export function Metade({ v, l }: { v: VistaWifi; l: Lado }) {
   );
 }
 
-/** os 2 routers + centro (TV e Painel sem TV) */
-export function Palco({ sala, v, agora }: PropsWifi) {
+/**
+ * os 2 routers + centro (TV e Painel sem TV).
+ * No telemóvel (`tel`) não repete o que o topo já diz (ronda, tempo, fase); com `semRes`, nem o resultado/"Confirmaram" que a parte do jogador mostra.
+ */
+export function Palco({ sala, v, agora, tel = false, semRes = false }: PropsWifi & { tel?: boolean; semRes?: boolean }) {
   return (
     <div class="wifi-palco">
       <Metade v={v} l="b" />
       <div class="wifi-centro">
-        <div class="wifi-ronda">{t('swRonda')} {rondaTexto(v)}</div>
-        <Tempo v={v} agora={agora} />
-        {faseTexto(v) && <div class="wifi-fase">{faseTexto(v)}</div>}
+        {!tel && (
+          <>
+            <div class="wifi-ronda">{t('swRonda')} {rondaTexto(v)}</div>
+            <Tempo v={v} agora={agora} />
+            {faseTexto(v) && <div class="wifi-fase">{faseTexto(v)}</div>}
+          </>
+        )}
         {v.fase === 'revelar' ? (
-          <Resultado v={v} />
+          !semRes && <Resultado v={v} />
         ) : (
           <>
             <div class="mini">{t('swCriptografos')}</div>
@@ -43,7 +50,7 @@ export function Palco({ sala, v, agora }: PropsWifi) {
             ))}
           </>
         )}
-        {v.fase === 'responder' && (
+        {v.fase === 'responder' && !semRes && (
           <div class="wifi-res">
             {t('swConfirmaram', { n: v.resposta.confirmados.length, t: v.precisa })}
           </div>
@@ -92,6 +99,8 @@ export function TvWifi({ sala, v, agora, selFim = 0, onOutraVez, onMenu }: Props
       {v.fase === 'fim' && (
         <>
           <h1 class="pergunta">{v.vencedor ? t('swGanharam', { eq: nomeEquipa(v.vencedor) }) : t('fim')}</h1>
+          {/* palavras e placar lado a lado: cabe tudo num ecrã (fase 3) */}
+          <div class="wifi-fim">
           <div class="wifi-dois">
             {LADOS.map((l) => (
               <div key={l} class="cartao">
@@ -111,6 +120,7 @@ export function TvWifi({ sala, v, agora, selFim = 0, onOutraVez, onMenu }: Props
           </div>
           <div class="cartao">
             <PlacarWifi sala={sala} v={v} tam={64} />
+          </div>
           </div>
           <div class="linha">
             <button class={'botao' + (selFim === 0 ? ' foco' : '')} onClick={onOutraVez}>

@@ -8,7 +8,7 @@ export function TvMaquinas({ sala, v, agora, selFim = 0, onOutraVez, onMenu }: P
     <div class={'pag tv jogo-maquinas fase-' + v.fase}>
       <div class="topo">
         <span>{t('rmNome')}</span>
-        {!fim && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
+        {!fim && v.fase !== 'carta' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
       {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
       {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}

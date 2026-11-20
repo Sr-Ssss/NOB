@@ -28,7 +28,7 @@ export const NOTAS = 3;
 export const VALOR_NOTA = 100; // €
 export const PONTOS_POR_EURO = 10;
 export const BONUS_VENCEDORA = 1000;
-export const BONUS_PROBLEMA = 300;
+export const BONUS_PROBLEMA = 500;
 export const ETAPAS = 3; // problema → desenho → nome + slogan
 export const TIPOS_IDEIAS = ['im_problema', 'im_invencao', 'im_etapa', 'im_acabei', 'im_investir'];
 
@@ -268,7 +268,8 @@ export function reduzIdeias(e: EstadoIdeias, acao: AcaoIdeias, agora: number): E
     case 'ligados': {
       const s: EstadoIdeias = { ...e, ligados: acao.ids };
       if (s.fase === 'fim') return s;
-      return pausaPorFalta(s, quantosLigados(todos(s), acao.ids) < MIN_LIGADOS, agora);
+      // só os participantes contam (a audiência não segura o jogo)
+      return pausaPorFalta(s, quantosLigados(s.participantes, acao.ids) < MIN_LIGADOS, agora);
     }
     case 'im_problema': {
       if (e.fase !== 'problema' || pausadoIdeias(e) || !e.participantes.includes(acao.id)) return e;

@@ -3,7 +3,8 @@
  * Vista de cima; frente do robô = −y. Traço preto grosso e um pouco torto; olhos que só piscam.
  */
 import type { JSX } from 'preact';
-import { ALT, LARG, R, contorno, type Combate, type RoboF } from './fisica';
+import { ALT, LARG, R, contorno, type Combate } from './fisica';
+import type { Arena, RoboArena } from './quadro';
 import { CORES, COR_CABECA, COR_MODULO, POS_ENCAIXES, direcaoEncaixe, type Cabeca, type Modulo, type Robo } from './pecas';
 
 const P = '#1a1a1a';
@@ -100,24 +101,25 @@ export function CabecaSvg({ cabeca, anim = 0, giro = 0, fase = 0 }: { cabeca: Ca
       </g>
     );
   }
-  // ouriço: mangual (bola de espinhos presa por corrente)
-  const bx = Math.sin(fase) * 92;
-  const by = -Math.cos(fase) * 92;
+  // ouriço: tambor pequeno à frente (o ouriço enrolado, deitado, a girar como um rolo de espinhos)
+  const passo = ((fase * 8) % 8 + 8) % 8;
+  const yd = y0 - 16;
   return (
     <g>
-      <circle cx={0} cy={0} r={92} fill="none" stroke="#7a5230" stroke-width={2} stroke-dasharray="6 8" opacity={0.6} />
-      <line x1={0} y1={y0} x2={bx} y2={by} stroke="#5f666d" stroke-width={3} stroke-dasharray="4 3" />
-      <g transform={`translate(${bx} ${by}) rotate(${fase * 57})`}>
-        {Array.from({ length: 10 }, (_, i) => (
-          <path key={i} d="M0 -12 L3 -20 L-3 -20Z" fill="#5a3a20" stroke={P} stroke-width={1} transform={`rotate(${i * 36})`} />
-        ))}
-        <circle r={13} fill={c} stroke={P} stroke-width={SW} />
-        <ellipse cx={0} cy={-8} rx={4} ry={3} fill="#efe3c4" stroke={P} stroke-width={1} />
-        <circle cx={-3} cy={-3} r={1.6} fill={P} />
-        <circle cx={3} cy={-3} r={1.6} fill={P} />
-      </g>
-      {giro > 0.8 && <circle cx={bx} cy={by} r={20} fill="none" stroke="#f08a1c" stroke-width={2} opacity={0.7} />}
-      <rect x={-7} y={y0 - 10} width={14} height={12} rx={3} fill="#8b8f95" stroke={P} stroke-width={2} />
+      {/* suporte com a carinha do ouriço */}
+      <path d={`M-14 ${y0 + 2} L-12 ${y0 - 8} L12 ${y0 - 8} L14 ${y0 + 2}Z`} fill="#8b8f95" stroke={P} stroke-width={2} stroke-linejoin="round" />
+      <rect x={-17} y={yd - 3} width={4} height={10} fill="#5f666d" stroke={P} stroke-width={1.5} />
+      <rect x={13} y={yd - 3} width={4} height={10} fill="#5f666d" stroke={P} stroke-width={1.5} />
+      {/* o rolo: os espinhos correm conforme gira */}
+      <rect x={-14} y={yd - 8} width={28} height={16} rx={7} fill={c} stroke={P} stroke-width={SW} />
+      {Array.from({ length: 4 }, (_, i) => {
+        const x = -12 + ((i * 8 + passo) % 26);
+        return <path key={i} d={`M${x} ${yd - 8} l2 -6 l2 6 M${x} ${yd + 8} l2 6 l2 -6`} fill="#5a3a20" stroke={P} stroke-width={1} />;
+      })}
+      <ellipse cx={0} cy={yd - 1} rx={4} ry={3} fill="#efe3c4" stroke={P} stroke-width={1} />
+      <circle cx={-6} cy={yd + 2} r={1.6} fill={P} />
+      <circle cx={6} cy={yd + 2} r={1.6} fill={P} />
+      {giro > 0.75 && <path d={`M-18 ${yd - 12} q18 -8 36 0`} fill="none" stroke="#f08a1c" stroke-width={2.5} />}
     </g>
   );
 }
@@ -304,7 +306,8 @@ export function RoboCartao({ robo, tam = 110, seta, destaque, aoTocar }: { robo:
 }
 
 /** a arena inteira, desenhada a partir do estado da física */
-export function ArenaSvg({ c, nomes, condutores }: { c: Combate; nomes: Record<string, string>; condutores: Record<string, string> }) {
+/** a arena: `c` é o Combate da física (no host) ou um quadro recebido (src/jogos/ragerob/quadro.ts) */
+export function ArenaSvg({ c, nomes, condutores }: { c: Arena; nomes: Record<string, string>; condutores: Record<string, string> }) {
   const t = c.t;
   return (
     <svg viewBox={`0 0 ${LARG} ${ALT}`} class="rr-arena" role="img" aria-label="Arena">
@@ -361,7 +364,7 @@ export function ArenaSvg({ c, nomes, condutores }: { c: Combate; nomes: Record<s
           <RoboSvg robo={r.robo} />
         </g>
       ))}
-      {c.vivos().map((r) => (
+      {c.robos.filter((r) => !r.ko).map((r) => (
         <RoboNaArena key={r.id} r={r} t={t} nome={nomes[r.id] ?? r.id} condutor={condutores[r.id]} />
       ))}
       {c.efeitos.map((e, i) => (
@@ -382,7 +385,7 @@ export function ArenaSvg({ c, nomes, condutores }: { c: Combate; nomes: Record<s
   );
 }
 
-function RoboNaArena({ r, nome, condutor, t }: { r: RoboF; nome: string; condutor?: string; t: number }) {
+function RoboNaArena({ r, nome, condutor, t }: { r: RoboArena; nome: string; condutor?: string; t: number }) {
   const p = r.corpo.position;
   const vida = Math.max(0, r.hp);
   return (

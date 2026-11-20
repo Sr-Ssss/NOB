@@ -9,9 +9,9 @@ function com(n: number, semTv = false): EstadoSala {
 }
 
 describe('Se Vira! na sala', () => {
-  it('começa com 3+ e usa conteudo/se-vira.json; só com TV', () => {
+  it('começa com 3+ e usa conteudo/se-vira.json; também sem TV (Fase 10)', () => {
     expect(reduzSala(com(2), { tipo: 'comecar', id: 'j1', jogo: 'sevira' }, 100).sevira).toBeFalsy();
-    expect(reduzSala(com(3, true), { tipo: 'comecar', id: 'j1', jogo: 'sevira' }, 100).sevira).toBeFalsy();
+    expect(reduzSala(com(3, true), { tipo: 'comecar', id: 'j1', jogo: 'sevira' }, 100).sevira?.fase).toBe('preparar');
     const s = reduzSala(com(3), { tipo: 'comecar', id: 'j1', jogo: 'sevira' }, 100);
     expect(s.sevira?.fase).toBe('preparar');
     expect(s.sevira?.conteudo.titulos.length).toBeGreaterThanOrEqual(100);
@@ -21,7 +21,7 @@ describe('Se Vira! na sala', () => {
     expect(JSON.stringify(v)).not.toMatch(/"t[1-3]"/);
     const j = CATALOGO.find((x) => x.id === 'sevira')!;
     expect(motivo(j, 3)).toBeNull();
-    expect(motivo(j, 3, true)).toEqual({ tipo: 'tv' });
+    expect(motivo(j, 3, true)).toBeNull();
   });
 
   it('definições só pelo líder; ações do Se Vira! não partem os outros jogos', () => {

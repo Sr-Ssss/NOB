@@ -25,7 +25,7 @@ O autor escreve uma pergunta com 2 respostas e tenta dividir a sala exatamente a
 - **Não enviou = não conta**: o dilema não vai a votos e o autor faz 0 pontos. Sem preenchimento automático.
 
 ## Votar (por dilema, por ordem aleatória)
-- Mostrar → votar (todos menos o autor; pode mudar o voto até ao fim do tempo; caixinha ✅/❌) → revelar (barra, autor e, se a opção estiver ligada, os avatares de cada lado).
+- Mostrar → votar (todos menos o autor; fecha quando todos votam, por isso o ecrã não promete mudar o voto; caixinha ✅/❌) → revelar (barra, autor e, se a opção estiver ligada, os avatares de cada lado).
 - O autor fica anónimo até à revelação.
 - **Quem vota não ganha pontos.**
 
@@ -41,7 +41,7 @@ O autor escreve uma pergunta com 2 respostas e tenta dividir a sala exatamente a
   - **timer no meio da balança** (no eixo);
   - na revelação, os bonecos caem **um de cada vez** no prato que votaram e a balança vai pendendo; divisão perfeita = balança direita.
 - **Telemóvel — escrever**: modo **Completar** = frase + 🔄 e as 2 respostas como **2 botões coloridos** (vermelho SIM / azul NÃO), editáveis com um toque; modo **Escrever a minha** = **formulário simples** (caixa da pergunta + 2 campos de resposta). Botão Enviar em baixo; ⓘ no topo.
-- **Telemóvel — votar**: pergunta no topo + **2 botões gigantes** (metade do ecrã cada um, vermelho/azul); o voto escolhido fica com ✓ e pode mudar-se até ao fim do tempo.
+- **Telemóvel — votar**: pergunta no topo + **2 botões gigantes** (metade do ecrã cada um, vermelho/azul); o voto escolhido fica com ✓ ("Voto registado"); pode mudar-se enquanto falta alguém, mas o ecrã não o promete. Com "Mostrar quem votou = Não" a vista só leva contagens.
 - **Telemóvel (geral)**: com TV, o telemóvel fica no ecrã de votar até ao fim; **sem TV**, no fim da votação o telemóvel mostra a balança.
 
 ## Fim

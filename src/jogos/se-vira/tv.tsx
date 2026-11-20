@@ -11,8 +11,8 @@ export interface PropsSevira {
   agora: () => number;
 }
 
-/** reações a voar por baixo do slide */
-function Reacoes({ lista }: { lista: Reacao[] }) {
+/** reações a voar por baixo do slide (também no telemóvel, sem TV) */
+export function Reacoes({ lista }: { lista: Pick<Reacao, 'n' | 'r'>[] }) {
   return (
     <div class="sv-reacoes" aria-hidden="true">
       {lista.map((r) => (

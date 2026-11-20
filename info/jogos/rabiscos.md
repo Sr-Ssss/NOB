@@ -36,3 +36,6 @@ Desenha algo secreto; os outros inventam títulos falsos; todos tentam adivinhar
 
 ## Conteúdo
 - 300 títulos para desenhar + 150 falsos da casa, família.
+
+## Pausa
+- Pausa abaixo de 3 participantes ligados; a audiência não conta (18/11). O mesmo nas Ideias Mirabolantes.

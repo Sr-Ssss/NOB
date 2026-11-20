@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import type { AcaoSala } from '../../core/sala';
 import { t } from '../../core/i18n';
 import { Avatar, Temporizador } from '../../ui/comuns';
@@ -8,6 +8,7 @@ import { avatarDe, nomeDe } from '../5050/tv';
 import { ETAPAS, MAX_NOME, MAX_PROBLEMA, MAX_SLOGAN, NOTAS, VALOR_NOTA, type Problema } from './regras';
 import { ETAPAS_TXT, Palco, PlacarIdeias, type PropsIdeias } from './comuns';
 import { Espera, Progresso } from '../../ui/ecraunico';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 type Enviar = (a: AcaoSala) => void;
@@ -187,6 +188,21 @@ function Eu({ sala, v, eu, tag, enviar }: Omit<PropsIdeias, 'agora'> & { eu: str
   return null;
 }
 
+/** aparece nos últimos 15 s (verifica uma vez por segundo) */
+function AvisoFim({ terminaEm, agora }: { terminaEm: number; agora: () => number }) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const i = window.setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const falta = terminaEm - agora();
+  return falta > 0 && falta <= 15_000 ? (
+    <div class="aviso" role="alert">
+      {t('imFaltam15')}
+    </div>
+  ) : null;
+}
+
 export function TelemovelIdeias({ sala, v, agora, eu, tag, enviar }: PropsIdeias & { eu: string; tag: string; enviar: Enviar }) {
   const [ajuda, setAjuda] = useState(false);
   const lider = sala.vipId === eu;
@@ -202,6 +218,7 @@ export function TelemovelIdeias({ sala, v, agora, eu, tag, enviar }: PropsIdeias
         <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
           ⓘ
         </button>
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
         {!fim && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
       {ajuda && (
@@ -211,6 +228,8 @@ export function TelemovelIdeias({ sala, v, agora, eu, tag, enviar }: PropsIdeias
       )}
       {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
       {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
+      {/* quem não envia a invenção não apresenta: avisar nos últimos 15 s */}
+      {v.fase === 'inventar' && escreve && v.apresentadores.includes(eu) && v.restante === null && <AvisoFim terminaEm={v.terminaEm} agora={agora} />}
       {fim ? (
         <>
           <h1 class="pergunta">{t('fim')}</h1>

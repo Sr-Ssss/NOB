@@ -36,7 +36,7 @@ describe('Ideias Mirabolantes na sala', () => {
 
   it('o líder joga pelos bots; partida inteira; outra vez e menu no fim', () => {
     let s = com(1);
-    for (const b of ['1', '2']) s = reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0);
+    for (const b of ['1', '2']) s = reduzSala(reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0), { tipo: 'bot_ia', id: 'j1', bot: PREFIXO_BOT + b, ia: false }, 0); // IA desligada: o líder joga por eles
     s = reduzSala(s, { tipo: 'comecar', id: 'j1', jogo: 'ideias' }, 100);
     const como = (bot: string, acao: object) => (s = reduzSala(s, { tipo: 'como', id: 'j1', bot, acao: { tipo: 'jogo', acao: { id: '', ...acao } as never } }, 100));
     for (const id of ['j1', 'bot-1', 'bot-2']) {

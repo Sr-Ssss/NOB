@@ -6,10 +6,12 @@ const ids = (n: number) => Array.from({ length: n }, (_, i) => `j${i + 1}`);
 const novo = (n: number) => novoMaquinas(ids(n), {}, T);
 const r = (e: EstadoMaquinas, ...a: AcaoMaquinas[]) => a.reduce((s, x) => reduzMaquinas(s, x, T), e);
 const tick = (e: EstadoMaquinas) => reduzMaquinas(e, { tipo: 'tick' }, e.terminaEm);
+/** todos viram a identidade → sai da fase 'carta' */
+const visto = (e: EstadoMaquinas) => r(e, ...e.participantes.map((id) => ({ tipo: 'rm_vi' as const, id })));
 
 /** até à votação, com o Piloto dado (ou o 1.º elegível) */
 function governo(e: EstadoMaquinas, piloto?: string, sim = true): EstadoMaquinas {
-  if (e.fase === 'carta') e = tick(e);
+  if (e.fase === 'carta') e = visto(e);
   e = r(e, { tipo: 'rm_piloto', id: e.comandante, alvo: piloto ?? elegiveis(e)[0] });
   e = r(e, ...e.vivos.map((id) => ({ tipo: 'rm_votar' as const, id, sim })));
   return tick(e); // votos revelados → segue
@@ -30,6 +32,20 @@ function seguir(e: EstadoMaquinas): EstadoMaquinas {
 const sem = (e: EstadoMaquinas, papel: string) => e.participantes.filter((id) => e.papeis[id] !== papel);
 
 describe('Revolução das Máquinas', () => {
+  it('carta: só começa quando todos os ligados viram a identidade (bots contam; sem tempo-limite)', () => {
+    let e = novoMaquinas(['j1', 'j2', 'j3', 'j4', 'bot-1'], {}, T);
+    e = tick(e);
+    expect(e.fase).toBe('carta');
+    e = r(e, { tipo: 'rm_vi', id: 'j1' }, { tipo: 'rm_vi', id: 'j1' }, { tipo: 'rm_vi', id: 'j2' });
+    expect(vistaMaquinas(e).viram).toEqual(['j1', 'j2']);
+    e = r(e, { tipo: 'rm_vi', id: 'j3' });
+    expect(e.fase).toBe('carta');
+    // o j4 desliga-se: já não se espera por ele
+    e = r(e, { tipo: 'ligados', ids: ['j1', 'j2', 'j3', 'bot-1'] });
+    expect(e.fase).toBe('nomear');
+    expect(vistaMaquinas(e).viram).toEqual([]);
+  });
+
   it('papéis por n.º de jogadores (5–10)', () => {
     for (const [n, a] of [[5, 1], [6, 1], [7, 2], [8, 2], [9, 3], [10, 3]]) {
       const e = novo(n);
@@ -78,6 +94,15 @@ describe('Revolução das Máquinas', () => {
     expect(vistaMaquinas(e).bloqueados.sort()).toEqual(antes.filter((x) => x !== e.comandante).sort());
   });
 
+  it('com 5 vivos só o Piloto anterior fica bloqueado', () => {
+    let e = meter(novo(5), 'R');
+    const [cmd, pil] = [e.comandante, e.piloto!];
+    e = seguir(e);
+    expect(elegiveis(e)).not.toContain(pil);
+    if (cmd !== e.comandante) expect(elegiveis(e)).toContain(cmd);
+    expect(e.bloqueados).toEqual([cmd, pil]);
+  });
+
   it('empate ou mais Não = falha; 3 falhas = carta do topo sem poder, contador a 0, ninguém bloqueado', () => {
     let e = novo(6);
     const c1 = (e = tick(e)).comandante;
@@ -101,7 +126,7 @@ describe('Revolução das Máquinas', () => {
   });
 
   it('voto em falta = Não; sem escolha = sorteio', () => {
-    let e = tick(novo(5));
+    let e = visto(novo(5));
     e = tick(e); // piloto sorteado
     expect(e.fase).toBe('votar');
     expect(e.piloto).not.toBeNull();
@@ -244,12 +269,12 @@ describe('Revolução das Máquinas', () => {
   });
 
   it('desligar e voltar: pausa abaixo de 3 e retoma com o tempo que faltava', () => {
-    let e = tick(novo(5));
+    let e = visto(novo(5));
     e = reduzMaquinas(e, { tipo: 'ligados', ids: ['j1', 'j2'] }, T + 5000);
-    expect(e.pausaRestante).toBe(60_000);
+    expect(e.pausaRestante).toBe(40_000);
     expect(reduzMaquinas(e, { tipo: 'tick' }, T + 999_999).fase).toBe('nomear');
     e = reduzMaquinas(e, { tipo: 'ligados', ids: ids(5) }, T + 60_000);
-    expect(e.terminaEm).toBe(T + 120_000);
+    expect(e.terminaEm).toBe(T + 100_000);
   });
 
   it('discussão: o "Seguir" passa ao Comandante seguinte', () => {

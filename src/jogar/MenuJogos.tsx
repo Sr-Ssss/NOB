@@ -1,152 +1,170 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { t } from '../core/i18n';
-import { CATALOGO, descricao, filtrar, motivo, nome, type Filtro } from '../core/jogos';
+import { CATALOGO, descricao, motivo, nome, ordenarMenu, type InfoJogo } from '../core/jogos';
 import type { AcaoSala, VistaSala } from '../core/sala';
-import { FILTROS, textoMotivo } from '../tv/Tv';
+import { textoMotivo } from '../tv/Tv';
 import { COM_ECRAS, acaoDefinir, opcoesNaVista } from '../jogos/ecras';
-import { jogoEscolhido, jogosDoLobby } from './lobbyTv';
+import { Boneco, Pensando } from '../ui/comuns';
+import { PopupModos } from '../ui/modos';
 
 /**
- * Menu de jogos do telemóvel do líder, sem TV: o mesmo conteúdo do menu da TV,
- * mas vertical e sem vídeo (pesquisa, filtros, esbatidos com o porquê).
+ * Menu de jogos do telemóvel do líder (com e sem TV; pedido de 20/11):
+ * sem pesquisa nem filtros; os que dão para jogar em cima, por duração; os que não dão no fim, esbatidos com o porquê.
+ * Tocar num jogo abre o popup dele (vídeo, ⚙️ opções, "Mostrar tutorial a todos", "Jogar").
  */
 export function MenuJogos({ vista, enviar, fechar }: { vista: VistaSala; enviar: (a: AcaoSala) => void; fechar: () => void }) {
-  const [pesquisa, setPesquisa] = useState('');
-  const [filtros, setFiltros] = useState<Filtro[]>([]);
   const [aberto, setAberto] = useState<string | null>(null);
-  const [tutorial, setTutorial] = useState(false);
+  const [modos, setModos] = useState(false);
   const n = vista.jogadores.filter((j) => j.ligado).length;
-  const lista = filtrar(CATALOGO, pesquisa, filtros, n, vista.idioma);
-  const alternar = (f: Filtro) => setFiltros((x) => (x.includes(f) ? x.filter((y) => y !== f) : [...x, f]));
+  const lista = ordenarMenu(CATALOGO, n, vista.semTv);
+  const jogo = lista.find((j) => j.id === aberto);
 
   return (
     <div class="pag menu-tel">
       <div class="topo">
-        <h2 style={{ margin: 0 }}>{t('escolherJogo')}</h2>
-        <button class="chip" onClick={fechar}>
-          ✕ {t('fecharMenu')}
+        <h2 style={{ margin: 0 }}>🕹️ {t('escolherJogo')}</h2>
+        <button class="chip" onClick={fechar} aria-label={t('fecharMenu')}>
+          ✕
         </button>
       </div>
-      <input class="pesquisa" placeholder={`🔍 ${t('pesquisar')}`} value={pesquisa} onInput={(e) => setPesquisa(e.currentTarget.value)} />
-      <div class="opcoes">
-        {FILTROS.map(([f, k]) => (
-          <button key={f} class={'chip' + (filtros.includes(f) ? ' on' : '')} onClick={() => alternar(f)}>
-            {t(k)}
-          </button>
-        ))}
-      </div>
+      {/* modos (Fase 5): Aleatório e Torneio, no mesmo popup (src/ui/modos.tsx) */}
+      <button class="botao sec" style={{ width: '100%', marginBottom: 10 }} onClick={() => setModos(true)}>
+        {t('mjAleatorio')} · {t('mjTorneio')}
+      </button>
       <ol class="lista-tel">
         {lista.map((j) => {
           const m = motivo(j, n, vista.semTv);
-          const on = aberto === j.id;
-          // opções do jogo (sem TV não há as dos jogos "só com TV")
-          const reg = COM_ECRAS.find((x) => x.id === j.id && !x.soTv);
           return (
-            <li key={j.id} class={'cartao item-tel' + (m ? ' esbatido' : '')}>
-              <button class="item-tel-cab" onClick={() => setAberto(on ? null : j.id)}>
-                <b>{nome(j, vista.idioma)}</b>
-                <small>
-                  👥 {j.min}–{j.max} · ⏱ {j.minutos} min
-                </small>
+            <li key={j.id}>
+              <button class={'cartao item-tel' + (m ? ' esbatido' : '')} onClick={() => setAberto(j.id)}>
+                <span class="item-tel-cab">
+                  <b>{nome(j, vista.idioma)}</b>
+                  <small>
+                    ⏱ {j.minutos} min · 👥 {j.min}–{j.max}
+                  </small>
+                </span>
+                {m && <small class="porque">⚠ {textoMotivo(j, n, vista.semTv)}</small>}
               </button>
-              {m && <small class="porque">⚠ {textoMotivo(j, n, vista.semTv)}</small>}
-              {on && (
-                <div class="item-tel-corpo">
-                  <p class="desc">{descricao(j, vista.idioma)}</p>
-                  {reg && reg.e.opcoes.render({ def: opcoesNaVista(vista, reg), sala: vista, n, mudar: (d) => enviar(acaoDefinir(reg, d)) })}
-                  {!m && (
-                    <>
-                      <label class="linha">
-                        <input type="checkbox" checked={tutorial} onChange={(e) => setTutorial(e.currentTarget.checked)} /> {t('verTutorial')}
-                      </label>
-                      <button
-                        class="botao grande"
-                        onClick={() => {
-                          enviar({ tipo: 'comecar', id: '', jogo: j.id, tutorial });
-                          fechar();
-                        }}
-                      >
-                        ▶ {t('comecar')}
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
             </li>
           );
         })}
       </ol>
+      {modos && <PopupModos vista={vista} n={n} enviar={enviar} fechar={() => setModos(false)} aoJogar={fechar} />}
+      {jogo && <PopupJogo j={jogo} vista={vista} n={n} enviar={enviar} fechar={() => setAberto(null)} aoJogar={fechar} />}
     </div>
+  );
+}
+
+/** popup de um jogo: vídeo do tutorial, ⚙️ (opções num 2.º popup por cima), "Mostrar tutorial a todos" e "Jogar" */
+function PopupJogo({ j, vista, n, enviar, fechar, aoJogar }: { j: InfoJogo; vista: VistaSala; n: number; enviar: (a: AcaoSala) => void; fechar: () => void; aoJogar: () => void }) {
+  const [opcoes, setOpcoes] = useState(false);
+  const [tutorial, setTutorial] = useState(false);
+  const m = motivo(j, n, vista.semTv);
+  // opções do jogo (sem TV não há as dos jogos "só com TV")
+  const reg = COM_ECRAS.find((x) => x.id === j.id && !(x.soTv && vista.semTv));
+  return (
+    <>
+      <div class="popup" onClick={fechar}>
+        <div class="cartao popup-jogo" role="dialog" aria-modal="true" aria-label={nome(j, vista.idioma)} onClick={(e) => e.stopPropagation()}>
+          <div class="topo">
+            {reg ? (
+              <button class="botao-icone" onClick={() => setOpcoes(true)} aria-label={t('mjOpcoes')} title={t('mjOpcoes')}>
+                ⚙️
+              </button>
+            ) : (
+              <span />
+            )}
+            <button class="botao-icone" onClick={fechar} aria-label={t('fechar')} title={t('fechar')}>
+              ✕
+            </button>
+          </div>
+          <div class="video">
+            <span>▶ {t('videoEmBreve')}</span>
+          </div>
+          <h2 style={{ margin: '10px 0 0' }}>{nome(j, vista.idioma)}</h2>
+          <p class="desc">{descricao(j, vista.idioma)}</p>
+          <p class="mini">
+            ⏱ {t('minutosN', { m: j.minutos })} · 👥 {t('jogadoresN', { a: j.min, b: j.max })}
+          </p>
+          {m ? (
+            <p class="porque">⚠ {textoMotivo(j, n, vista.semTv)}</p>
+          ) : (
+            <>
+              <label class="linha">
+                <input type="checkbox" checked={tutorial} onChange={(e) => setTutorial(e.currentTarget.checked)} /> {t('mjTutorialTodos')}
+              </label>
+              <button
+                class="botao grande"
+                style={{ width: '100%', marginTop: 10 }}
+                onClick={() => {
+                  enviar({ tipo: 'jogar', id: '', jogo: j.id, tutorial });
+                  aoJogar();
+                }}
+              >
+                ▶ {t('jogar')}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      {opcoes && reg && (
+        <div class="popup por-cima" onClick={() => setOpcoes(false)}>
+          <div class="cartao" role="dialog" aria-modal="true" aria-label={t('mjOpcoes')} onClick={(e) => e.stopPropagation()}>
+            <div class="topo">
+              <h3 style={{ margin: 0 }}>⚙️ {nome(j, vista.idioma)}</h3>
+              <button class="botao-icone" onClick={() => setOpcoes(false)} aria-label={t('fechar')}>
+                ✕
+              </button>
+            </div>
+            {reg.e.opcoes.render({ def: opcoesNaVista(vista, reg), sala: vista, n, mudar: (d) => enviar(acaoDefinir(reg, d)) })}
+            <button class="botao sec" style={{ width: '100%', marginTop: 12 }} onClick={() => setOpcoes(false)}>
+              {t('fechar')}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
 /**
- * Lobby do líder com TV (auditoria E2/E3): escolhe um jogo e vê só as opções dele,
- * com a mesma caixa "Mostrar tutorial" do menu sem TV e "Começar" daqui.
- * (OK no comando da TV começa o jogo em destaque na TV, sem tutorial.)
+ * Depois de "Jogar" (todos os telemóveis): quem já está pronto; cada um carrega em "Pronto".
+ * O líder tem "Cancelar" e "Forçar início". Começa sozinho quando todos estão prontos (src/core/sala.ts).
  */
-export function OpcoesComTv({ vista, enviar }: { vista: VistaSala; enviar: (a: AcaoSala) => void }) {
-  const [id, setId] = useState<string | null>(null);
-  const [tutorial, setTutorial] = useState(false);
-  const n = vista.jogadores.filter((j) => j.ligado).length;
-  const lista = jogosDoLobby();
-  const x = jogoEscolhido(lista, id, n);
-  if (!x) return null;
-  const m = motivo(x.info, n);
+export function Preparar({ vista, eu, enviar }: { vista: VistaSala; eu: string; enviar: (a: AcaoSala) => void }) {
+  const p = vista.preparar;
+  if (!p) return null;
+  const j = CATALOGO.find((x) => x.id === p.jogo);
+  const souLider = vista.vipId === eu;
+  const meu = vista.jogadores.find((x) => x.id === eu);
+  const gente = vista.jogadores.filter((x) => x.ligado && !x.bot);
+  const prontos = gente.filter((x) => x.pronto).length;
   return (
-    <div class="cartao">
-      <label for="jogo-lobby" style={{ fontWeight: 700 }}>
-        {t('opcoesDe')}
-      </label>
-      <select id="jogo-lobby" value={x.info.id} onChange={(e) => setId(e.currentTarget.value)} style={{ width: '100%', margin: '6px 0 10px' }}>
-        {lista.map((y) => (
-          <option key={y.info.id} value={y.info.id}>
-            {nome(y.info, vista.idioma)}
-          </option>
-        ))}
-      </select>
-      {x.reg.e.opcoes.render({ def: opcoesNaVista(vista, x.reg), sala: vista, n, mudar: (d) => enviar(acaoDefinir(x.reg, d)) })}
-      {m ? (
-        <small class="porque">⚠ {textoMotivo(x.info, n)}</small>
-      ) : (
-        <>
-          <label class="linha">
-            <input type="checkbox" checked={tutorial} onChange={(e) => setTutorial(e.currentTarget.checked)} /> {t('verTutorial')}
-          </label>
-          <button class="botao" style={{ width: '100%' }} onClick={() => enviar({ tipo: 'comecar', id: '', jogo: x.info.id, tutorial })}>
-            ▶ {t('comecar')} · {nome(x.info, vista.idioma)}
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
-
-/** tutorial antes do jogo: passa ao mesmo tempo em todos os telemóveis (e na TV) */
-export function Tutorial({ vista, eu, enviar, agora }: { vista: VistaSala; eu: string; enviar: (a: AcaoSala) => void; agora: () => number }) {
-  const [, setT] = useState(0);
-  useEffect(() => {
-    const i = setInterval(() => setT((x) => x + 1), 500);
-    return () => clearInterval(i);
-  }, []);
-  const j = CATALOGO.find((x) => x.id === vista.tutorial?.jogo);
-  const s = Math.max(0, Math.ceil(((vista.tutorial?.ate ?? 0) - agora()) / 1000));
-  return (
-    <div class="pag centro">
-      <h1 class="pergunta">
-        {t('tutorial')} · {j ? nome(j, vista.idioma) : ''}
-      </h1>
-      <div class="video">
-        <span>▶ {t('tutorialEmBreve')}</span>
-      </div>
-      <p class="tempo">{s}</p>
-      {vista.vipId === eu && (
-        <button class="botao sec" onClick={() => enviar({ tipo: 'saltar', id: '' })}>
-          {t('saltar')}
+    <div class="popup">
+      <div class="cartao centro" role="dialog" aria-modal="true" aria-label={j ? nome(j, vista.idioma) : ''}>
+        <h2 style={{ margin: 0 }}>{j ? nome(j, vista.idioma) : ''}</h2>
+        <p class="mini" style={{ margin: '4px 0 10px' }}>
+          {t('prontos', { n: prontos, t: gente.length })}
+        </p>
+        <div class="fila-bonecos" style={{ marginBottom: 12 }}>
+          {gente.map((x) => (
+            <Boneco key={x.id} j={x} tam={48} marca={x.pronto ? '✓' : <Pensando />} />
+          ))}
+        </div>
+        <button class={'botao grande' + (meu?.pronto ? ' sec' : '')} style={{ width: '100%' }} onClick={() => enviar({ tipo: 'pronto', id: '', pronto: !meu?.pronto })}>
+          {meu?.pronto ? t('prontoOk') : t('pronto')}
         </button>
-      )}
-      <div class="rodape-codigo">{vista.codigo}</div>
+        {souLider && (
+          <div class="linha" style={{ marginTop: 10 }}>
+            <button class="botao sec cresce" onClick={() => enviar({ tipo: 'preparar_cancelar', id: '' })}>
+              {t('cancelar')}
+            </button>
+            <button class="botao sec cresce" onClick={() => enviar({ tipo: 'forcar', id: '' })}>
+              ⏩ {t('mjForcar')}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

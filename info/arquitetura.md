@@ -65,6 +65,7 @@ android/       projeto Capacitor (Fase 3)
 - Cada jogo tem o seu próprio estilo visual por dentro (a decidir jogo a jogo).
 
 ### Ecrãs (ponto 1 do planeamento)
+- **TV = palco 1920×1080** (fase 3, 20/11): tudo cabe num ecrã, sem scroll. `src/ui/palco.tsx` escala um ecrã virtual ≥ 1920×1080 ao ecrã real; no CSS usar `cqw`/`cqh` (nunca `vw`/`vh`). Vigiado por `e2e/tv-scroll.spec.ts`. Ecrã sempre ligado: `src/ui/ecraLigado.ts` + `FLAG_KEEP_SCREEN_ON` no APK.
 - **Ecrã inicial do telemóvel (escolhido: B, "código em destaque")**: logo NOB no topo; cartão com campo "Código da party" (4 caracteres) e botão coral "Entrar"; "ou"; botão "Criar party"; rodapé com Histórico, Como jogar e Definições.
 - **Código da party sempre visível em baixo**, em todos os ecrãs de quem está numa party (TV e telemóveis).
 - **Líder da party** (antes "VIP"): o primeiro a entrar. Passa a liderança tocando num jogador → "Passar liderança". Se sair, passa ao membro mais antigo.
@@ -170,7 +171,7 @@ android/       projeto Capacitor (Fase 3)
 |---|---|
 | Meio a Meio, Respostas Rápidas, Pirata a Bordo, Dois Lados, Motim em Órbita, Encriptado | ✅ |
 | Rabiscos, Invenções Inúteis | ✅ (os desenhos aparecem no telemóvel; fica pior) |
-| Apresentação Surpresa, Rinha de Robôs | ❌ precisam de ecrã grande |
+| Apresentação Surpresa (Se Vira!), Rinha de Robôs (Ragerob) | ✅ desde 20/11 (Fase 10): Se Vira! — o slide atual em todos os telemóveis (imagem da galeria pelo canal privado); Ragerob — a física corre no host (telemóvel que tem a sala) e manda quadros da arena (`rr_quadro`) que cada telemóvel desenha em pequeno |
 
 ## Party (substitui o "placar da noite")
 - **Party** = grupo com um código, que dura enquanto houver alguém lá dentro (+24 h para quem se desligou voltar).

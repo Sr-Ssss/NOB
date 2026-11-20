@@ -4,8 +4,13 @@ import { chaveValida, guardadas, impressao as impressaoChave, novasChavesDisposi
 import { codigoSala, definirSal, novoSal, obterSal, paramsHash } from './ids';
 import { BATIMENTO, CHAVE_ESTADO, CHAVE_SEQ, COPIA_MAX, ESPERA_HERDEIRO, INTERVALO_COPIA, escolherHerdeiro, gravarEstado, guardarAssumir, horaRetoma, lerEstado, rotaCom, tirarAssumir } from './passagem';
 import { privadosPorAparelho } from './privado';
-import { ProtocoloCliente, ProtocoloHost, publicas, type ChavesPublicasHost, type CopiaHost, type MsgPedir, type Passagem } from './protocolo';
-import { ID_TV, comandoValido, novaSala, privadoSala, reduzSala, vistaSala, type AcaoSala, type EstadoSala, type Idioma, type Tecla, type VistaSala } from './sala';
+import { PASSA_JA, ProtocoloCliente, ProtocoloHost, publicas, type ChavesPublicasHost, type CopiaHost, type MsgPedir, type Passagem } from './protocolo';
+import { ID_TV, assumirSemTv, comandoValido, novaSala, privadoSala, reduzSala, virarTv, vistaSala, type AcaoSala, type EstadoSala, type Idioma, type Tecla, type VistaSala } from './sala';
+
+/** quanto o anfitrião tenta passar a party à TV escolhida antes de desistir (ms) */
+const ESPERA_TV = 12_000;
+/** aviso que o ecrã inicial mostra uma vez (ex.: esta TV foi substituída por outra) */
+export const CHAVE_AVISO = 'nob.aviso';
 
 export type { MsgAcao, MsgVista } from './protocolo';
 
@@ -60,10 +65,13 @@ function cadeiaTv(): Passagem[] {
   }
 }
 
-/** sem TV: o herdeiro está a assumir a party? (src/core/passagem.ts) A cópia passa a ser o código, as chaves e as fixadas deste separador. */
-function herdar(): { copia: CopiaHost; hora: number } | null {
+/**
+ * Este separador está a assumir a party? (src/core/passagem.ts) `tv`: como TV escolhida pelo líder; senão, sem TV (herdeiro).
+ * A cópia passa a ser o código, as chaves e as fixadas deste separador.
+ */
+function herdar(tv: boolean): { copia: CopiaHost; hora: number } | null {
   const a = tirarAssumir();
-  if (!a || !definirSal(a.copia.sal)) return null;
+  if (!a || !!a.copia.tv !== tv || !definirSal(a.copia.sal)) return null;
   const k = a.copia;
   guardarSessao('nob.tv.codigo', k.estado.codigo);
   guardarSessao('nob.tv.chaves', k.chaves);
@@ -80,10 +88,10 @@ interface Arranque {
   seq: number;
 }
 
-/** sem TV, a cópia do herdeiro que está a assumir; senão, a gravação deste separador (recarregou a página) */
+/** a cópia de quem está a assumir (herdeiro sem TV, ou a TV nova); senão, a gravação deste separador (recarregou a página) */
 function arrancar(semTv: boolean): Arranque | null {
-  const h = semTv ? herdar() : null;
-  if (h) return { estado: { ...h.copia.estado, semTv: true }, hora: h.hora, seq: h.copia.seq };
+  const h = herdar(!semTv);
+  if (h) return { estado: semTv ? assumirSemTv(h.copia.estado, h.hora) : { ...h.copia.estado, semTv: false, novaTv: null }, hora: h.hora, seq: h.copia.seq };
   try {
     const g = lerEstado(sessionStorage, codigoTv());
     if (!g || !definirSal(g.sal) || !!g.estado.semTv !== semTv) return null;
@@ -131,9 +139,11 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
   const presentes = useRef<string[]>([]);
   const herdeiro = useRef<{ ap: string; chaves: ChavesHost; prox: string } | null>(null);
   const copiada = useRef<{ em: number; estado: EstadoSala | null }>({ em: 0, estado: null });
+  /** a passar a party ao aparelho que o líder escolheu para TV (jogador, aparelho, chaves novas) */
+  const aTv = useRef<{ alvo: string; ap: string; chaves: ChavesHost; prox: string; desde: number } | null>(null);
   if (!proto.current) {
     const chaves = guardadas(sessao, 'nob.tv.chaves', novasChavesHost, chavesHostValidas);
-    proto.current = new ProtocoloHost(estado.codigo, chaves, fixadasTv(), (f) => guardarSessao('nob.tv.fixadas', f), semTv ? cadeiaTv() : []);
+    proto.current = new ProtocoloHost(estado.codigo, chaves, fixadasTv(), (f) => guardarSessao('nob.tv.fixadas', f), cadeiaTv());
     // expulsos de antes de recarregar / da cópia herdada (src/core/membros.ts)
     proto.current.barrar(estado.expulsos ?? []);
   }
@@ -154,7 +164,9 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     if (!forcar && txt === ultima.current) return;
     ultima.current = txt;
     publicadaEm.current = Date.now();
-    canal.current?.enviar('vista', proto.current!.vista(++seq.current, agora(), v, herdeiro.current?.prox));
+    // a passar a party à TV escolhida: anuncia-a com PASSA_JA (os telemóveis aceitam-na logo)
+    const prox = aTv.current ? aTv.current.prox + PASSA_JA : herdeiro.current?.prox;
+    canal.current?.enviar('vista', proto.current!.vista(++seq.current, agora(), v, prox));
     guardarSessao(CHAVE_SEQ, String(seq.current)); // ao recarregar, as vistas continuam a subir
   };
 
@@ -166,11 +178,17 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     gravado.current = { em: Date.now(), estado: ref.current };
   };
 
-  /** sem TV: escolhe o herdeiro e manda-lhe a cópia (quando o estado muda, no máximo a cada INTERVALO_COPIA) */
+  /** a chave do próprio anfitrião sem TV vai nas cópias: se voltar como jogador, o novo anfitrião já o conhece */
+  const fixadasCopia = () => (semTv ? { ...proto.current!.fixadas, [semTv.eu]: chavesAparelho(semTv.eu).pub } : proto.current!.fixadas);
+
+  /**
+   * Escolhe o herdeiro e manda-lhe a cópia (quando o estado muda, no máximo a cada INTERVALO_COPIA).
+   * Também com TV: se a TV se calar, o telemóvel do líder assume a party sem TV.
+   */
   const passagem = () => {
-    if (!semTv) return;
+    if (aTv.current) return;
     const p = proto.current!;
-    const ap = escolherHerdeiro(ref.current, presentes.current, p.fixadas, semTv.eu);
+    const ap = escolherHerdeiro(ref.current, presentes.current, p.fixadas, semTv?.eu ?? ID_TV);
     const mudou = (herdeiro.current?.ap ?? null) !== ap;
     if (mudou) {
       const chaves = novasChavesHost();
@@ -181,9 +199,7 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     const t = Date.now();
     const c = copiada.current;
     if (h && (mudou || (c.estado !== ref.current && t - c.em >= INTERVALO_COPIA) || t - c.em >= COPIA_MAX)) {
-      // a chave do próprio anfitrião vai junto: se voltar como jogador, o novo anfitrião já o conhece
-      const fixadas = { ...p.fixadas, [semTv.eu]: chavesAparelho(semTv.eu).pub };
-      const m = p.copia(h.ap, { seq: seq.current, agora: agora(), estado: ref.current, sal: obterSal(), fixadas, chaves: h.chaves, cadeia: [...p.cadeia, p.passar(publicas(h.chaves))] });
+      const m = p.copia(h.ap, { seq: seq.current, agora: agora(), estado: ref.current, sal: obterSal(), fixadas: fixadasCopia(), chaves: h.chaves, cadeia: [...p.cadeia, p.passar(publicas(h.chaves))] });
       if (m) {
         canal.current?.enviar('copia', m);
         copiada.current = { em: t, estado: ref.current };
@@ -192,10 +208,15 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     if (mudou) publicar(true); // anuncia o herdeiro novo (`prox`)
   };
 
-  /** sem TV: outro telemóvel assumiu a party (este separador voltou depois de fechado, ou ficou sem rede): passa a jogador */
+  /**
+   * Outro aparelho assumiu a party (este voltou depois de fechado, ficou sem rede, ou passou a party à TV escolhida):
+   * sem TV, o criador passa a jogador; a TV volta ao ecrã inicial com um aviso.
+   */
   const substituido = (novo: ChavesPublicasHost) => {
+    if (deixou.current) return;
     const codigo = ref.current.codigo;
     deixou.current = true;
+    aTv.current = null;
     guardarHost(codigo, novo);
     for (const k of CHAVES_TV) {
       try {
@@ -204,7 +225,54 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
         /* sem armazenamento */
       }
     }
-    location.hash = rotaCom('/jogar', { sala: codigo }, paramsHash().get('eu'));
+    if (semTv) location.hash = rotaCom('/jogar', { sala: codigo }, paramsHash().get('eu'));
+    else {
+      guardarSessao(CHAVE_AVISO, 'avisoOutraTv');
+      location.hash = rotaCom('/', {}, paramsHash().get('eu'));
+    }
+  };
+
+  /** o aparelho (no canal, com chave conhecida) do jogador `alvo` */
+  const aparelhoDe = (alvo: string) =>
+    presentes.current.find((ap) => ap !== ID_TV && (ref.current.aliases[ap] ?? ap) === alvo && !!proto.current!.fixadas[ap]) ?? null;
+
+  /**
+   * O líder escolheu quem passa a ser a TV (`novaTv`, pedido de 20/11):
+   * - é o próprio anfitrião sem TV: este separador passa a TV (grava e muda de ecrã; as chaves ficam as mesmas);
+   * - é outro aparelho: manda-lhe a cópia marcada `tv` (com ele já fora da lista) e anuncia-o com PASSA_JA,
+   *   até ver a vista da TV nova (`substituido`); ao fim de ESPERA_TV desiste.
+   */
+  const passarATv = () => {
+    const alvo = ref.current.novaTv;
+    if (deixou.current) return;
+    if (!alvo) {
+      aTv.current = null;
+      return;
+    }
+    if (semTv && (ref.current.aliases[semTv.eu] ?? semTv.eu) === alvo) {
+      ref.current = virarTv(ref.current, alvo, agora());
+      gravar(true);
+      deixou.current = true; // o ecrã da TV continua daqui (mesmo separador, mesma gravação)
+      location.hash = rotaCom('/tv', {}, paramsHash().get('eu'));
+      return;
+    }
+    let x = aTv.current;
+    if (!x || x.alvo !== alvo) {
+      const ap = aparelhoDe(alvo);
+      if (!ap) return despachar({ tipo: 'tornar_tv', id: ID_TV, alvo: null });
+      const chaves = novasChavesHost();
+      x = aTv.current = { alvo, ap, chaves, prox: impressaoChave(chaves.assina.pub), desde: Date.now() };
+    }
+    if (Date.now() - x.desde > ESPERA_TV) {
+      aTv.current = null;
+      despachar({ tipo: 'tornar_tv', id: ID_TV, alvo: null });
+      publicar(true); // tira o PASSA_JA
+      return;
+    }
+    const p = proto.current!;
+    publicar(true);
+    const m = p.copia(x.ap, { seq: seq.current, agora: agora(), estado: virarTv(ref.current, alvo, agora()), sal: obterSal(), fixadas: fixadasCopia(), chaves: x.chaves, cadeia: [...p.cadeia, p.passar(publicas(x.chaves))], tv: true });
+    if (m) canal.current?.enviar('copia', m);
   };
 
   /** cada aparelho só recebe o seu (papéis secretos, cartas, palavras da equipa), cifrado só para ele */
@@ -242,11 +310,10 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
       despachar({ tipo: 'ligados', ids: [...ids.filter((i) => i !== ID_TV), ...(semTv ? [semTv.eu] : [])] });
       passagem();
     });
-    if (semTv)
-      c.ouvir('vista', (d) => {
-        const novo = proto.current!.substituidoPor(d);
-        if (novo) substituido(novo);
-      });
+    c.ouvir('vista', (d) => {
+      const novo = proto.current!.substituidoPor(d);
+      if (novo) substituido(novo);
+    });
     c.ouvir('acao', (d) => {
       const m = proto.current!.abrir(d);
       if (!m) return;
@@ -271,6 +338,7 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     // batimento (o herdeiro sabe que o anfitrião está vivo, mesmo sem mudanças) e cópias ao herdeiro
     const vivo = setInterval(() => {
       if (Date.now() - publicadaEm.current >= BATIMENTO) publicar(true);
+      passarATv();
       passagem();
       gravar();
     }, 1000);
@@ -291,6 +359,11 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     publicar();
     enviarPrivados();
   }, [estado]);
+
+  // o líder acabou de escolher a TV: começa já (depois, a cada segundo, até a TV nova responder)
+  useEffect(() => {
+    if (estado.novaTv && !aTv.current) passarATv();
+  }, [estado.novaTv]);
 
   return {
     estado,
@@ -415,7 +488,18 @@ export function useCliente(codigo: string, eu: string, entrada: Entrada | null, 
     });
     c.ouvir('copia', (d) => {
       const k = proto.current!.lerCopia(d);
-      if (k) copia = k;
+      if (!k) return;
+      if (!k.tv) {
+        copia = k;
+        return;
+      }
+      // o líder escolheu este aparelho para TV: assume já a party, como TV
+      try {
+        guardarAssumir(k, Date.now() + desvio.current);
+      } catch {
+        return; // sem armazenamento no separador
+      }
+      location.hash = rotaCom('/tv', {}, paramsHash().get('eu'));
     });
     // o anfitrião calou-se: o herdeiro assume a party com a cópia (vira `#/criar`, que lê a cópia)
     const vigia = setInterval(() => {
@@ -450,6 +534,8 @@ export function useCliente(codigo: string, eu: string, entrada: Entrada | null, 
     pedirPrivado: () => canal.current?.enviar('pedir', { de: eu } satisfies MsgPedir),
     /** hora da TV, para os temporizadores */
     agoraTv: () => Date.now() + desvio.current,
+    /** impressão digital do anfitrião (vai no link do QR que este telemóvel mostra); '' = ainda não se conhece */
+    impressaoHost: () => (proto.current?.host ? impressaoChave(proto.current.host.assina) : ''),
     acao: enviar,
   };
 }

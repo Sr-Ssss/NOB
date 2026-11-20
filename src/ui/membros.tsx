@@ -3,6 +3,7 @@ import type { AcaoSala, VistaSala } from '../core/sala';
 import { useState } from 'preact/hooks';
 import { Boneco } from './comuns';
 import { Confirmar } from './confirmar';
+import { Qr } from './qr';
 
 /**
  * Quem pode estar na party (src/core/membros.ts, auditoria T8), no telemóvel:
@@ -13,31 +14,65 @@ import { Confirmar } from './confirmar';
 
 type J = VistaSala['jogadores'][number];
 
-/** o líder tocou num jogador (humano) no lobby */
-export function PopupJogador({ j, enviar, fechar }: { j: J; enviar: (a: AcaoSala) => void; fechar: () => void }) {
-  const [confirmar, setConfirmar] = useState(false);
-  if (confirmar)
+/**
+ * O líder tocou num jogador (humano) no lobby, ou em si próprio: "Tornar TV" (com popup a explicar) e expulsar.
+ * `eu`: é o próprio líder (não se expulsa). A liderança passa-se no "👑 Líder" do topo (`EscolherLider`).
+ */
+export function PopupJogador({ j, eu, vista, enviar, fechar }: { j: J; eu: boolean; vista: VistaSala; enviar: (a: AcaoSala) => void; fechar: () => void }) {
+  const [confirmar, setConfirmar] = useState<'tv' | 'expulsar' | null>(null);
+  if (confirmar === 'expulsar')
     return <Confirmar texto={t('mbExpulsarConfirma', { nome: j.nome })} sim={t('mbExpulsar')} aoSim={() => enviar({ tipo: 'expulsar', id: '', alvo: j.id })} fechar={fechar} />;
-  const expulsar = () => setConfirmar(true);
+  if (confirmar === 'tv') {
+    const texto = (eu ? t('lbTvExplicaEu') : t('lbTvExplica', { nome: j.nome })) + (vista.semTv ? '' : ' ' + t('lbTvSubstitui'));
+    return <Confirmar texto={texto} sim={t('confirmar')} aoSim={() => enviar({ tipo: 'tornar_tv', id: '', alvo: j.id })} fechar={fechar} />;
+  }
+  // a TV precisa de alguém que fique a jogar
+  const outros = vista.jogadores.some((x) => x.ligado && !x.bot && x.id !== j.id);
   return (
     <div class="popup" onClick={fechar}>
-      <div class="cartao centro" onClick={(e) => e.stopPropagation()}>
+      <div class="cartao centro" role="dialog" aria-modal="true" aria-label={j.nome} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <Boneco j={j} tam={72} />
         </div>
-        {j.ligado && (
-          <button
-            class="botao"
-            style={{ width: '100%', marginTop: 12 }}
-            onClick={() => {
-              enviar({ tipo: 'lideranca', id: '', para: j.id });
-              fechar();
-            }}
-          >
-            {t('mbPassar')}
+        {j.ligado && outros && !vista.novaTv && (
+          <button class="botao" style={{ width: '100%', marginTop: 12 }} onClick={() => setConfirmar('tv')}>
+            {t('lbTornarTv')}
           </button>
         )}
-        <button class="botao sec" style={{ width: '100%', marginTop: 8 }} onClick={expulsar}>
+        {!eu && (
+          <button class="botao sec" style={{ width: '100%', marginTop: 8 }} onClick={() => setConfirmar('expulsar')}>
+            {t('mbExpulsar')}
+          </button>
+        )}
+        <button class="botao sec" style={{ width: '100%', marginTop: 8 }} onClick={fechar}>
+          {t('fechar')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * O líder tocou num bot no lobby: interruptor "IA jogável" (ligado por defeito; bolinha verde = ligada,
+ * cinzenta = desligada; src/core/ia.ts) e Expulsar. Com a IA ligada o bot joga sozinho.
+ */
+export function PopupBot({ j, enviar, fechar }: { j: J; enviar: (a: AcaoSala) => void; fechar: () => void }) {
+  const [remover, setRemover] = useState(false);
+  if (remover) return <Confirmar texto={t('botRemover', { nome: j.nome })} sim={t('mbExpulsar')} aoSim={() => enviar({ tipo: 'bot_del', id: '', bot: j.id })} fechar={fechar} />;
+  const ia = !!j.ia;
+  return (
+    <div class="popup" onClick={fechar}>
+      <div class="cartao centro" role="dialog" aria-modal="true" aria-label={j.nome} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <Boneco j={j} tam={72} marca="🤖" />
+        </div>
+        <button class={'interruptor-ia' + (ia ? ' on' : '')} role="switch" aria-checked={ia} onClick={() => enviar({ tipo: 'bot_ia', id: '', bot: j.id, ia: !ia })}>
+          <span class="bolinha-ia" aria-hidden="true" />
+          <span class="cresce">{t('botIa')}</span>
+          <span class="mini">{ia ? t('botIaOn') : t('botIaOff')}</span>
+        </button>
+        <p class="mini" style={{ margin: '4px 0 0' }}>{ia ? t('botIaDicaOn') : t('botIaDicaOff')}</p>
+        <button class="botao sec" style={{ width: '100%', marginTop: 12 }} onClick={() => setRemover(true)}>
           {t('mbExpulsar')}
         </button>
         <button class="botao sec" style={{ width: '100%', marginTop: 8 }} onClick={fechar}>
@@ -48,15 +83,72 @@ export function PopupJogador({ j, enviar, fechar }: { j: J; enviar: (a: AcaoSala
   );
 }
 
-/** só o líder: fechar / abrir a party */
-export function BotaoFecharParty({ vista, enviar }: { vista: VistaSala; enviar: (a: AcaoSala) => void }) {
+/** 🔒 ao lado do código: o líder fecha / abre a party; os outros só veem o cadeado quando está fechada */
+export function CadeadoParty({ vista, lider, enviar }: { vista: VistaSala; lider: boolean; enviar: (a: AcaoSala) => void }) {
+  const rotulo = vista.fechada ? t('mbAbrir') : t('mbFechar');
+  if (!lider)
+    return vista.fechada ? (
+      <span class="chip on" role="img" aria-label={t('mbFechadaTv')} title={t('mbFechadaDica')}>
+        🔒
+      </span>
+    ) : null;
   return (
-    <>
-      <button class="botao sec" onClick={() => enviar({ tipo: 'fechar', id: '', fechada: !vista.fechada })} aria-pressed={!!vista.fechada}>
-        {vista.fechada ? t('mbAbrir') : t('mbFechar')}
-      </button>
-      {vista.fechada && <p class="centro mini">{t('mbFechadaDica')}</p>}
-    </>
+    <button class={'chip cadeado' + (vista.fechada ? ' on' : '')} onClick={() => enviar({ tipo: 'fechar', id: '', fechada: !vista.fechada })} aria-pressed={!!vista.fechada} aria-label={rotulo} title={rotulo}>
+      {vista.fechada ? '🔒' : '🔓'}
+    </button>
+  );
+}
+
+/** "👑 Líder" no topo: a lista da sala, e o escolhido passa a ser o líder (o atual deixa de ser) */
+export function EscolherLider({ vista, eu, enviar, fechar }: { vista: VistaSala; eu: string; enviar: (a: AcaoSala) => void; fechar: () => void }) {
+  const outros = vista.jogadores.filter((j) => j.id !== eu && j.ligado && !j.bot && !(vista.expulsos ?? []).includes(j.id));
+  return (
+    <div class="popup" onClick={fechar}>
+      <div class="cartao centro" role="dialog" aria-modal="true" aria-label={t('lbEscolherLider')} onClick={(e) => e.stopPropagation()}>
+        <h3 style={{ marginTop: 0 }}>👑 {t('lbEscolherLider')}</h3>
+        {outros.length ? (
+          <div class="fila-bonecos">
+            {outros.map((j) => (
+              <button
+                key={j.id}
+                class="escolha-boneco"
+                aria-label={j.nome}
+                onClick={() => {
+                  enviar({ tipo: 'lideranca', id: '', para: j.id });
+                  fechar();
+                }}
+              >
+                <Boneco j={j} tam={56} />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p class="mini">{t('lbSemOutros')}</p>
+        )}
+        <button class="botao sec" style={{ width: '100%', marginTop: 12 }} onClick={fechar}>
+          {t('cancelar')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** tocar no código da party: o QR + o código em grande + ✕ */
+export function PopupCodigo({ codigo, link, fechar }: { codigo: string; link: string; fechar: () => void }) {
+  return (
+    <div class="popup" onClick={fechar}>
+      <div class="cartao centro popup-codigo" role="dialog" aria-modal="true" aria-label={t('codigoParty')} onClick={(e) => e.stopPropagation()}>
+        <div class="topo">
+          <span />
+          <button class="botao-icone" onClick={fechar} aria-label={t('fechar')} title={t('fechar')}>
+            ✕
+          </button>
+        </div>
+        <Qr texto={link} tam={240} />
+        <div class="codigo-grande">{codigo}</div>
+        <p class="mini">{t('lbQrDica')}</p>
+      </div>
+    </div>
   );
 }
 

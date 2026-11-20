@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../core/i18n';
 import type { AcaoSala, VistaSala } from '../../core/sala';
 import { Temporizador } from '../../ui/comuns';
-import { ModuloSvg, RoboCartao } from './desenho';
+import { AcabarPartida } from '../../ui/acabarPartida';
+import { nomeDe } from '../5050/tv';
+import { ArenaSvg, ModuloSvg, RoboCartao } from './desenho';
+import { T_QUADRO, arenaDe, entre, type Quadro } from './quadro';
 import { CABECAS, CORPOS, ICONE_CABECA, LOCOS, PRECO, type Cabeca, type Corpo, type Loco } from './pecas';
 import { etiquetaModulo, infoModulo, moeda, nomeCabeca, nomeCorpo, nomeFase, nomeLoco, nomeRobo, roboPorId } from './comuns';
 import { PRECO_CONTROLO, T_COMBATE, ativos, classificacao, minimoAposta, roboDe, type VistaRagerob } from './regras';
@@ -82,12 +85,40 @@ function Vida({ n }: { n: number }) {
   );
 }
 
-function Montar({ v, eu, enviar }: PropsTelRagerob) {
+/** "Olhe para a TV" (sem TV: "Esperando os outros…") */
+const olha = (sala: VistaSala) => t(sala.semTv ? 'rrEsperaOutros' : 'rrOlhaTv');
+
+/**
+ * Sem TV: a arena pequena (por cima dos controlos), desenhada a partir dos quadros que o host manda
+ * (src/jogos/ragerob/quadro.ts), interpolando entre os dois últimos para andar suave.
+ */
+function ArenaTel({ v, sala }: Pick<PropsTelRagerob, 'v' | 'sala'>) {
+  const c = v.combate!;
+  const q = c.quadro;
+  const hist = useRef<{ a: Quadro | null; b: Quadro | null; em: number }>({ a: null, b: null, em: 0 });
+  if (q && q.t !== hist.current.b?.t) hist.current = { a: hist.current.b, b: q, em: performance.now() };
+  const [, setF] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      setF((x) => x + 1);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  const h = hist.current;
+  const quadro = h.b && h.a ? entre(h.a, h.b, (performance.now() - h.em) / T_QUADRO) : h.b;
+  const nomes = Object.fromEntries(c.robos.map((id) => [id, nomeRobo(roboPorId(v, id), sala)]));
+  return <div class="rr-arena-tel">{quadro ? <ArenaSvg c={arenaDe(quadro, v.robos)} nomes={nomes} condutores={{}} /> : <div class="rr-arena rr-arena-vazia" />}</div>;
+}
+
+function Montar({ v, sala, eu, enviar }: PropsTelRagerob) {
   const meu = v.robos.find((r) => r.dono === eu);
   const [corpo, setCorpo] = useState<Corpo>(meu?.corpo ?? 'quadrado');
   const [loco, setLoco] = useState<Loco>(meu?.loco ?? 'rodas');
   const [cabeca, setCabeca] = useState<Cabeca>(meu?.cabeca ?? 'galo');
-  if (!meu) return <p class="centro">{t('rrOlhaTv')}</p>;
+  if (!meu) return <p class="centro">{olha(sala)}</p>;
   const feito = v.montados.includes(eu);
   const previa = { ...meu, corpo, loco, cabeca, modulos: [] };
   const linha = <T extends string>(lista: T[], atual: T, mudar: (x: T) => void, nome: (x: T) => string) => (
@@ -250,7 +281,7 @@ function Instalar({ v, sala, eu, enviar }: PropsTelRagerob) {
       <p class="centro">
         {t('rrNadaInstalar')}
         <br />
-        {t('rrOlhaTv')}
+        {olha(sala)}
       </p>
     );
   return (
@@ -291,18 +322,22 @@ function Luta({ v, sala, eu, agora, enviar }: PropsTelRagerob) {
       <span>{conduzo && cond ? t('rrTeusSegundos', { s: Math.max(0, Math.ceil((cond.ate - agora()) / 1000)) }) : restante > 0 ? `${restante} s` : t('rrEncolhe')}</span>
     </div>
   );
+  // sem TV: a arena pequena por cima dos controlos (decisão de 20/11)
+  const arena = sala.semTv ? <ArenaTel v={v} sala={sala} /> : null;
   if (noCombate && vida <= 0)
     return (
       <>
         {topo}
+        {arena}
         <p class="centro rr-grande">💥 {t('rrKo')}</p>
-        <p class="centro">{t('rrOlhaTv')}</p>
+        {!sala.semTv && <p class="centro">{t('rrOlhaTv')}</p>}
       </>
     );
   if (conduzo)
     return (
       <>
         {topo}
+        {arena}
         <Comando enviar={enviar} />
         <p class="centro rr-mini">{t('rrSozinhos')}</p>
       </>
@@ -312,6 +347,7 @@ function Luta({ v, sala, eu, agora, enviar }: PropsTelRagerob) {
   return (
     <>
       {topo}
+      {arena}
       {v.def.modo === 'normal' && noCombate ? (
         <div class="rr-coluna">
           <button class="rr-btn-grande" disabled={naFila >= 0 || (v.carteira[eu] ?? 0) < PRECO_CONTROLO} onClick={() => jogo(enviar, { tipo: 'rr_controlar', id: '' })}>
@@ -320,8 +356,24 @@ function Luta({ v, sala, eu, agora, enviar }: PropsTelRagerob) {
           {cond && cond.ate > agora() && <p class="centro">{t('rrOutroConduz')}</p>}
         </div>
       ) : null}
-      <p class="centro">{t('rrOlhaTv')}</p>
+      {!sala.semTv && <p class="centro">{t('rrOlhaTv')}</p>}
     </>
+  );
+}
+
+/** sem TV: a ordem do combate (o que a TV mostrava) */
+function OrdemTel({ v, sala }: Pick<PropsTelRagerob, 'v' | 'sala'>) {
+  const r = v.resultado!;
+  return (
+    <ol class="rr-ordem rr-ordem-tel">
+      {r.ordem.flatMap((gr, i) =>
+        gr.map((id) => (
+          <li key={id}>
+            <span>{['🥇', '🥈', '🥉', '4.º'][Math.min(3, i)]}</span> {nomeRobo(roboPorId(v, id), sala)} · 💥 {r.dano[id] ?? 0}
+          </li>
+        )),
+      )}
+    </ol>
   );
 }
 
@@ -330,8 +382,10 @@ export function TelemovelRagerob(p: PropsTelRagerob) {
   const din = v.carteira[eu] ?? 0;
   const ativo = ativos(v).includes(eu);
   const participa = v.participantes.includes(eu);
+  const semTv = !!p.sala.semTv;
   let corpo;
-  if (!participa) corpo = <p class="centro">{t('rrAudiencia')}</p>;
+  // sem TV, a audiência também vê a arena
+  if (!participa && !(semTv && v.fase === 'combate' && v.combate)) corpo = <p class="centro">{t('rrAudiencia')}</p>;
   else if (v.fase === 'montar') corpo = <Montar {...p} />;
   else if (v.fase === 'loja') corpo = !ativo ? <p class="centro">{t('rrSemDinheiro')}</p> : v.def.loja === 'leilao' ? <Leilao key={v.ronda} {...p} /> : <LojaPrivada {...p} />;
   else if (v.fase === 'aposta') corpo = !ativo ? <p class="centro">{t('rrSemDinheiro')}</p> : <Apostar key={v.combateIdx} {...p} />;
@@ -347,15 +401,39 @@ export function TelemovelRagerob(p: PropsTelRagerob) {
         <p class="rr-grande">
           <b class={g >= 0 ? 'rr-mais' : 'rr-menos'}>{g >= 0 ? '+' + g : g}</b>
         </p>
-        <p>{t('rrOlhaTv')}</p>
+        {semTv ? <OrdemTel v={v} sala={p.sala} /> : <p>{t('rrOlhaTv')}</p>}
       </div>
     );
   } else if (v.fase === 'fim') {
-    const lugar = classificacao(v).findIndex((x) => x.id === eu);
+    const lista = classificacao(v);
+    const lugar = lista.findIndex((x) => x.id === eu);
     corpo = (
       <div class="rr-coluna centro">
         <p class="rr-grande">{lugar === 0 ? '🏆 ' : ''}{t('rrLugar', { n: lugar + 1 })}</p>
-        <p>{t('rrOlhaTv')}</p>
+        {semTv ? (
+          <>
+            {/* sem TV: a classificação e (só o líder) jogar outra vez / menu */}
+            <ol class="rr-ordem rr-ordem-tel">
+              {lista.map((x, i) => (
+                <li key={x.id}>
+                  {['🥇', '🥈', '🥉'][i] ?? `${i + 1}.º`} {nomeDe(p.sala, x.id)} · {v.def.modo === 'normal' ? moeda(x.valor) : t('rrPontos', { n: x.valor })}
+                </li>
+              ))}
+            </ol>
+            {p.sala.vipId === eu && (
+              <div class="linha">
+                <button class="botao cresce" onClick={() => p.enviar({ tipo: 'outra_vez', id: '' })}>
+                  {t('jogarOutraVez')}
+                </button>
+                <button class="botao sec" onClick={() => p.enviar({ tipo: 'menu', id: '' })}>
+                  {t('menu')}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <p>{t('rrOlhaTv')}</p>
+        )}
       </div>
     );
   }
@@ -365,6 +443,7 @@ export function TelemovelRagerob(p: PropsTelRagerob) {
         <span>{nomeFase(v)}</span>
         <b>{moeda(din)}</b>
         {v.fase !== 'fim' && v.fase !== 'resultado' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
+        <AcabarPartida sala={p.sala} eu={eu} enviar={p.enviar} />
       </div>
       {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
       {(v.inventario[eu]?.length ?? 0) > 0 && v.fase !== 'instalar' && (

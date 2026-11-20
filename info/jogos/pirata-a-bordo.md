@@ -20,7 +20,7 @@ Lobisomem clássico com tema de navio mercante. Os piratas atiram marinheiros ao
 - Piratas: escolhem a vítima e veem os votos uns dos outros. No fim ganha a maioria; em empate há sorteio entre os empatados.
 - Vigia e Médico: fazem a sua ação.
 - **Marinheiros: escolhem quem vigiar.**
-  - Só conta se **≥ N marinheiros** escolherem a mesma pessoa (N na config; padrão 3, ou 2 com 5–6 jogadores).
+  - Só conta se **≥ N marinheiros** escolherem a mesma pessoa (N na config). Padrão (decisão do utilizador, 18/11): **jogo de 5 = sem vigia dos marinheiros**; depois N conta pelos **vivos**: 2 com ≤ 6 vivos, senão 3.
   - Nesse caso, **só esses marinheiros** ficam a saber, em privado, se o alvo **saiu da cabine** (= é Pirata, Vigia ou Médico).
   - Quem escolheu um alvo com menos de N votos não recebe nada.
   - Mais do que um alvo pode chegar a N.
@@ -40,9 +40,9 @@ Lobisomem clássico com tema de navio mercante. Os piratas atiram marinheiros ao
   - **Botão "Identidade" em todos os ecrãs**: tem de se **segurar 3 s**; mostra um **símbolo pequeno + nome do papel**; ao tirar o dedo, some.
   1. **Carta** (início): pergaminho fechado + "Segura 3 s para veres quem és";
   2. **Noite**: pergaminho com a lista + Confirmar, igual para todos. A ação de cada papel (atirar ao mar, revistar, proteger, vigiar) é dita só no ecrã da Identidade. Os votos dos outros piratas e o bloqueio do Médico também **só aparecem enquanto se segura a Identidade**, para nada ficar visível a quem espreita;
-  3. **Amanhecer**: resultado privado só para quem tem (Vigia: "A Ana é/não é pirata"; marinheiros que chegaram a N: "A Ana saiu/não saiu da cabine"); os outros veem "Nada a reportar";
+  3. **Amanhecer**: resultado privado só para quem tem (Vigia: "A Ana é/não é pirata"; marinheiros que chegaram a N: "A Ana saiu/não saiu da cabine"); os outros veem "Nada a reportar". Depois do amanhecer, o resultado fica guardado no ecrã da Identidade ("Noite 1: Ana é pirata!"), só para o próprio;
   4. **Discussão**: "Conversem, olhem para a TV" + timer + botão 👁 "O meu papel";
-  5. **Votação**: lista + "Ninguém" + Confirmar;
+  5. **Votação**: lista + "Ninguém" + Confirmar; o ecrã avisa que o voto não muda depois de confirmar;
   6. **Fora do jogo**: "Foste atirado ao mar. Agora és espectador, não fales." (Artilheiro: primeiro escolhe quem leva, 20 s);
   7. **Fim**: "Ganhaste/Perdeste" + pontos; sem TV, o Painel mostra o convés.
 

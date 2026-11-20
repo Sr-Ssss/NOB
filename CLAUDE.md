@@ -29,3 +29,17 @@ Plataforma de party games, só online: app NOB na Play Store (modos "Ser a TV" e
 
 ## Ficheiros soltos
 - `index.html` — protótipo antigo: teste de proximidade por som (ultrassons). Fica como referência, não é a app.
+
+## Poupar tokens (todas as sessões)
+- Fazer exatamente o pedido + o trabalho autónomo que ele implica; nada de extras não pedidos.
+- Ler só o necessário: Grep/Glob primeiro, depois Read com `offset`/`limit`. Não reler ficheiros já lidos nem editados.
+- Respostas curtas: sem resumos longos, sem repetir o que já foi dito, sem narrar passos.
+- Sem subagentes nem sessões novas salvo pedido ou necessidade real.
+- Máx. 2 sessões a trabalhar ao mesmo tempo.
+- Contexto passa de ~200k tokens: guardar estado/próximo passo no `.md` do assunto (`info/PROXIMA_SESSAO.md` ou `info/jogos/<jogo>.md`) e avisar o utilizador para fazer `/compact` ou passar a uma sessão nova.
+- Tarefa acabada: atualizar o `.md` respetivo com o essencial (o contexto fica nos ficheiros, não no histórico).
+
+## Limite semanal: parar a cada 10%
+- No início de cada pedido e entre passos longos, ver o limite semanal com `mcp__ccd_session_mgmt__get_usage`.
+- Sempre que passar uma nova dezena (10%, 20%, 30% … 90%) desde a última confirmação: terminar o passo atual sem começar outro, guardar o estado no `.md` do assunto e perguntar ao utilizador se quer continuar. Só continuar com um "sim".
+- Vale para todas as sessões, incluindo as filhas (perguntam ao utilizador na própria sessão).

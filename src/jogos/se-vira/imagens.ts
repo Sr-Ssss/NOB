@@ -45,7 +45,13 @@ function hash(s: string): number {
   return h;
 }
 
-/** imagem sorteada pelo jogo para um termo (alterna GIPHY/Pexels conforme as chaves que há) */
+/** termos de reserva quando a pesquisa não dá nada */
+const RESERVA = ['funny', 'office'];
+
+/**
+ * imagem sorteada pelo jogo para um termo (alterna GIPHY/Pexels conforme as chaves que há).
+ * Se não houver resultados: a outra fonte, depois outro termo; só no fim null (= emoji)
+ */
 export function fotoPara(busca: string, chave: string): Promise<Resultado | null> {
   const k = busca + '|' + chave;
   if (!cache.has(k)) {
@@ -53,9 +59,14 @@ export function fotoPara(busca: string, chave: string): Promise<Resultado | null
     const fontes: Resultado['fonte'][] = [...(GIPHY ? ['giphy' as const] : []), ...(PEXELS ? ['pexels' as const] : [])];
     const p = (async (): Promise<Resultado | null> => {
       if (!fontes.length) return null;
-      const fonte = fontes[h % fontes.length];
-      const l = await pesquisar(fonte, busca);
-      return l.length ? { url: l[h % l.length], fonte } : null;
+      const ordem = [...fontes.slice(h % fontes.length), ...fontes.slice(0, h % fontes.length)];
+      for (const termo of [busca, ...RESERVA.filter((x) => x !== busca)]) {
+        for (const fonte of ordem) {
+          const l = await pesquisar(fonte, termo);
+          if (l.length) return { url: l[h % l.length], fonte };
+        }
+      }
+      return null;
     })();
     cache.set(k, p);
   }

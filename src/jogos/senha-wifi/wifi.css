@@ -1,6 +1,6 @@
 /* Senha do Wi-Fi — visual "router da sala com post-its" (info/jogos/encriptado.md) */
 .jogo-wifi, .tel-wifi { --postit: #f7e26b; --postit-txt: #2b2410; --router-b: #f1efe8; --router-p: #26232f; --mao: 'Gochi Hand', 'Comic Sans MS', cursive; }
-.jogo-wifi { min-height: 100vh; display: flex; flex-direction: column; }
+.jogo-wifi { min-height: 100cqh; display: flex; flex-direction: column; }
 .wifi-palco { flex: 1; display: grid; grid-template-columns: 1fr 340px 1fr; gap: 28px; align-items: start; }
 .wifi-metade { display: flex; flex-direction: column; gap: 14px; }
 .wifi-metade-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 34px; font-weight: 800; }
@@ -83,6 +83,8 @@
 .equipa-lista .item button.on { background: var(--coral); border-color: var(--coral); color: #1b1747; }
 .wifi-dois { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .wifi-dois .cartao { font-size: 28px; }
+.wifi-fim { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start; }
+.wifi-fim .wifi-dois { grid-template-columns: 1fr; }
 .tel-wifi .wifi-palco { grid-template-columns: 1fr; gap: 12px; }
 .tel-wifi .wifi-centro .tempo { font-size: 48px; }
 .tel-wifi .wifi-metade-cab { font-size: 20px; }

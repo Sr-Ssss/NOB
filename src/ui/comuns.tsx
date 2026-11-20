@@ -1,4 +1,6 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
+import { t } from '../core/i18n';
 import type { Jogador } from '../core/sala';
 import { Boneco18 } from './bonecos';
 
@@ -12,7 +14,23 @@ export function Avatar({ n, tam = 64 }: { n: number; tam?: number }) {
   return <Boneco18 n={n} tam={tam} />;
 }
 
-export function Boneco({ j, marca, tam }: { j: Pick<Jogador, 'nome' | 'avatar' | 'ligado'>; marca?: string; tam?: number }) {
+/** à espera que alguém responda: balão de pensamento com 3 pontinhos (estilo WhatsApp; em vez de ✗/❌, que parecia um "não") */
+export function Pensando() {
+  return (
+    <span class="pensando" role="img" aria-label={t('aPensar')}>
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
+/** ✅ se já está feito, senão o balão de pensamento */
+export function Feito({ ok }: { ok: boolean }) {
+  return ok ? <>✅</> : <Pensando />;
+}
+
+export function Boneco({ j, marca, tam }: { j: Pick<Jogador, 'nome' | 'avatar' | 'ligado'>; marca?: ComponentChildren; tam?: number }) {
   return (
     <div class={'boneco' + (j.ligado ? '' : ' off')}>
       {marca && <span class="marca">{marca}</span>}
@@ -23,6 +41,11 @@ export function Boneco({ j, marca, tam }: { j: Pick<Jogador, 'nome' | 'avatar' |
 }
 
 /** segundos que faltam; `restante` (ms) quando pausado */
+/** barra amarela→laranja que enche um botão "segurar para ver" em `ms` (o botão leva `position` e `overflow: hidden`; o texto vai num `.rotulo-segurar`) */
+export function BarraSegurar({ ms }: { ms: number }) {
+  return <span class="barra-segurar" style={{ animationDuration: ms + 'ms' }} aria-hidden="true" />;
+}
+
 export function Temporizador({ terminaEm, restante, agora }: { terminaEm: number; restante: number | null; agora: () => number }) {
   const [, setT] = useState(0);
   useEffect(() => {

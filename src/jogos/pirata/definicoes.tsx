@@ -31,7 +31,7 @@ export function DefinicoesPirata({ def, n, mudar }: { def: DefPirata; n: number;
         <label>{t('prOpVigiar')}</label>
         <div class="opcoes">
           <button class={'opcao' + (def.vigiar === null ? ' on' : '')} onClick={() => mudar({ vigiar: null })}>
-            {t('prOpPadrao', { n: limiarVigia(DEF_PADRAO_PIRATA, n) })}
+            {t('prOpPadrao', { n: limiarVigia(DEF_PADRAO_PIRATA, n) ?? '—' })}
           </button>
           {OPCOES_PIRATA.vigiar.map((x) => (
             <button key={x} class={'opcao' + (def.vigiar === x ? ' on' : '')} onClick={() => mudar({ vigiar: x })}>

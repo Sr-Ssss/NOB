@@ -21,7 +21,8 @@ export function TvRei({ sala, v, agora, selFim = 0, onOutraVez, onMenu }: PropsR
           <p class="centro">
             {v.aposta && t('rdApostou', { eq: nomeEquipa(v.aposta) })} {v.apontado && t('rdApontou', { nome: nomeDe(sala, v.apontado) })}
           </p>
-          <div class="cartao">
+          {/* placar em 5 colunas: cabe tudo num ecrã (fase 3) */}
+          <div class="cartao rd-placar-fim">
             <PlacarRei sala={sala} v={v} tam={44} />
           </div>
           <div class="linha">

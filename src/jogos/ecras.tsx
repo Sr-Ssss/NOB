@@ -20,7 +20,7 @@ import type { PrivadoWifi } from './senha-wifi/regras';
 import { TvSevira } from './se-vira/tv';
 import { TelemovelSevira } from './se-vira/telemovel';
 import { DefinicoesSevira } from './se-vira/definicoes';
-import { extraTv } from './se-vira/regras';
+import { extraTv, type PrivadoSevira } from './se-vira/regras';
 import { TvMona } from './mona-lixa/tv';
 import { TelemovelMona } from './mona-lixa/telemovel';
 import { DefinicoesMona } from './mona-lixa/definicoes';
@@ -39,7 +39,7 @@ import { TvRei } from './rei-dragao/tv';
 import { TelemovelRei } from './rei-dragao/telemovel';
 import { DefinicoesRei } from './rei-dragao/definicoes';
 import type { PrivadoRei } from './rei-dragao/regras';
-import { TvRagerob } from './ragerob/tv';
+import { MotorRagerob, TvRagerob } from './ragerob/tv';
 import { TelemovelRagerob } from './ragerob/telemovel';
 import { DefinicoesRagerob } from './ragerob/definicoes';
 
@@ -68,6 +68,10 @@ export interface Ecras<G, V, D> {
   vibrar(v: V): string;
   /** jogos com canal privado: muda quando o telemóvel deve voltar a pedir o privado */
   versaoPrivado?(v: V): string;
+  /** sem TV: o que a TV faria como host (ex.: a física do Ragerob), montado no telemóvel que tem a sala (src/jogar/Criar.tsx) */
+  motor?(p: Pick<PropsTv<G, V>, 'g' | 'v' | 'sala' | 'agora' | 'acao'>): JSX.Element | null;
+  /** durante a barra de 5 s antes do jogo (src/ui/abertura.tsx): carrega imagens, sons… que o jogo vai usar */
+  precarregar?(): void | Promise<unknown>;
 }
 
 export const ECRAS: { [J in Registado as J['id']]: Ecras<EstadoDe<J>, VistaDe<J>, DefDe<J>> } = {
@@ -92,9 +96,11 @@ export const ECRAS: { [J in Registado as J['id']]: Ecras<EstadoDe<J>, VistaDe<J>
   },
   sevira: {
     tv: (p) => <TvSevira sala={p.sala} v={p.v} extra={extraTv(p.g)} agora={p.agora} selFim={p.selFim} onOutraVez={p.onOutraVez} onMenu={p.onMenu} />,
-    telemovel: (p) => <TelemovelSevira sala={p.sala} v={p.v} agora={p.agora} eu={p.eu} tag={p.marca()} enviar={p.enviar} />,
+    telemovel: (p) => <TelemovelSevira sala={p.sala} v={p.v} agora={p.agora} eu={p.eu} tag={p.marca()} enviar={p.enviar} privado={(p.privado as PrivadoSevira | null) ?? null} />,
     opcoes: { nome: () => t('svOpcoesNome'), render: (p) => <DefinicoesSevira def={p.def} n={p.n} mudar={p.mudar} /> },
     vibrar: (v) => `s:${v.fase}:${v.atual}`,
+    // sem TV: a imagem da galeria do slide atual (src/jogos/se-vira/regras.ts → privadoSevira)
+    versaoPrivado: (v) => (v.fase === 'apresentar' ? `${v.atual}:${v.slide}` : ''),
   },
   mona: {
     tv: (p) => <TvMona sala={p.sala} v={p.v} agora={p.agora} selFim={p.selFim} onOutraVez={p.onOutraVez} onMenu={p.onMenu} />,
@@ -132,6 +138,7 @@ export const ECRAS: { [J in Registado as J['id']]: Ecras<EstadoDe<J>, VistaDe<J>
   ragerob: {
     tv: (p) => <TvRagerob g={p.g} v={p.v} sala={p.sala} agora={p.agora} selFim={p.selFim} onOutraVez={p.onOutraVez} onMenu={p.onMenu} acao={p.acao} />,
     telemovel: (p) => <TelemovelRagerob key={p.eu} sala={p.sala} v={p.v} agora={p.agora} eu={p.eu} enviar={p.enviar} />,
+    motor: (p) => <MotorRagerob g={p.g} v={p.v} sala={p.sala} agora={p.agora} acao={p.acao} />,
     opcoes: { nome: () => 'Ragerob', render: (p) => <DefinicoesRagerob def={p.def} mudar={p.mudar} /> },
     vibrar: (v) => `rr:${v.fase}:${v.ronda}:${v.combateIdx}`,
   },

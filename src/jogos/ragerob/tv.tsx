@@ -5,6 +5,7 @@ import { Temporizador } from '../../ui/comuns';
 import { nomeDe } from '../5050/tv';
 import { ArenaSvg, ModuloSvg, RoboCartao } from './desenho';
 import { Combate, type ComandoF } from './fisica';
+import { T_QUADRO, quadroDe } from './quadro';
 import { ICONE_EVENTO, PRECO } from './pecas';
 import { QuemEnviou, etiquetaModulo, moeda, nomeEvento, nomeFase, nomeRobo, roboPorId } from './comuns';
 import { T_COMBATE, ativos, classificacao, tabela, type EstadoRagerob, type VistaRagerob } from './regras';
@@ -43,8 +44,11 @@ function humanos(g: EstadoRagerob, agora: number, sala: VistaSala): Record<strin
   return r;
 }
 
-/** o combate: a física corre aqui (a TV é o host) */
-function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
+/**
+ * A física do combate corre no host: na TV (que a desenha) ou, sem TV, no telemóvel que tem a sala, que manda também
+ * os quadros da arena (`quadros`) para os telemóveis a desenharem (src/jogos/ragerob/quadro.ts).
+ */
+function useMotor({ g, v, sala, agora, acao }: Pick<PropsTvRagerob, 'g' | 'v' | 'sala' | 'agora' | 'acao'>, quadros: boolean): Combate {
   const c = v.combate!;
   const sim = useRef<{ chave: string; c: Combate; enviado: boolean } | null>(null);
   const gRef = useRef(g);
@@ -60,6 +64,7 @@ function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
     let antes = performance.now();
     let acumulado = 0;
     let ultimoEnvio = 0;
+    let ultimoQuadro = 0;
     let ultimas = '';
     // a física anda pelo relógio real: se o browser abrandar (separador escondido), apanha o atraso (até 2 s de cada vez)
     const avancar = (agoraMs: number) => {
@@ -70,6 +75,10 @@ function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
       while (acumulado >= 1 / 60 && !s.c.acabou) {
         s.c.passo(h);
         acumulado -= 1 / 60;
+      }
+      if (quadros && !s.enviado && agoraMs - ultimoQuadro >= T_QUADRO) {
+        ultimoQuadro = agoraMs;
+        jogo(acao, { tipo: 'rr_quadro', id: '', q: quadroDe(s.c) });
       }
       if (agoraMs - ultimoEnvio > 500) {
         ultimoEnvio = agoraMs;
@@ -82,6 +91,7 @@ function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
       }
       if (s.c.acabou && !s.enviado) {
         s.enviado = true;
+        if (quadros) jogo(acao, { tipo: 'rr_quadro', id: '', q: quadroDe(s.c) });
         jogo(acao, { tipo: 'rr_vidas', id: '', vidas: s.c.vidas() });
         const dano = Object.fromEntries(s.c.robos.map((r) => [r.id, r.dano]));
         const kos = Object.fromEntries(s.c.robos.map((r) => [r.id, r.kos]));
@@ -89,20 +99,35 @@ function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
         setTimeout(() => jogo(acao, { tipo: 'rr_fim', id: '', ordem: s.c.ordem(), dano, kos }), 1500);
       }
     };
+    // sem TV não há nada a desenhar aqui (o telemóvel desenha os quadros): basta o relógio de reserva
     const loop = (agoraMs: number) => {
       avancar(agoraMs);
       setQuadro((x) => x + 1);
       raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    const reserva = setInterval(() => avancar(performance.now()), 100);
+    if (!quadros) raf = requestAnimationFrame(loop);
+    const reserva = setInterval(() => avancar(performance.now()), quadros ? 40 : 100);
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(reserva);
     };
   }, [chave]);
+  return sim.current.c;
+}
 
-  const s = sim.current.c;
+/** sem TV: o motor do combate no telemóvel que tem a sala (não desenha nada) */
+export function MotorRagerob(p: Pick<PropsTvRagerob, 'g' | 'v' | 'sala' | 'agora' | 'acao'>) {
+  return p.v.fase === 'combate' && p.v.combate ? <Motor {...p} /> : null;
+}
+function Motor(p: Pick<PropsTvRagerob, 'g' | 'v' | 'sala' | 'agora' | 'acao'>) {
+  useMotor(p, true);
+  return null;
+}
+
+/** o combate na TV: a física corre aqui (a TV é o host) */
+function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
+  const c = v.combate!;
+  const s = useMotor({ g, v, sala, agora, acao }, false);
   const nomes = Object.fromEntries(c.robos.map((id) => [id, nomeRobo(roboPorId(v, id), sala)]));
   const condutores: Record<string, string> = {};
   const h = humanos(g, agora(), sala);
@@ -117,14 +142,23 @@ function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
   const ev = s.evento && s.t - s.evento.ini < 3 ? s.evento : null;
   return (
     <div class="rr-luta">
-      <div class="rr-arena-caixa">
-        <ArenaSvg c={s} nomes={nomes} condutores={condutores} />
-        {ev && (
-          <div class="rr-placa">
-            {ICONE_EVENTO[ev.tipo]} {nomeEvento(ev.tipo)}
-          </div>
-        )}
-        <div class="rr-relogio">{restante > 0 ? `${restante} s` : t('rrEncolhe')}</div>
+      <div class="rr-coluna-arena">
+        <div class="rr-arena-caixa">
+          <ArenaSvg c={s} nomes={nomes} condutores={condutores} />
+          <div class="rr-relogio">{restante > 0 ? `${restante} s` : t('rrEncolhe')}</div>
+        </div>
+        {/* aviso de evento: por baixo da arena (não tapa a luta), pisca 3 vezes */}
+        <div class="rr-faixa-aviso" role="status" aria-live="assertive">
+          {ev && (
+            <div key={ev.ini} class="rr-aviso-perigo">
+              <span class="rr-alerta" aria-hidden="true">⚠️</span>
+              <span class="rr-aviso-texto">
+                {ICONE_EVENTO[ev.tipo]} {nomeEvento(ev.tipo)}
+              </span>
+              <span class="rr-alerta" aria-hidden="true">⚠️</span>
+            </div>
+          )}
+        </div>
       </div>
       <aside class="rr-chapa">
         {v.def.modo === 'normal' ? (

@@ -3,10 +3,11 @@ import type { AcaoSala } from '../../core/sala';
 import { t } from '../../core/i18n';
 import { Avatar, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
-import { PlacarSevira, txt } from './comuns';
+import { PlacarSevira, SlideBranco, txt } from './comuns';
 import { buscarGiphy, reduzirGaleria, temGiphy } from './imagens';
-import { MAX_IMAGENS, MAX_LINK, MAX_TITULO, REACOES, type Imagem } from './regras';
-import type { PropsSevira } from './tv';
+import { MAX_IMAGENS, MAX_LINK, MAX_TITULO, REACOES, type Imagem, type PrivadoSevira } from './regras';
+import { Reacoes, type PropsSevira } from './tv';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 
 /** nome das reações para leitores de ecrã */
@@ -145,6 +146,8 @@ function Preparar({ sala, v, tag, eu, enviar }: Pick<PropsSevira, 'sala' | 'v'> 
         {temGiphy() ? ` · ${t('svGiphy')}` : ''}
         {v.def.links ? ` · ${t('svLink')}` : ''}
       </p>
+      {/* com "8 sorteados", nem todos os decks chegam à TV (não se diz qual: quem apresenta o quê é segredo) */}
+      {v.apresentadores.length < v.participantes.length && <p class="aviso">⚠ {t('svTalvezNao', { n: v.apresentadores.length, t: v.participantes.length })}</p>}
       <button class="botao grande" onClick={() => jogo(enviar, { tipo: 'sv_enviar', id: '', titulo: titulo.trim() && titulo.trim() !== sorteado ? titulo : null })}>
         {t('enviar')}
       </button>
@@ -226,27 +229,50 @@ function Nota({ enviar }: { enviar: Enviar }) {
   );
 }
 
-export function TelemovelSevira({ sala, v, agora, eu, tag, enviar }: PropsSevira & { eu: string; tag: string; enviar: Enviar }) {
+/** sem TV: o slide atual em todos os telemóveis (a imagem da galeria chega pelo canal privado) + as reações a voar */
+function SlideTel({ sala, v, privado }: Pick<PropsSevira, 'sala' | 'v'> & { privado: PrivadoSevira | null }) {
+  if (!v.slideAtual) return null;
+  const chave = `${v.apresentador}:${v.slide}`;
+  return (
+    <div class="sv-tel-slide">
+      <SlideBranco sala={sala} titulo={v.titulo ?? ''} s={v.slideAtual} imagem={privado?.chave === chave ? privado.imagem : null} n={v.slide + 1} total={v.nSlides} chave={chave} />
+      <Reacoes lista={v.reacoes} />
+    </div>
+  );
+}
+
+export function TelemovelSevira({ sala, v, agora, eu, tag, enviar, privado = null }: PropsSevira & { eu: string; tag: string; enviar: Enviar; privado?: PrivadoSevira | null }) {
   const a = v.apresentador;
   const souEu = a === eu;
+  const semTv = !!sala.semTv;
   useSoRascunho(v.fase === 'preparar' && v.participantes.includes(eu) && !v.enviaram.includes(eu) ? `${sala.codigo}:sevira:p` : null);
   const lider = sala.vipId === eu;
+  const [ajuda, setAjuda] = useState(false);
   return (
     <div class="pag tel-sevira">
       <div class="topo">
         <span>{t('svOpcoesNome')}</span>
+        <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
+          ⓘ
+        </button>
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
         {v.fase !== 'fim' && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
+      {ajuda && (
+        <div class="cartao" onClick={() => setAjuda(false)}>
+          <b>{t('svOpcoesNome')}</b> — {t('ajudaSevira')}
+        </div>
+      )}
       {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
       {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {v.fase === 'preparar' &&
-        (v.participantes.includes(eu) ? <Preparar key={tag} sala={sala} v={v} tag={tag} eu={eu} enviar={enviar} /> : <p class="centro">{t('olhaTv')}</p>)}
+        (v.participantes.includes(eu) ? <Preparar key={tag} sala={sala} v={v} tag={tag} eu={eu} enviar={enviar} /> : <p class="centro">{t(semTv ? 'svEsperaPreparar' : 'olhaTv')}</p>)}
 
       {v.fase === 'tema' && a && (
         <div class="cartao centro">
           {souEu ? (
-            <h2>{t('svEsTu')}</h2>
+            <h2>{t(semTv ? 'svEsTuSemTv' : 'svEsTu')}</h2>
           ) : (
             <>
               <p>{t('svVaiApresentar')}</p>
@@ -254,26 +280,38 @@ export function TelemovelSevira({ sala, v, agora, eu, tag, enviar }: PropsSevira
               <h2>{nomeDe(sala, a)}</h2>
             </>
           )}
+          {/* sem TV, a capa (o tema) vê-se aqui */}
+          {semTv && v.titulo && <h2 class="sv-tel-tema">«{v.titulo}»</h2>}
         </div>
       )}
 
+      {v.fase === 'apresentar' && semTv && <SlideTel sala={sala} v={v} privado={privado} />}
+
       {v.fase === 'apresentar' &&
         (souEu ? (
-          <div class="sv-comando">
+          <div class={'sv-comando' + (semTv ? ' sem-tv' : '')}>
             <p class="sv-slide-de">{t('svSlideDe', { n: v.slide + 1, t: v.nSlides })}</p>
             <div class="sv-setas">
               <button class="botao sec" disabled={v.slide === 0} onClick={() => jogo(enviar, { tipo: 'sv_slide', id: '', dir: -1 })} aria-label="◀">
                 ◀
               </button>
-              <button class="botao" disabled={v.slide >= v.nSlides - 1} onClick={() => jogo(enviar, { tipo: 'sv_slide', id: '', dir: 1 })} aria-label="▶">
-                ▶
-              </button>
+              {v.slide >= v.nSlides - 1 ? (
+                // último slide: o ▶ passa a "Terminar apresentação" (vai logo à Nota)
+                <button class="botao sv-terminar" onClick={() => jogo(enviar, { tipo: 'sv_terminar', id: '' })}>
+                  🏁
+                  <span>{t('svTerminar')}</span>
+                </button>
+              ) : (
+                <button class="botao" onClick={() => jogo(enviar, { tipo: 'sv_slide', id: '', dir: 1 })} aria-label="▶">
+                  ▶
+                </button>
+              )}
             </div>
           </div>
         ) : (
           <>
             <p class="centro">{t('svReaja')}</p>
-            <div class="sv-reagir">
+            <div class={'sv-reagir' + (semTv ? ' sem-tv' : '')}>
               {REACOES.map((r) => (
                 <button key={r} class="botao sec" aria-label={NOME_REACAO[r] ?? r} onClick={() => jogo(enviar, { tipo: 'sv_reagir', id: '', r })}>
                   {r}

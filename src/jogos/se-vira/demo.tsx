@@ -2,13 +2,13 @@ import { paramsHash } from '../../core/ids';
 import { usarIdioma } from '../../core/i18n';
 import type { VistaSala } from '../../core/sala';
 import { conteudoSevira } from './conteudo';
-import { DEF_PADRAO_SEVIRA, apresentador, extraTv, novoSevira, reduzSevira, vistaSevira, type AcaoSevira, type EstadoSevira } from './regras';
+import { DEF_PADRAO_SEVIRA, apresentador, extraTv, novoSevira, privadoSevira, reduzSevira, vistaSevira, type AcaoSevira, type EstadoSevira } from './regras';
 import { TelemovelSevira } from './telemovel';
 import { TvSevira } from './tv';
 
 /**
  * só em dev (para as capturas):
- * `#/demo-sevira?fase=preparar|tema|apresentar|nota|fim&ecra=tv|tel[&slide=0..5][&papel=apresentador|plateia]`
+ * `#/demo-sevira?fase=preparar|tema|apresentar|nota|fim&ecra=tv|tel[&slide=0..5][&papel=apresentador|plateia][&semtv=1]`
  */
 const NOMES = ['Ana', 'Beto', 'Caio', 'Duda', 'Edu', 'Fê'];
 
@@ -50,7 +50,7 @@ export function DemoSevira() {
     defPensa: { rondas: 2, escrever: 60, votar: 15, final: true, mostrarVotos: true },
     pensa: null,
     defSevira: DEF_PADRAO_SEVIRA,
-    semTv: false,
+    semTv: p.get('semtv') === '1',
     tutorial: null,
     aliases: {},
   };
@@ -62,7 +62,7 @@ export function DemoSevira() {
   const a = apresentador(e);
   const eu = p.get('papel') === 'apresentador' && a ? a : e.participantes.find((id) => id !== a) ?? 'j1';
   return p.get('ecra') === 'tel' ? (
-    <TelemovelSevira sala={sala} v={v} agora={Date.now} eu={eu} tag={'tag-' + eu} enviar={nada} />
+    <TelemovelSevira sala={sala} v={v} agora={Date.now} eu={eu} tag={'tag-' + eu} enviar={nada} privado={privadoSevira(e, eu, { semTv: !!sala.semTv, bot: false })} />
   ) : (
     <TvSevira sala={sala} v={v} extra={extraTv(e)} agora={Date.now} onOutraVez={nada} onMenu={nada} />
   );

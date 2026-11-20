@@ -28,7 +28,7 @@ Duelos: cada pergunta vai para 2 jogadores e a sala vota na resposta mais engra�
 - Quem vota não ganha pontos.
 
 ## Pontos
-- `1000 × % de votos`. 100% = +250 "Arrasou". Ronda 2 ×2.
+- `1000 × % de votos`. 100% = +250 "Arrasou". **Última ronda normal ×2** (com 2+ rondas; confirmado pelo utilizador a 18/11). Votar na final dura 2× o tempo de votar.
 
 ## Final — todos contra todos
 - A mesma pergunta para todos (60 s). Até 150 caracteres; com mais de 8 jogadores, 80 caracteres.

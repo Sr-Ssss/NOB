@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { impressao, novasChavesDispositivo, novasChavesHost, type ChavesHost } from './cripto';
-import { ProtocoloCliente, ProtocoloHost, SILENCIO_TROCA, publicas, type CopiaHost, type MsgVista, type Passagem } from './protocolo';
+import { PASSA_JA, ProtocoloCliente, ProtocoloHost, SILENCIO_TROCA, publicas, type CopiaHost, type MsgVista, type Passagem } from './protocolo';
 import { novaSala, vistaSala, type EstadoSala } from './sala';
 
 const COD = 'ABCD';
@@ -44,6 +44,22 @@ describe('protocolo: passagem do anfitrião', () => {
     expect(c.host).toEqual(publicas(chaves));
     // e a partir daí recusa o antigo
     expect(c.lerVista(a.vista(7, 0, vista), SILENCIO_TROCA * 3)).toBeNull();
+  });
+
+  it('a passar já (TV escolhida pelo líder, PASSA_JA): aceita o herdeiro anunciado sem esperar o silêncio, e só esse', () => {
+    const a = host();
+    const { k, chaves } = passar(a);
+    const outro = passar(a).k;
+    const c = new ProtocoloCliente(COD, 'b', novasChavesDispositivo());
+    c.lerVista(a.vista(5, 0, vista, impressao(chaves.assina.pub) + PASSA_JA), 0);
+    expect(c.lerVista(outro.vista(6, 0, vista), 1)).toBeNull();
+    expect(c.lerVista(k.vista(6, 0, vista), 1)?.trocou).toBe(true);
+    // o PASSA_JA vai dentro da assinatura: ninguém o acrescenta a uma vista do anfitrião
+    const d = new ProtocoloCliente(COD, 'd', novasChavesDispositivo());
+    const m = a.vista(5, 0, vista, impressao(chaves.assina.pub));
+    expect(d.lerVista({ ...m, prox: m.prox + PASSA_JA }, 0)).toBeNull();
+    d.lerVista(m, 0);
+    expect(d.lerVista(k.vista(6, 0, vista), 1)).toBeNull();
   });
 
   it('recusa um sucessor que não é o herdeiro anunciado', () => {

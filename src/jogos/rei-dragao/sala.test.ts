@@ -26,7 +26,7 @@ describe('O Rei e o Dragão na sala', () => {
 
   it('com bots: o líder carrega Pronto/OK por eles e a partida chega ao fim; ações de outros jogos ignoradas', () => {
     let s = com(1);
-    for (const b of ['1', '2', '3', '4', '5']) s = reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0);
+    for (const b of ['1', '2', '3', '4', '5']) s = reduzSala(reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0), { tipo: 'bot_ia', id: 'j1', bot: PREFIXO_BOT + b, ia: false }, 0); // IA desligada: o líder joga por eles
     s = reduzSala(s, { tipo: 'definir_rei', id: 'j1', def: { tempo: 120 } }, 0);
     s = reduzSala(s, { tipo: 'comecar', id: 'j1', jogo: 'rei' }, 100);
     expect(s.rei!.def.tempo).toBe(120);

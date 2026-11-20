@@ -1,9 +1,10 @@
+import { useState } from 'preact/hooks';
 import type { VistaSala } from '../../core/sala';
 import { t } from '../../core/i18n';
 import { Avatar } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { useFoto } from './imagens';
-import type { Slide, Txt, VistaSevira } from './regras';
+import type { Slide, Txt, Visual, VistaSevira } from './regras';
 import './sevira.css';
 
 export const txt = (x: Txt | undefined, sala: Pick<VistaSala, 'idioma'>): string => (x ? (sala.idioma === 'en' ? x.en : x.pt) : '');
@@ -14,18 +15,26 @@ function Selo() {
   return <span class="sv-giphy">{t('svPowered')}</span>;
 }
 
-function Foto({ url, giphy }: { url: string; giphy: boolean }) {
+function Foto({ url, giphy, aoFalhar }: { url: string; giphy: boolean; aoFalhar?: () => void }) {
   return (
     <div class="sv-foto">
-      {url ? <img src={url} alt="" referrerpolicy="no-referrer" /> : <span class="sv-sem">{t('svSemImagem')}</span>}
+      {url ? <img src={url} alt="" referrerpolicy="no-referrer" onError={aoFalhar} /> : <span class="sv-sem">{t('svSemImagem')}</span>}
       {giphy && <Selo />}
     </div>
   );
 }
 
-function FotoGerada({ s, chave }: { s: Extract<Slide, { tipo: 'foto' }>; chave: string }) {
-  const r = useFoto(s.busca, chave);
-  return r ? <Foto url={r.url} giphy={r.fonte === 'giphy'} /> : <div class="sv-foto sv-emoji">{s.emoji}</div>;
+function FotoGerada({ busca, emoji, chave }: { busca: string; emoji: string; chave: string }) {
+  const r = useFoto(busca, chave);
+  // a imagem que não carrega também cai no emoji
+  const [falhou, setFalhou] = useState<string | null>(null);
+  return r && falhou !== r.url ? <Foto url={r.url} giphy={r.fonte === 'giphy'} aoFalhar={() => setFalhou(r.url)} /> : <div class="sv-foto sv-emoji">{emoji}</div>;
+}
+
+/** a imagem do slide: a do jogador (galeria chega só à TV, em `imagem`) ou a automática */
+function ImagemSlide({ v, imagem, chave }: { v: Visual; imagem?: string | null; chave: string }) {
+  if (v.tipo === 'auto') return <FotoGerada key={chave} busca={v.busca} emoji={v.emoji} chave={chave} />;
+  return <Foto url={v.img.tipo === 'galeria' ? imagem ?? '' : v.img.url} giphy={v.img.tipo === 'giphy'} />;
 }
 
 function Grafico({ s, sala }: { s: Extract<Slide, { tipo: 'grafico' }>; sala: VistaSala }) {
@@ -81,30 +90,29 @@ export function SlideBranco({ sala, titulo, s, imagem, n, total, chave }: { sala
           {n}/{total}
         </span>
       </div>
-      <div class="sv-slide-corpo">
-        {s.tipo === 'imagem' && (
-          <>
-            <Foto url={s.img.tipo === 'galeria' ? imagem ?? '' : s.img.url} giphy={s.img.tipo === 'giphy'} />
-            <p class="sv-legenda-foto">{txt(s.legenda, sala)}</p>
-          </>
-        )}
-        {s.tipo === 'foto' && (
-          <>
-            <FotoGerada s={s} chave={chave} />
-            <p class="sv-legenda-foto">{txt(s.legenda, sala)}</p>
-          </>
-        )}
-        {s.tipo === 'grafico' && <Grafico s={s} sala={sala} />}
-        {s.tipo === 'citacao' && <blockquote class="sv-citacao">{txt(s.texto, sala)}</blockquote>}
-        {s.tipo === 'lista' && (
-          <ul class="sv-lista">
-            {s.itens.map((x) => (
-              <li key={x.id}>{txt(x, sala)}</li>
-            ))}
-          </ul>
-        )}
-        {s.tipo === 'conclusao' && <div class="sv-conclusao">{txt(s.palavra, sala)}</div>}
-      </div>
+      {s.tipo === 'foto' ? (
+        <div class="sv-slide-corpo">
+          <ImagemSlide v={s.visual} imagem={imagem} chave={chave} />
+          <p class="sv-legenda-foto">{txt(s.legenda, sala)}</p>
+        </div>
+      ) : (
+        // imagem à esquerda, texto à direita
+        <div class="sv-slide-corpo sv-duo">
+          <ImagemSlide v={s.visual} imagem={imagem} chave={chave} />
+          <div class="sv-texto">
+            {s.tipo === 'grafico' && <Grafico s={s} sala={sala} />}
+            {s.tipo === 'citacao' && <blockquote class="sv-citacao">{txt(s.texto, sala)}</blockquote>}
+            {s.tipo === 'lista' && (
+              <ul class="sv-lista">
+                {s.itens.map((x) => (
+                  <li key={x.id}>{txt(x, sala)}</li>
+                ))}
+              </ul>
+            )}
+            {s.tipo === 'conclusao' && <div class="sv-conclusao">{txt(s.palavra, sala)}</div>}
+          </div>
+        </div>
+      )}
       <div class="sv-slide-pe">NOB Corp. · {t('svReuniao')}</div>
     </div>
   );

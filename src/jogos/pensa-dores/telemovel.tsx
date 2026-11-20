@@ -4,6 +4,7 @@ import { t } from '../../core/i18n';
 import { Estado } from '../5050/tv';
 import { Autor, LETRAS, PlacarPensa, Topo, Votos, textoP } from './comuns';
 import { Progresso } from '../../ui/ecraunico';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 import { MAX_RESPOSTA, VOTOS_FINAL } from './regras';
 import type { PropsPensa } from './tv';
@@ -114,9 +115,12 @@ export function TelemovelPensa({ sala, v, agora, eu, tag, enviar }: PropsPensa &
         v={v}
         agora={agora}
         extra={
-          <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
-            ⓘ
-          </button>
+          <>
+            <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
+              ⓘ
+            </button>
+            <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
+          </>
         }
       />
       {ajuda && (

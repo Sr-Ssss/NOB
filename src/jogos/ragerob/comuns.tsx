@@ -1,6 +1,7 @@
 import { t, type Chave } from '../../core/i18n';
 import type { VistaSala } from '../../core/sala';
 import { nomeDe } from '../5050/tv';
+import { Feito } from '../../ui/comuns';
 import { CORES, ICONE_MODULO, NOME_CABECA, type Cabeca, type Corpo, type Evento, type Loco, type Modulo, type Perigo, type Robo } from './pecas';
 import type { VistaRagerob } from './regras';
 
@@ -34,13 +35,13 @@ export function nomeFase(v: VistaRagerob): string {
 
 export const moeda = (n: number) => `🪙 ${n}`;
 
-/** ✅/❌ de quem já enviou */
+/** ✅ / balão de pensamento de quem já enviou */
 export function QuemEnviou({ sala, ids, feitos }: { sala: VistaSala; ids: string[]; feitos: string[] }) {
   return (
     <div class="rr-quem">
       {ids.map((id) => (
         <span key={id} class={'rr-chip' + (feitos.includes(id) ? ' ok' : '')}>
-          {feitos.includes(id) ? '✅' : '❌'} {nomeDe(sala, id)}
+          <Feito ok={feitos.includes(id)} /> {nomeDe(sala, id)}
         </span>
       ))}
     </div>

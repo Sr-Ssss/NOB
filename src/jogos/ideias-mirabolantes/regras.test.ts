@@ -130,7 +130,7 @@ describe('Ideias Mirabolantes', () => {
     expect(e.fase).toBe('revelar');
   });
 
-  it('pontos: € × 10; a mais financiada +1000; o autor do problema dela +300; investidores 0', () => {
+  it('pontos: € × 10; a mais financiada +1000; o autor do problema dela +500; investidores 0', () => {
     let e = ateInvestir(3);
     e = ap(e, [
       { tipo: 'im_investir', id: 'j1', notas: { j2: 3 }, confirmar: true },
@@ -150,7 +150,7 @@ describe('Ideias Mirabolantes', () => {
     expect(r[1].tracos).toEqual([]);
   });
 
-  it('empate: todos os empatados ganham +1000 e os autores dos problemas +300', () => {
+  it('empate: todos os empatados ganham +1000 e os autores dos problemas +500', () => {
     let e = ateInvestir(4);
     e = ap(e, [
       { tipo: 'im_investir', id: 'j1', notas: { j2: 3 } },
@@ -189,6 +189,11 @@ describe('Ideias Mirabolantes', () => {
     e = reduzIdeias(e, { tipo: 'ligados', ids: ['j1', 'j2', 'j3'] }, 50_000);
     expect(e.pausaRestante).toBeNull();
     expect(e.terminaEm).toBe(85_000);
+  });
+
+  it('a audiência não conta para a pausa', () => {
+    const e = { ...novoIdeias(ids(3), {}, 0, P), audiencia: ['a1'] };
+    expect(reduzIdeias(e, { tipo: 'ligados', ids: ['j1', 'j2', 'a1'] }, 10_000).pausaRestante).toBe(35_000);
   });
 
   it('desligado não trava: a fase acaba quando os ligados enviam', () => {

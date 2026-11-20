@@ -10,7 +10,7 @@ export type Papel = 'pirata' | 'vigia' | 'medico' | 'artilheiro' | 'marinheiro';
 
 export interface DefPirata {
   discussao: number; // s
-  /** marinheiros necessários para vigiar (null = padrão: 3, ou 2 com 5–6 jogadores) */
+  /** marinheiros necessários para vigiar (null = padrão: nenhuma em jogos de 5; depois 2 com ≤ 6 vivos, senão 3) */
   vigiar: number | null;
   artilheiro: boolean;
   revelar: boolean;
@@ -72,6 +72,8 @@ export interface EstadoPirata {
   historico: Noite[];
   /** resultados privados do último amanhecer */
   privados: Record<string, Privado>;
+  /** resultados privados de todas as noites, por jogador (histórico no telemóvel) */
+  diario: Record<string, (Privado & { n: number })[]>;
   /** votos do dia (null = ninguém) */
   votos: Record<string, string | null>;
   /** expulso no último dia (null = ninguém) */
@@ -97,8 +99,11 @@ export function contarPapeis(n: number, artilheiro = true): { piratas: number; a
   return { piratas, artilheiro: artilheiro && n >= 7 };
 }
 
-export function limiarVigia(def: DefPirata, n: number): number {
-  return def.vigiar ?? (n <= 6 ? 2 : 3);
+/** null = sem vigia dos marinheiros. Padrão: nenhuma em jogos de 5; depois conta pelos vivos (≤ 6 → 2, senão 3) */
+export function limiarVigia(def: DefPirata, inicial: number, vivos = inicial): number | null {
+  if (def.vigiar !== null) return def.vigiar;
+  if (inicial <= 5) return null;
+  return vivos <= 6 ? 2 : 3;
 }
 
 export function novoPirata(ids: string[], def: Partial<DefPirata>, agora: number, usadas: string[] = []): EstadoPirata {
@@ -126,6 +131,7 @@ export function novoPirata(ids: string[], def: Partial<DefPirata>, agora: number
       medicoAntes: null,
       historico: [],
       privados: {},
+      diario: {},
       votos: {},
       expulso: null,
       artilheiro: null,
@@ -206,15 +212,17 @@ function fimDaNoite(e: EstadoPirata, agora: number): EstadoPirata {
   const privados: Record<string, Privado> = {};
   if (vigiaId && vigia) privados[vigiaId] = { tipo: 'vigia', alvo: vigia, pirata: e.papeis[vigia] === 'pirata' };
   // vigia dos marinheiros: só conta com ≥ N no mesmo alvo
-  const n = limiarVigia(e.def, e.participantes.length);
+  const n = limiarVigia(e.def, e.participantes.length, e.vivos.length);
   const marinheiros = vivosCom(e, 'marinheiro').filter((id) => e.escolhas[id]);
   const conta = new Map<string, string[]>();
   marinheiros.forEach((id) => conta.set(e.escolhas[id], [...(conta.get(e.escolhas[id]) ?? []), id]));
   conta.forEach((quem, a) => {
-    if (quem.length >= n) quem.forEach((id) => (privados[id] = { tipo: 'vigiar', alvo: a, saiu: SAEM.includes(e.papeis[a]) }));
+    if (n !== null && quem.length >= n) quem.forEach((id) => (privados[id] = { tipo: 'vigiar', alvo: a, saiu: SAEM.includes(e.papeis[a]) }));
   });
+  const diario = { ...e.diario };
+  for (const [id, p] of Object.entries(privados)) diario[id] = [...(diario[id] ?? []), { ...p, n: e.noite }];
   const r = sai(
-    { ...e, privados, medicoAntes: medico, historico: [...e.historico, { n: e.noite, alvo, salvo, vitima, vigia, medico }] },
+    { ...e, privados, diario, medicoAntes: medico, historico: [...e.historico, { n: e.noite, alvo, salvo, vitima, vigia, medico }] },
     vitima,
     'noite',
   );
@@ -381,6 +389,8 @@ export interface PrivadoPirata {
   bloqueado: string | null;
   /** resultado privado do amanhecer */
   resultado: Privado | null;
+  /** os meus resultados de todas as noites */
+  diario: (Privado & { n: number })[];
   /** o meu voto do dia (undefined = ainda não) */
   voto?: string | null;
 }
@@ -397,6 +407,7 @@ export function privadoPirata(e: EstadoPirata, id: string): PrivadoPirata | null
     votosPiratas: pirata && e.fase === 'noite' ? Object.fromEntries(vivosCom(e, 'pirata').filter((x) => x !== id && e.escolhas[x]).map((x) => [x, e.escolhas[x]])) : {},
     bloqueado: papel === 'medico' ? e.medicoAntes : null,
     resultado: e.fase === 'amanhecer' ? (e.privados[id] ?? null) : null,
+    diario: e.diario?.[id] ?? [],
     ...(id in e.votos && e.fase === 'votar' ? { voto: e.votos[id] } : {}),
   };
 }

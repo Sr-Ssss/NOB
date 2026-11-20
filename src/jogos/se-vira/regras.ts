@@ -48,13 +48,19 @@ export interface Imagem {
   url: string;
 }
 
-export type Slide =
-  | { tipo: 'imagem'; img: Imagem; legenda: Txt } // imagem do jogador
-  | { tipo: 'foto'; busca: string; emoji: string; legenda: Txt } // gerada (GIPHY/Pexels; sem chave, emoji)
+/** a imagem de cada slide: a do jogador, ou uma gerada pelo jogo (GIPHY/Pexels; se a pesquisa falhar, o emoji) */
+export type Visual = { tipo: 'jogador'; img: Imagem } | { tipo: 'auto'; busca: string; emoji: string };
+
+/** todos os slides têm imagem (`visual`) + um texto: legenda, gráfico, citação, tópico ou conclusão */
+export type Slide = { visual: Visual } & (
+  | { tipo: 'foto'; legenda: Txt }
   | { tipo: 'grafico'; rotulo: Txt; forma: 'barras' | 'pizza'; valores: number[] }
   | { tipo: 'citacao'; texto: Txt }
-  | { tipo: 'lista'; itens: Txt[] }
-  | { tipo: 'conclusao'; palavra: Txt };
+  | { tipo: 'lista'; itens: Txt[] } // 1 tópico
+  | { tipo: 'conclusao'; palavra: Txt }
+);
+
+export type TipoSlide = Slide['tipo'];
 
 export interface Deck {
   autor: string;
@@ -118,12 +124,14 @@ export type AcaoSevira =
   | { tipo: 'sv_imagem'; id: string; i: number; img: Imagem | null }
   | { tipo: 'sv_enviar'; id: string; titulo: string | null }
   | { tipo: 'sv_slide'; id: string; dir: number }
+  /** o apresentador, no último slide, acaba antes do tempo */
+  | { tipo: 'sv_terminar'; id: string }
   | { tipo: 'sv_reagir'; id: string; r: string }
   | { tipo: 'sv_nota'; id: string; estrelas: number }
   | { tipo: 'ligados'; ids: string[] }
   | { tipo: 'tick' };
 
-export const TIPOS_SEVIRA = ['sv_imagem', 'sv_enviar', 'sv_slide', 'sv_reagir', 'sv_nota'];
+export const TIPOS_SEVIRA = ['sv_imagem', 'sv_enviar', 'sv_slide', 'sv_terminar', 'sv_reagir', 'sv_nota'];
 
 const prox = (s: number) => (s * 1664525 + 1013904223) >>> 0;
 
@@ -156,33 +164,48 @@ function tirar(lista: Txt[], k: number, usadas: Set<string>, seed: number): Txt[
 }
 
 const EMOJIS = ['🐟', '🦆', '🐈', '🧦', '🥔', '🦖', '🍕', '🛋️', '🐌', '🎈', '🧀', '🐧', '🌵', '🚀', '🦒'];
-const BUSCAS = ['cat', 'duck', 'office', 'dog', 'surprised', 'dance', 'penguin', 'potato', 'pizza', 'llama', 'robot', 'fail', 'celebrate', 'sloth', 'meeting'];
+/** termos da imagem automática (inglês: a GIPHY e a Pexels dão mais resultados) */
+export const BUSCAS = [
+  'cat', 'duck', 'office', 'dog', 'surprised', 'dance', 'penguin', 'potato', 'pizza', 'llama', 'robot', 'fail', 'celebrate', 'sloth', 'meeting',
+  'goat', 'coffee', 'computer', 'banana', 'hamster', 'chicken', 'confused', 'presentation', 'thumbs up', 'party',
+];
 
-/** gera os slides: as imagens do jogador em posições sorteadas; o último é sempre a conclusão */
+/** tipos do corpo (a conclusão é sempre o último) */
+const CORPO: TipoSlide[] = ['foto', 'grafico', 'citacao', 'lista'];
+
+/** os tipos do corpo: 1 de cada (os que couberem) e o resto sorteado, tudo por ordem sorteada */
+export function sortearTipos(corpo: number, seed: number): TipoSlide[] {
+  const obrig = baralhar(CORPO, seed).slice(0, corpo);
+  const resto = Array.from({ length: corpo - obrig.length }, (_, i) => baralhar(CORPO, seed + 11 + i)[0]);
+  return baralhar([...obrig, ...resto], seed + 5);
+}
+
+/**
+ * gera os slides: todos com imagem (a do jogador em posições sorteadas do corpo; nos outros, automática),
+ * pelo menos 1 de cada tipo (com 4 slides não cabem os 5: fica a conclusão + 3 sorteados); o último é sempre a conclusão
+ */
 export function gerarSlides(n: number, imagens: Imagem[], c: Conteudo, usadas: Set<string>, seed: number): Slide[] {
   const corpo = n - 1;
   const imgs = imagens.slice(0, Math.min(MAX_IMAGENS, corpo));
-  const posicoes = new Set(baralhar(Array.from({ length: corpo }, (_, i) => i), seed).slice(0, imgs.length));
-  const tipos = baralhar(['foto', 'grafico', 'citacao', 'lista', 'foto', 'grafico', 'citacao', 'lista'], seed + 1);
+  const posicoes = baralhar(Array.from({ length: corpo }, (_, i) => i), seed).slice(0, imgs.length);
+  const tipos: TipoSlide[] = [...sortearTipos(corpo, seed + 1), 'conclusao'];
+  const buscas = baralhar(BUSCAS, seed + 2);
+  const emojis = baralhar(EMOJIS, seed + 3);
   const slides: Slide[] = [];
   let s = seed;
-  let k = 0;
-  let j = 0;
-  for (let i = 0; i < corpo; i++) {
+  for (let i = 0; i < n; i++) {
     s = prox(s);
-    if (posicoes.has(i)) {
-      slides.push({ tipo: 'imagem', img: imgs[k++], legenda: tirar(c.legendas, 1, usadas, s)[0] });
-      continue;
-    }
-    const t = tipos[j++ % tipos.length];
-    if (t === 'foto') slides.push({ tipo: 'foto', busca: BUSCAS[s % BUSCAS.length], emoji: EMOJIS[(s >>> 8) % EMOJIS.length], legenda: tirar(c.legendas, 1, usadas, s)[0] });
+    const k = posicoes.indexOf(i);
+    const visual: Visual = k >= 0 ? { tipo: 'jogador', img: imgs[k] } : { tipo: 'auto', busca: buscas[i % buscas.length], emoji: emojis[i % emojis.length] };
+    const t = tipos[i];
+    if (t === 'foto') slides.push({ visual, tipo: 'foto', legenda: tirar(c.legendas, 1, usadas, s)[0] });
     else if (t === 'grafico') {
       const valores = Array.from({ length: 4 }, (_, q) => 5 + (prox(s + q) % 96));
-      slides.push({ tipo: 'grafico', rotulo: tirar(c.rotulos, 1, usadas, s)[0], forma: s % 3 === 0 ? 'pizza' : 'barras', valores });
-    } else if (t === 'citacao') slides.push({ tipo: 'citacao', texto: tirar(c.citacoes, 1, usadas, s)[0] });
-    else slides.push({ tipo: 'lista', itens: tirar(c.topicos, 3, usadas, s) });
+      slides.push({ visual, tipo: 'grafico', rotulo: tirar(c.rotulos, 1, usadas, s)[0], forma: s % 3 === 0 ? 'pizza' : 'barras', valores });
+    } else if (t === 'citacao') slides.push({ visual, tipo: 'citacao', texto: tirar(c.citacoes, 1, usadas, s)[0] });
+    else if (t === 'lista') slides.push({ visual, tipo: 'lista', itens: tirar(c.topicos, 1, usadas, s) });
+    else slides.push({ visual, tipo: 'conclusao', palavra: tirar(c.conclusoes, 1, usadas, s)[0] });
   }
-  slides.push({ tipo: 'conclusao', palavra: tirar(c.conclusoes, 1, usadas, prox(s))[0] });
   return slides;
 }
 
@@ -342,6 +365,11 @@ export function reduzSevira(e: EstadoSevira, acao: AcaoSevira, agora: number): E
       const slide = Math.max(0, Math.min(n - 1, e.slide + (acao.dir > 0 ? 1 : -1)));
       return slide === e.slide ? e : { ...e, slide };
     }
+    case 'sv_terminar': {
+      if (e.fase !== 'apresentar' || pausadoSevira(e) || apresentador(e) !== acao.id) return e;
+      if (e.slide < (e.decks[acao.id]?.slides.length ?? 1) - 1) return e;
+      return irPara(e, 'nota', T_NOTA, agora);
+    }
     case 'sv_reagir': {
       if (e.fase !== 'apresentar' || pausadoSevira(e) || !REACOES.includes(acao.r) || !plateia(e).includes(acao.id)) return e;
       if (agora - (e.ultimaReacao[acao.id] ?? -Infinity) < T_ENTRE_REACOES) return e;
@@ -403,9 +431,11 @@ export interface VistaSevira {
   deram: string[];
   pontos: Record<string, number>;
   podio: PodioSevira[];
+  /** as reações a voar, sem quem reagiu (sem TV, aparecem nos telemóveis por cima do slide) */
+  reacoes: Pick<Reacao, 'n' | 'r'>[];
 }
 
-const semDados = (s: Slide): Slide => (s.tipo === 'imagem' && s.img.tipo === 'galeria' ? { ...s, img: { tipo: 'galeria', url: '' } } : s);
+const semDados = (s: Slide): Slide => (s.visual.tipo === 'jogador' && s.visual.img.tipo === 'galeria' ? { ...s, visual: { tipo: 'jogador', img: { tipo: 'galeria', url: '' } } } : s);
 
 export function vistaSevira(e: EstadoSevira, tagDe: (id: string) => string | undefined): VistaSevira {
   const a = apresentador(e);
@@ -430,14 +460,31 @@ export function vistaSevira(e: EstadoSevira, tagDe: (id: string) => string | und
     deram: a && e.fase === 'nota' ? Object.keys(e.notas[a] ?? {}) : [],
     pontos: e.pontos,
     podio: e.fase === 'fim' ? podioSevira(e) : [],
+    // sem quem reagiu
+    reacoes: e.fase === 'apresentar' ? e.reacoes.map((r) => ({ n: r.n, r: r.r })) : [],
   };
+}
+
+/**
+ * Sem TV, o slide aparece em todos os telemóveis: a imagem da galeria (pesada, não vai na vista) segue pelo canal
+ * privado, só a do slide atual. Com TV, nada (só a TV a mostra). Bots também não (o líder recebê-la-ia uma vez por bot).
+ * `chave` diz de que slide é.
+ */
+export interface PrivadoSevira {
+  chave: string;
+  imagem: string;
+}
+export function privadoSevira(e: EstadoSevira, _id: string, ctx: { semTv: boolean; bot: boolean }): PrivadoSevira | null {
+  if (!ctx.semTv || ctx.bot) return null;
+  const imagem = extraTv(e).imagem;
+  return imagem ? { chave: `${apresentador(e)}:${e.slide}`, imagem } : null;
 }
 
 /** o que só a TV vê (não vai no canal): imagens da galeria do slide atual e as reações */
 export function extraTv(e: EstadoSevira): { imagem: string | null; reacoes: Reacao[] } {
   const a = apresentador(e);
   const s = a && e.fase === 'apresentar' ? e.decks[a]?.slides[e.slide] : null;
-  return { imagem: s?.tipo === 'imagem' ? s.img.url : null, reacoes: e.fase === 'apresentar' ? e.reacoes : [] };
+  return { imagem: s?.visual.tipo === 'jogador' ? s.visual.img.url : null, reacoes: e.fase === 'apresentar' ? e.reacoes : [] };
 }
 
 /* ---------- saídas a meio (src/core/saidas.ts) ---------- */

@@ -5,7 +5,7 @@ const r = (s: EstadoSala, a: AcaoSala, t = 100) => reduzSala(s, a, t);
 
 function comBots(n: number): EstadoSala {
   let s = r(novaSala('ABCD', 'pt-BR'), { tipo: 'entrar', id: 'eu', nome: 'Eu', avatar: 0, tag: 'te' });
-  for (let i = 1; i <= n; i++) s = r(s, { tipo: 'bot_add', id: 'eu', bot: `bot-${i}`, tag: `tb${i}` });
+  for (let i = 1; i <= n; i++) s = r(r(s, { tipo: 'bot_add', id: 'eu', bot: `bot-${i}`, tag: `tb${i}` }), { tipo: 'bot_ia', id: 'eu', bot: `bot-${i}`, ia: false });
   return s;
 }
 

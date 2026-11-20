@@ -1,9 +1,18 @@
 /* Revolução das Máquinas: "sala de controlo" (info/jogos/motim-em-orbita.md → Visual) */
-.jogo-maquinas { min-height: 100vh; box-sizing: border-box; background: var(--noite); }
-.rm-narra { text-align: center; margin: 8px 0; font-size: clamp(22px, 3.6vw, 60px); }
-.rm-consola { display: flex; flex-direction: column; gap: 2vh; align-items: center; }
-.rm-painel { display: grid; grid-template-columns: 1fr auto 1fr; gap: 3vw; align-items: end; width: min(96%, 1500px); background: #3a3486; border: 5px solid #000; border-radius: 28px 28px 8px 8px; padding: 2vh 3vw; box-sizing: border-box; }
+.jogo-maquinas { min-height: 100cqh; box-sizing: border-box; background: var(--noite); }
+.rm-narra { text-align: center; margin: 8px 0; font-size: clamp(22px, 3.6cqw, 60px); }
+.rm-consola { display: flex; flex-direction: column; gap: 2cqh; align-items: center; }
+.rm-painel { display: grid; grid-template-columns: 1fr auto 1fr; gap: 3cqw; align-items: end; width: min(96%, 1500px); background: #3a3486; border: 5px solid #000; border-radius: 28px 28px 8px 8px; padding: 2cqh 3cqw; box-sizing: border-box; }
 .compacto .rm-painel { padding: 8px; gap: 8px; border-width: 3px; }
+/* fora das fases de conversar/votar: medidores numa barra fina */
+.rm-painel.fino { grid-template-columns: repeat(3, 1fr); align-items: center; padding: 1cqh 2cqw; border-radius: 14px; gap: 2cqw; }
+.compacto .rm-painel.fino { padding: 6px 8px; gap: 8px; }
+.rm-fino { display: flex; align-items: center; gap: 6px; color: var(--creme); font-size: clamp(14px, 1.8cqw, 32px); white-space: nowrap; }
+.rm-fino-trilho { flex: 1; min-width: 30px; height: 0.7em; background: #222; border: 2px solid #000; border-radius: 999px; overflow: hidden; }
+.rm-fino-trilho > div { height: 100%; transition: width 0.8s; }
+.rm-fino.rep .rm-fino-trilho > div { background: #4A90D9; }
+.rm-fino.fal .rm-fino-trilho > div { background: var(--coral); }
+.rm-fino.sab .rm-fino-trilho > div { background: #E0533F; }
 .rm-manometro { display: flex; flex-direction: column; align-items: center; color: var(--creme); font-size: 1.4em; white-space: nowrap; }
 .rm-fim .rm-manometro svg { max-width: 260px; }
 .rm-fim .rm-postos { padding-top: 20px; }
@@ -13,8 +22,8 @@
 .rm-bateria { display: flex; flex-direction: column; align-items: center; color: var(--creme); font-size: 1.2em; }
 .compacto .rm-bateria { font-size: 0.8em; }
 .rm-polo { width: 30%; height: 12px; background: #222; border: 4px solid #000; border-bottom: 0; border-radius: 6px 6px 0 0; }
-.rm-corpo { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #222; border: 5px solid #000; border-radius: 12px; width: clamp(60px, 7vw, 120px); }
-.rm-celula { height: clamp(22px, 4vh, 54px); border-radius: 6px; background: #444; border: 3px solid #000; transition: background 0.5s; }
+.rm-corpo { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #222; border: 5px solid #000; border-radius: 12px; width: clamp(60px, 7cqw, 120px); }
+.rm-celula { height: clamp(22px, 4cqh, 54px); border-radius: 6px; background: #444; border: 3px solid #000; transition: background 0.5s; }
 .rm-celula.on { background: var(--coral); }
 .rm-postos { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; width: min(96%, 1500px); background: #4a4a48; border: 5px solid #000; border-radius: 12px; padding: 34px 16px 14px; box-sizing: border-box; }
 .rm-postos.compacto { gap: 6px; padding: 26px 6px 8px; border-width: 3px; }
@@ -35,7 +44,8 @@
 .rm-linha.on { background: var(--creme); color: var(--tinta); }
 .rm-linha:disabled { opacity: 0.35; }
 .rm-cartas { display: flex; gap: 12px; justify-content: center; margin: 16px 0; }
-.rm-cartao { width: 96px; height: 136px; background: var(--creme); color: var(--tinta); border: 4px solid #000; border-radius: 12px; font-size: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+/* cartas: fundo apagado + borda clara grossa com filete escuro por dentro (parecem cartas de jogar) */
+.rm-cartao { width: 96px; height: 136px; background: #B9B3A3; color: var(--tinta); border: 5px solid var(--creme); border-radius: 12px; box-shadow: inset 0 0 0 3px #2b2b2b, 0 6px 0 rgba(0, 0, 0, 0.45); font-size: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
 .rm-cartao small { font-size: 13px; font-weight: 700; }
 .rm-cartao.on { outline: 5px solid var(--coral); transform: translateY(-6px); }
 .rm-votar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
@@ -45,7 +55,7 @@
 .rm-votar button.on { outline: 5px solid var(--creme); }
 .rm-segredo { position: fixed; inset: 0 0 90px; background: var(--noite); z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px; text-align: center; color: var(--creme); }
 .rm-bola { font-size: 72px; }
-.rm-botao-id { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 31; background: var(--creme); color: var(--tinta); border: 4px solid #000; border-radius: 999px; padding: 10px 28px; font-weight: 800; font-size: 1.1em; touch-action: none; user-select: none; -webkit-user-select: none; }
+.rm-botao-id { overflow: hidden; position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 31; background: var(--creme); color: var(--tinta); border: 4px solid #000; border-radius: 999px; padding: 10px 28px; font-weight: 800; font-size: 1.1em; touch-action: none; user-select: none; -webkit-user-select: none; }
 .rm-botao-id.on { background: var(--coral); }
 .rm-ejetado { text-align: center; opacity: 0.8; margin-top: 40px; }
 .jogo-maquinas.tel { padding-bottom: 110px; }

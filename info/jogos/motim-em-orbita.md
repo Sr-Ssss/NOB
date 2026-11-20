@@ -16,7 +16,7 @@ Governo secreto numa nave: a Tripulação repara o motor, os Amotinados sabotam 
 - Carta: só texto + bolinha de cor; botões OK e ℹ️ (como no Dois Lados).
 
 ## Ronda
-1. O **Comandante** escolhe o **Piloto**. Quem foi Comandante ou Piloto na ronda anterior aparece bloqueado.
+1. O **Comandante** escolhe o **Piloto**. Quem foi Comandante ou Piloto no último governo aprovado aparece bloqueado; **com 5 vivos ou menos só o Piloto** fica bloqueado.
 2. **Votação** secreta Sim/Não, com caixinha ✅/❌. No fim os votos são revelados.
    - Mais Sim: o governo é aprovado.
    - Empate ou mais Não: o Comandante passa ao seguinte e o contador de falhas sobe 1.
@@ -62,7 +62,7 @@ Governo secreto numa nave: a Tripulação repara o motor, os Amotinados sabotam 
   - fim: revela todos os papéis + animação da nave + pontos.
 - **Telemóvel** (cores da app, código em baixo; sem TV o Painel mostra a consola):
   - **texto igual para todos** em cada fase + botão **"Identidade" (segurar 3 s)**: bolinha de cor + papel; aos Amotinados mostra os aliados e a IA; à IA de 5–6 mostra os Amotinados; ao largar, some;
-  1. **Carta** (início): "Segura 3 s para veres quem és";
+  1. **Carta** (início): "Segura 3 s para veres quem és"; só avança quando todos os ligados viram a identidade (sem tempo; bots contam como vistos — 20/11);
   2. **Comandante escolhe o Piloto**: o Comandante vê a lista (bloqueados esbatidos) + Confirmar; os outros veem "A Rita está a escolher o Piloto";
   3. **Votação**: "Comandante: Rita · Piloto: Ana" + Sim / Não + "Votaram 4/6" (caixinhas ✅/❌);
   4. **Sessão secreta**: Comandante "Descarta 1 cartão" (3 cartões creme 🔧/💥); Piloto "Escolhe 1" (2 cartões); os outros "À espera do Comandante e do Piloto". Os cargos são públicos, por isso isto não denuncia ninguém;

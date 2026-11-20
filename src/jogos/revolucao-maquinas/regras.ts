@@ -40,7 +40,7 @@ export const CARTAS_R = 7;
 export const CARTAS_S = 12;
 export const VETO_DESDE = 4;
 export const IA_PILOTO_DESDE = 4;
-export const TIPOS_MAQUINAS = ['rm_piloto', 'rm_votar', 'rm_descartar', 'rm_escolher', 'rm_vetar', 'rm_veto', 'rm_poder', 'rm_visto', 'rm_seguir'];
+export const TIPOS_MAQUINAS = ['rm_piloto', 'rm_votar', 'rm_descartar', 'rm_escolher', 'rm_vetar', 'rm_veto', 'rm_poder', 'rm_visto', 'rm_seguir', 'rm_vi'];
 export const SO_LIDER_MAQUINAS = ['rm_seguir'];
 
 export type AcaoMaquinas =
@@ -53,6 +53,8 @@ export type AcaoMaquinas =
   | { tipo: 'rm_poder'; id: string; alvo: string | null }
   | { tipo: 'rm_visto'; id: string }
   | { tipo: 'rm_seguir'; id: string }
+  /** viu a identidade (fase 'carta') */
+  | { tipo: 'rm_vi'; id: string }
   | { tipo: 'ligados'; ids: string[] }
   | { tipo: 'tick' };
 
@@ -78,7 +80,7 @@ export interface EstadoMaquinas {
   rotacao: number;
   comandante: string;
   piloto: string | null;
-  /** governo anterior aprovado */
+  /** governo anterior aprovado: [Comandante, Piloto] (com ≤ 5 vivos só o Piloto conta) */
   bloqueados: string[];
   /** 📢: próximo Comandante escolhido (a rotação continua depois) */
   eleito: string | null;
@@ -96,6 +98,8 @@ export interface EstadoMaquinas {
   motivo: 'reparacoes' | 'ia_ejetada' | 'sabotagens' | 'ia_piloto' | null;
   pontos: Record<string, number>;
   usadas: string[];
+  /** quem já viu a identidade (a fase 'carta' só acaba quando todos os ligados a viram; bots contam como vistos) */
+  viram: string[];
 }
 
 /** tabela de papéis do .md */
@@ -158,6 +162,7 @@ export function novoMaquinas(ids: string[], def: Partial<DefMaquinas>, agora: nu
       motivo: null,
       pontos: Object.fromEntries(participantes.map((id) => [id, 0])),
       usadas,
+      viram: [],
     },
     'carta',
     T_CARTA,
@@ -167,7 +172,8 @@ export function novoMaquinas(ids: string[], def: Partial<DefMaquinas>, agora: nu
 
 /** quem o Comandante pode escolher como Piloto */
 export function elegiveis(e: Pick<EstadoMaquinas, 'vivos' | 'comandante' | 'bloqueados'>): string[] {
-  const l = e.vivos.filter((id) => id !== e.comandante && !e.bloqueados.includes(id));
+  const bl = e.vivos.length <= 5 ? e.bloqueados.slice(1) : e.bloqueados;
+  const l = e.vivos.filter((id) => id !== e.comandante && !bl.includes(id));
   return l.length ? l : e.vivos.filter((id) => id !== e.comandante);
 }
 
@@ -285,10 +291,18 @@ function usarPoder(e: EstadoMaquinas, alvo: string | null, agora: number): Estad
   return irPara(s, 'discussao', e.def.discussao, agora);
 }
 
+/** = PREFIXO_BOT de core/sala (não importado: evita o ciclo sala → registo → regras) */
+const ehBot = (id: string) => id.startsWith('bot-');
+
+/** todos os jogadores ligados (humanos) já viram a identidade */
+export function todosViram(e: Pick<EstadoMaquinas, 'participantes' | 'ligados' | 'viram'>): boolean {
+  return e.participantes.every((id) => ehBot(id) || !e.ligados.includes(id) || e.viram.includes(id));
+}
+
 function tempoAcabou(e: EstadoMaquinas, agora: number): EstadoMaquinas {
   switch (e.fase) {
     case 'carta':
-      return irPara(e, 'nomear', T_ESCOLHA, agora);
+      return todosViram(e) ? irPara(e, 'nomear', T_ESCOLHA, agora) : e;
     case 'nomear': {
       const [p, s] = sorteio(e, elegiveis(e));
       return irPara({ ...s, piloto: p, votos: {} }, 'votar', T_ESCOLHA, agora);
@@ -331,6 +345,8 @@ export function reduzMaquinas(e: EstadoMaquinas, a: AcaoMaquinas, agora: number)
     let s: EstadoMaquinas = { ...e, ligados: a.ids };
     if (s.fase === 'fim') return s;
     s = pausaPorFalta(s, quantosLigados(s.participantes, a.ids) < MIN_LIGADOS, agora);
+    // quem faltava ver saiu: pode começar
+    if (s.fase === 'carta' && !pausadoMaquinas(s) && todosViram(s)) return tempoAcabou(s, agora);
     return s;
   }
   if (a.tipo === 'tick') return pausadoMaquinas(e) || agora < e.terminaEm ? e : tempoAcabou(e, agora);
@@ -371,6 +387,11 @@ export function reduzMaquinas(e: EstadoMaquinas, a: AcaoMaquinas, agora: number)
     case 'rm_seguir':
       if (e.fase !== 'discussao') return e;
       return novaRonda(e, agora);
+    case 'rm_vi': {
+      if (e.fase !== 'carta' || e.viram.includes(a.id)) return e;
+      const s = { ...e, viram: [...e.viram, a.id] };
+      return todosViram(s) ? tempoAcabou(s, agora) : s;
+    }
   }
   return e;
 }
@@ -392,6 +413,8 @@ export interface VistaMaquinas {
   piloto: string | null;
   bloqueados: string[];
   votaram: string[];
+  /** fase 'carta': quem já viu a identidade */
+  viram: string[];
   ultimaVotacao: { votos: Record<string, boolean>; aprovado: boolean } | null;
   entrou: { carta: Carta; caos: boolean } | null;
   poder: Poder | null;
@@ -424,6 +447,7 @@ export function vistaMaquinas(e: EstadoMaquinas): VistaMaquinas {
     piloto: e.piloto,
     bloqueados: e.fase === 'nomear' ? e.vivos.filter((id) => id !== e.comandante && !elegiveis(e).includes(id)) : [],
     votaram: e.fase === 'votar' ? Object.keys(e.votos) : [],
+    viram: e.fase === 'carta' ? e.viram : [],
     ultimaVotacao: e.ultimaVotacao,
     entrou: e.entrou,
     poder: e.poder,
@@ -481,7 +505,7 @@ export function sairMaquinas(e: EstadoMaquinas, id: string, agora: number): Esta
   if (!e.vivos.includes(id) || e.fase === 'fim') return e;
   const votos = { ...e.votos };
   delete votos[id];
-  let s: EstadoMaquinas = { ...e, vivos: e.vivos.filter((x) => x !== id), votos, bloqueados: e.bloqueados.filter((x) => x !== id), eleito: e.eleito === id ? null : e.eleito };
+  let s: EstadoMaquinas = { ...e, vivos: e.vivos.filter((x) => x !== id), votos, bloqueados: e.bloqueados.map((x) => (x === id ? '' : x)), eleito: e.eleito === id ? null : e.eleito };
   const noGoverno = id === e.comandante || id === e.piloto;
   if (noGoverno && ['nomear', 'votar', 'votos', 'comandante', 'piloto', 'veto', 'poder', 'ver'].includes(e.fase)) {
     s = { ...s, baralho: [...e.mao, ...e.baralho], mao: [] };

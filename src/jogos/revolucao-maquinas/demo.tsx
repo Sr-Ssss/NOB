@@ -16,8 +16,8 @@ function estado(fase: string): EstadoMaquinas {
   e = { ...e, participantes: ids, comandante: 'j1', rotacao: 0, papeis: Object.fromEntries(ids.map((id, i) => [id, PAPEIS[i]])), reparacoes: 2, sabotagens: 1, falhas: 1 };
   const tick = () => (e = reduzMaquinas(e, { tipo: 'tick' }, e.terminaEm));
   const ap = (...a: AcaoMaquinas[]) => (e = a.reduce((s, x) => reduzMaquinas(s, x, T), e));
-  if (fase === 'carta') return e;
-  tick();
+  if (fase === 'carta') return ap({ tipo: 'rm_vi', id: 'j3' }, { tipo: 'rm_vi', id: 'j5' });
+  ap(...ids.map((id) => ({ tipo: 'rm_vi' as const, id }))); // todos viram a identidade → nomear
   if (fase === 'nomear') return { ...e, bloqueados: ['j3', 'j5'] };
   ap({ tipo: 'rm_piloto', id: 'j1', alvo: 'j2' });
   if (fase === 'votar') return ap(...['j1', 'j3', 'j4', 'j6'].map((id) => ({ tipo: 'rm_votar' as const, id, sim: true })));

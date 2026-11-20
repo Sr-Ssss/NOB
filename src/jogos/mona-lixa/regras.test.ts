@@ -208,6 +208,11 @@ describe('Mona Lixa: regras', () => {
     expect(e.desenhos.j3).toBeTruthy();
   });
 
+  it('a audiência não conta para a pausa (2 jogadores + 1 audiência pausam)', () => {
+    const e = { ...novoMona(ids(3), {}, T, C), audiencia: ['a1'] };
+    expect(reduzMona(e, { tipo: 'ligados', ids: ['j1', 'j2', 'a1'] }, T + 5000).pausaRestante).toBe(70_000);
+  });
+
   it('quem está desligado não trava a fase', () => {
     let e = novoMona(ids(4), {}, T, C);
     e = reduzMona(e, { tipo: 'ligados', ids: ['j1', 'j2', 'j3'] }, T);

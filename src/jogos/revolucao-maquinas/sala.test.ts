@@ -26,9 +26,10 @@ describe('Revolução das Máquinas na sala', () => {
 
   it('bots: o líder vota por eles; só o líder pode "Seguir"; ações de outros jogos são ignoradas', () => {
     let s = com(1);
-    for (const b of ['1', '2', '3', '4']) s = reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0);
+    for (const b of ['1', '2', '3', '4']) s = reduzSala(reduzSala(s, { tipo: 'bot_add', id: 'j1', bot: PREFIXO_BOT + b, tag: 'tb' + b }, 0), { tipo: 'bot_ia', id: 'j1', bot: PREFIXO_BOT + b, ia: false }, 0); // IA desligada: o líder joga por eles
     s = reduzSala(s, { tipo: 'comecar', id: 'j1', jogo: 'maquinas' }, 100);
-    s = reduzSala(s, { tipo: 'tick' }, s.maquinas!.terminaEm);
+    s = reduzSala(s, { tipo: 'jogo', acao: { tipo: 'rm_vi', id: 'j1' } }, 150); // bots contam como vistos
+    expect(s.maquinas!.fase).toBe('nomear');
     const c = s.maquinas!.comandante;
     const alvo = s.maquinas!.vivos.find((x) => x !== c)!;
     const como = (id: string, acao: Record<string, unknown>) =>

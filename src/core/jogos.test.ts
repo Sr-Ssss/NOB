@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CATALOGO, filtrar, motivo } from './jogos';
+import { CATALOGO, motivo, ordenarMenu } from './jogos';
 
 const j = (id: string) => CATALOGO.find((x) => x.id === id)!;
 
@@ -11,13 +11,22 @@ describe('menu de jogos', () => {
     expect(motivo(j('pirata'), 8)).toBeNull();
     expect(motivo(j('rei'), 8)).toBeNull();
     expect(motivo(j('ragerob'), 8)).toBeNull();
-    expect(motivo(j('ragerob'), 8, true)).toEqual({ tipo: 'tv' });
+    // Fase 10 (20/11): todos os jogos dão sem TV
+    for (const x of CATALOGO) expect(motivo(x, 8, true)).toBeNull();
+    expect(CATALOGO.some((x) => x.precisaTv)).toBe(false);
   });
 
-  it('pesquisa e filtros', () => {
-    expect(filtrar(CATALOGO, 'pira', [], 4, 'pt-BR').map((x) => x.id)).toEqual(['pirata']);
-    expect(filtrar(CATALOGO, '', ['tv'], 4, 'pt-BR').every((x) => x.precisaTv)).toBe(true);
-    expect(filtrar(CATALOGO, '', ['pessoas'], 3, 'pt-BR').some((x) => x.id === 'pirata')).toBe(false);
-    expect(filtrar(CATALOGO, 'thinkers', [], 4, 'en').map((x) => x.id)).toEqual(['pensa']);
+  it('ordem do menu: os que dão primeiro, por duração; os que não dão no fim', () => {
+    const l = ordenarMenu(CATALOGO, 4, true);
+    expect(l).toHaveLength(CATALOGO.length);
+    const da = l.filter((x) => !motivo(x, 4, true));
+    // nenhum indisponível antes de um disponível
+    expect(l.slice(0, da.length)).toEqual(da);
+    expect(da.map((x) => x.minutos)).toEqual([...da.map((x) => x.minutos)].sort((a, b) => a - b));
+    expect(da[0].id).toBe('5050'); // 10 min
+    // com 4, os de 5+ vão para o fim; sem TV, o Se Vira! e o Ragerob dão (Fase 10)
+    expect(l.slice(da.length).map((x) => x.id)).toEqual(expect.arrayContaining(['pirata', 'rei', 'maquinas']));
+    expect(da.map((x) => x.id)).toEqual(expect.arrayContaining(['sevira', 'ragerob']));
+    expect(ordenarMenu(CATALOGO, 4).slice(0, 6).map((x) => x.id)).toContain('ragerob');
   });
 });

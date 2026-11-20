@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { AcaoSala, VistaSala } from '../../core/sala';
 import { t, type Chave } from '../../core/i18n';
-import { Avatar, Temporizador } from '../../ui/comuns';
+import { Avatar, BarraSegurar, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
-import { limiarVigia, type PrivadoPirata, type VistaPirata } from './regras';
+import { limiarVigia, type Privado, type PrivadoPirata, type VistaPirata } from './regras';
 import { Palco, PlacarPirata, Revelacao, SIMBOLO, nomePapel, type PropsPirata } from './comuns';
 import { Progresso } from '../../ui/ecraunico';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { chaveSegurar, eventosSegurar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
@@ -17,6 +18,10 @@ export const T_SEGURAR = 3000;
  * símbolo + papel (e os segredos desta fase); ao largar, some.
  */
 /** `aberta`: só para as capturas (demo) */
+function textoResultado(r: Privado, nome: (id: string) => string): string {
+  return r.tipo === 'vigia' ? t(r.pirata ? 'prVigiaSim' : 'prVigiaNao', { nome: nome(r.alvo) }) : t(r.saiu ? 'prSaiu' : 'prNaoSaiu', { nome: nome(r.alvo) });
+}
+
 function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaPirata; p: PrivadoPirata | null; aberta?: boolean }) {
   const [estado, setEstado] = useState<'nada' | 'segura' | 'mostra'>(aberta ? 'mostra' : 'nada');
   const tempo = useRef<number | undefined>(undefined);
@@ -31,14 +36,15 @@ function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaP
     tempo.current = window.setTimeout(() => setEstado('mostra'), T_SEGURAR);
   };
   const nome = (id: string) => nomeDe(sala, id);
-  const n = limiarVigia(v.def, v.participantes.length);
+  const n = limiarVigia(v.def, v.participantes.length, v.vivos.length);
+  const acao = p?.papel === 'marinheiro' && n === null ? 'prAcao_marinheiroSem' : 'prAcao_' + p?.papel;
   return (
     <>
       {estado === 'mostra' && p?.papel && (
         <div class="pr-identidade" role="dialog" aria-live="assertive">
           <div class="pr-simbolo">{SIMBOLO[p.papel]}</div>
           <h2>{nomePapel(p.papel)}</h2>
-          {v.fase === 'noite' && p.vivo && <p>{t(('prAcao_' + p.papel) as Chave, { n })}</p>}
+          {v.fase === 'noite' && p.vivo && <p>{t(acao as Chave, { n: n ?? '' })}</p>}
           <p class="mini">{p.papel === 'pirata' ? t('prObjetivo_pirata') : t('prObjetivo_outro')}</p>
           {p.companheiros.length > 0 && <p>{t('prCompanheiros', { nomes: p.companheiros.map(nome).join(', ') })}</p>}
           {Object.entries(p.votosPiratas).map(([id, alvo]) => (
@@ -47,10 +53,21 @@ function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaP
             </p>
           ))}
           {v.fase === 'noite' && p.bloqueado && <p class="mini">{t('prBloqueado', { nome: nome(p.bloqueado) })}</p>}
+          {p.diario?.length > 0 && (
+            <div class="pr-descobriu">
+              <p class="mini">{t('prDescobriu')}</p>
+              {p.diario.map((r) => (
+                <p key={r.n + r.alvo} class="mini">
+                  {t('prNoiteN', { n: r.n })}: {textoResultado(r, nome)}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       )}
-      <button class={'pr-botao-id' + (estado !== 'nada' ? ' on' : '')} {...eventosSegurar({ segurar, largar, mostrar: () => setEstado('mostra'), aberto: estado === 'mostra' })}>
-        {estado === 'segura' ? t('prSegurando') : t('prIdentidade')}
+      <button class={'pr-botao-id' + (estado === 'mostra' ? ' on' : '')} {...eventosSegurar({ segurar, largar, mostrar: () => setEstado('mostra'), aberto: estado === 'mostra' })}>
+        {estado === 'segura' && <BarraSegurar ms={T_SEGURAR} />}
+        <span class="rotulo-segurar">{estado === 'segura' ? t('prSegurando') : t('prIdentidade')}</span>
       </button>
     </>
   );
@@ -127,7 +144,8 @@ function Frase({ texto }: { texto: string }) {
 function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: string; p: PrivadoPirata | null; enviar: Enviar }) {
   const vivo = v.vivos.includes(eu);
   const nome = (id: string) => nomeDe(sala, id);
-  if (!v.participantes.includes(eu)) return <Frase texto={t('prOlheTv')} />;
+  // sem TV, o palco por baixo já conta o que se passa ("Olhem para a TV" não faz sentido)
+  if (!v.participantes.includes(eu)) return sala.semTv ? null : <Frase texto={t('prOlheTv')} />;
   if (v.fase === 'carta')
     return (
       <>
@@ -160,7 +178,7 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
       );
     case 'amanhecer': {
       const r = p?.resultado;
-      const txt = !r ? t('prNada') : r.tipo === 'vigia' ? t(r.pirata ? 'prVigiaSim' : 'prVigiaNao', { nome: nome(r.alvo) }) : t(r.saiu ? 'prSaiu' : 'prNaoSaiu', { nome: nome(r.alvo) });
+      const txt = r ? textoResultado(r, nome) : t('prNada');
       return (
         <>
           <Frase texto={t('prAmanhecer')} />
@@ -176,13 +194,14 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
       return (
         <>
           <Frase texto={t('prVotar')} />
+          <p class="centro mini">{t('prVotoFixo')}</p>
           <Escolher key={'v' + v.noite} sala={sala} v={v} enviada={p && 'voto' in p ? p.voto : undefined} tipo="pr_votar" ninguem enviar={enviar} />
         </>
       );
     case 'discussao':
       return (
         <>
-          <Frase texto={t('prDiscussao')} />
+          <Frase texto={sala.semTv ? t('conversem') : t('prDiscussao')} />
           {sala.vipId === eu && (
             <button class="botao sec" onClick={() => jogo(enviar, { tipo: 'pr_votar_ja' })}>
               {t('prVotarJa')}
@@ -193,7 +212,7 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
     case 'artilheiro':
       return <Frase texto={t('prArtilheiroOutros')} />;
     default:
-      return <Frase texto={t('prOlheTv')} />;
+      return sala.semTv ? null : <Frase texto={t('prOlheTv')} />;
   }
 }
 
@@ -212,6 +231,7 @@ export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta 
         <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
           ⓘ
         </button>
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
         {!fim && <Temporizador terminaEm={v.terminaEm} restante={v.restante} agora={agora} />}
       </div>
       {ajuda && (

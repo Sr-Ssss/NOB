@@ -319,7 +319,8 @@ export function reduzMona(e: EstadoMona, acao: AcaoMona, agora: number): EstadoM
     case 'ligados': {
       const s: EstadoMona = { ...e, ligados: acao.ids };
       if (s.fase === 'fim') return s;
-      return pausaPorFalta(s, quantosLigados(todos(s), acao.ids) < MIN_LIGADOS, agora);
+      // só os participantes contam (a audiência não segura o jogo)
+      return pausaPorFalta(s, quantosLigados(s.participantes, acao.ids) < MIN_LIGADOS, agora);
     }
     case 'ml_desenho': {
       if (e.fase !== 'desenhar' || pausadoMona(e) || !e.participantes.includes(acao.id)) return e;

@@ -4,17 +4,17 @@
 .quadro-giz { background: var(--quadro); border-radius: 8px; padding: 24px; color: var(--giz); font-family: var(--giz-font); display: flex; flex-direction: column; gap: 18px; }
 .jogo-pensa .quadro { flex: 1; display: flex; }
 .jogo-pensa .quadro-giz { flex: 1; padding: 36px 48px; }
-.giz-titulo { font-size: clamp(28px, 4vw, 64px); text-align: center; margin: 0; font-weight: 400; line-height: 1.15; overflow-wrap: anywhere; }
-.giz-titulo.pequeno { font-size: clamp(22px, 2.8vw, 44px); }
+.giz-titulo { font-size: clamp(28px, 4cqw, 64px); text-align: center; margin: 0; font-weight: 400; line-height: 1.15; overflow-wrap: anywhere; }
+.giz-titulo.pequeno { font-size: clamp(22px, 2.8cqw, 44px); }
 .tel-pensa .giz-titulo, .tel-pensa .giz-titulo.pequeno { font-size: 24px; }
-.giz-sub { text-align: center; margin: 0; font-size: clamp(18px, 1.8vw, 30px); opacity: 0.85; }
+.giz-sub { text-align: center; margin: 0; font-size: clamp(18px, 1.8cqw, 30px); opacity: 0.85; }
 .giz-caixas { display: grid; gap: 28px; }
 .giz-grelha { display: grid; gap: 14px; }
 .giz-grelha.tel { grid-template-columns: 1fr 1fr; }
-.giz-caixa { border: 3px dashed var(--giz); border-radius: 10px; padding: 18px; font-size: clamp(20px, 2.4vw, 40px); background: none; color: var(--giz); font-family: var(--giz-font); text-align: left; position: relative; display: flex; flex-direction: column; gap: 10px; overflow-wrap: anywhere; }
-.giz-grelha .giz-caixa { font-size: clamp(16px, 1.5vw, 26px); padding: 12px; }
+.giz-caixa { border: 3px dashed var(--giz); border-radius: 10px; padding: 18px; font-size: clamp(20px, 2.4cqw, 40px); background: none; color: var(--giz); font-family: var(--giz-font); text-align: left; position: relative; display: flex; flex-direction: column; gap: 10px; overflow-wrap: anywhere; }
+.giz-grelha .giz-caixa { font-size: clamp(16px, 1.5cqw, 26px); padding: 12px; }
 .tel-pensa .giz-caixa { font-size: 20px; padding: 12px; }
-.giz-caixa.grande { min-height: 26vh; justify-content: center; font-size: 26px; }
+.giz-caixa.grande { min-height: 26cqh; justify-content: center; font-size: 26px; }
 .giz-caixa.escolhido, .giz-caixa.destaque { border-color: var(--coral); }
 .giz-caixa.minha { opacity: 0.4; border-style: dotted; }
 .giz-caixa .visto { position: absolute; top: 6px; right: 10px; color: var(--coral); font-size: 28px; }
@@ -33,7 +33,7 @@
 .post-it { background: var(--creme); color: var(--noite); border: 0; min-height: 150px; font-family: var(--giz-font, cursive); font-size: 24px; padding: 18px; transform: rotate(-1.5deg); clip-path: polygon(0 3%, 6% 0, 94% 1%, 100% 5%, 99% 96%, 93% 100%, 5% 98%, 0 94%); resize: none; }
 .tel-pensa .quadro { padding: 10px; }
 .tel-pensa .quadro-giz { padding: 14px; gap: 12px; }
-.jogo-pensa { min-height: 100vh; display: flex; flex-direction: column; }
+.jogo-pensa { min-height: 100cqh; display: flex; flex-direction: column; }
 .jogo-pensa .quadro-giz { justify-content: center; }
 .carteira, .carteira * { box-sizing: border-box; max-width: 100%; }
 .carteira .post-it { width: 100%; }

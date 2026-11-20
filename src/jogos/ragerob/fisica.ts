@@ -83,13 +83,47 @@ export interface RoboF {
   giro: number;
   fase: number;
   /** crocodilo: quem está agarrado e até quando */
-  agarra: { id: string; ate: number } | null;
+  agarra: { id: string; ate: number; destino: { x: number; y: number; r: number } | null } | null;
   empurradoAte: number;
   chamasAte: number;
   /** picos: último toque por inimigo */
   toques: Record<string, number>;
-  ia: { modo: 'ir' | 'recuar'; ate: number };
+  ia: EstadoIa;
+  /** personalidade da IA (cada robô a sua, sorteada) */
+  pers: Personalidade;
+  /** depois de um impacto: escorrega (o knockback vê-se) até este instante */
+  atordoado: number;
+  /** tempo seguido em choque de frente com o alvo (para largar o empurra-empurra) */
+  frenteAFrente: number;
   humano: boolean;
+}
+
+/** a IA: rodear pelo flanco → parar e alinhar a arma → atacar → recuar (e às vezes esquivar) */
+export type ModoIa = 'rodear' | 'alinhar' | 'atacar' | 'recuar' | 'esquivar';
+export interface EstadoIa {
+  modo: ModoIa;
+  ate: number;
+  alvo: string | null;
+  /** −1 = cabeça; senão o encaixe do módulo com que vai atacar */
+  arma: number;
+  /** lado por onde rodeia (1 = direita, −1 = esquerda) */
+  lado: number;
+  /** quando volta a escolher alvo */
+  trocaAlvo: number;
+}
+export interface Personalidade {
+  /** 0 = cauteloso, 1 = vai a tudo */
+  agressivo: number;
+  /** segundos a alinhar antes de atacar */
+  paciencia: number;
+  /** distância a que gosta de rodear */
+  distancia: number;
+  /** ângulo do flanco preferido (rad a partir das costas do alvo: 0 = por trás, π/2 = de lado) */
+  flanco: number;
+  /** vontade de usar um módulo em vez da cabeça */
+  modulos: number;
+  /** prefere o alvo mais fraco (1) ou o mais perto (0) */
+  oportunista: number;
 }
 
 export interface EventoF {
@@ -168,7 +202,17 @@ export class Combate {
       this.robos.push({
         id: robo.id, robo, corpo, hp: 100, ko: false, dano: 0, kos: 0, ultimo: null,
         pronto: robo.modulos.map(() => 1 + this.rnd() * 1.5), disparou: robo.modulos.map(() => -9),
-        cabPronto: 0, cabAnim: -9, giro: 0, fase: 0, agarra: null, empurradoAte: -9, chamasAte: -9, toques: {}, ia: { modo: 'ir', ate: 0 }, humano: false,
+        cabPronto: 0, cabAnim: -9, giro: 0, fase: 0, agarra: null, empurradoAte: -9, chamasAte: -9, toques: {},
+        ia: { modo: 'rodear', ate: 2 + this.rnd() * 2, alvo: null, arma: -1, lado: this.rnd() < 0.5 ? 1 : -1, trocaAlvo: 0 },
+        pers: {
+          agressivo: this.rnd(),
+          paciencia: 0.3 + this.rnd() * 0.8,
+          distancia: 120 + this.rnd() * 110,
+          flanco: (0.2 + this.rnd() * 0.7) * Math.PI * 0.6,
+          modulos: 0.3 + this.rnd() * 0.6,
+          oportunista: this.rnd(),
+        },
+        atordoado: 0, frenteAFrente: 0, humano: false,
       });
     });
     this.montarPerigos(perigos);
@@ -201,6 +245,12 @@ export class Combate {
         const [w, h] = tam[tipo];
         this.perigos.push({ tipo, x, y, w, h, dir: this.rnd() < 0.5 ? 1 : -1, estado: tipo === 'tapete' || tipo === 'prato' ? 'on' : 'off' });
       }
+    }
+    // peças sólidas da arena: os robôs batem nelas (a serra é um disco de ferro, a parede é uma barra)
+    for (const h of this.perigos) {
+      const op = { isStatic: true, restitution: 0.6, friction: 0.05, label: 'perigo' };
+      if (h.tipo === 'serra') Matter.Composite.add(this.engine.world, Matter.Bodies.circle(h.x, h.y, h.w / 2, op));
+      if (h.tipo === 'parede') Matter.Composite.add(this.engine.world, Matter.Bodies.rectangle(h.x, h.y, h.w, h.h, op));
     }
   }
 
@@ -237,8 +287,21 @@ export class Combate {
 
   private empurrar(r: RoboF, dx: number, dy: number, forca: number) {
     const l = Math.hypot(dx, dy) || 1;
-    const massa = r.robo.loco === 'lagartas' ? 0.55 : 1;
+    const massa = r.robo.loco === 'lagartas' ? 0.6 : 1;
     Matter.Body.setVelocity(r.corpo, { x: r.corpo.velocity.x + (dx / l) * forca * massa, y: r.corpo.velocity.y + (dy / l) * forca * massa });
+    // pancadas a sério: o robô perde aderência um bocado e voa/escorrega (senão as rodas anulam logo o empurrão)
+    if (forca >= 4) {
+      r.atordoado = Math.max(r.atordoado, this.t + Math.min(0.7, 0.04 * forca * massa));
+      Matter.Body.setAngularVelocity(r.corpo, r.corpo.angularVelocity + (this.rnd() - 0.5) * 0.02 * forca);
+    }
+  }
+
+  /** choque: projeta os dois para lados opostos (o atacante leva menos) */
+  private choque(a: RoboF, o: RoboF, forca: number, recuo = 0.35) {
+    const dx = o.corpo.position.x - a.corpo.position.x;
+    const dy = o.corpo.position.y - a.corpo.position.y;
+    this.empurrar(o, dx, dy, forca);
+    this.empurrar(a, -dx, -dy, forca * recuo);
   }
 
   private efeito(tipo: TipoEfeito, x: number, y: number, a: number, l: number, dur: number) {
@@ -282,31 +345,32 @@ export class Combate {
     const alvos = this.vivos().filter((o) => o !== r && Math.hypot(o.corpo.position.x - hx, o.corpo.position.y - hy) < R + 14 && Math.abs(difAng(angulo(o.corpo.position.x - p.x, o.corpo.position.y - p.y), a)) < 50 * D2R);
     const tipo = r.robo.cabeca;
     if (tipo === 'ourico') {
-      r.giro = Math.min(1, r.giro + DT / 3);
-      r.fase += (1.2 + 7 * r.giro) * DT;
-      const bx = p.x + Math.sin(r.fase) * 92;
-      const by = p.y - Math.cos(r.fase) * 92;
-      if (r.giro > 0.25) {
-        for (const o of this.vivos()) {
-          if (o === r || Math.hypot(o.corpo.position.x - bx, o.corpo.position.y - by) > R + 16) continue;
-          // projeta os 2 robôs, com mais dano no inimigo
-          this.ferir(o, 5 + 15 * r.giro, r, bx, by);
-          this.empurrar(o, o.corpo.position.x - bx, o.corpo.position.y - by, 9 * r.giro + 3);
-          this.empurrar(r, p.x - o.corpo.position.x, p.y - o.corpo.position.y, 4 * r.giro);
-          this.ferir(r, 2 * r.giro, null);
-          this.efeito('impacto', bx, by, 0, 26, 0.3);
-          r.giro = 0;
-          break;
-        }
+      // tambor pequeno à frente (o ouriço enrolado a girar como um disco): ganha rotação devagar,
+      // e no impacto projeta os 2 robôs (mais o inimigo); área pequena, dano moderado
+      r.giro = Math.min(1, r.giro + DT / 2.5);
+      r.fase += (2 + 18 * r.giro) * DT;
+      if (r.giro > 0.25 && alvos.length) {
+        const o = alvos[0];
+        this.ferir(o, 3 + 9 * r.giro, r, hx, hy);
+        this.empurrar(o, o.corpo.position.x - hx, o.corpo.position.y - hy, 12 * r.giro + 4);
+        this.empurrar(r, -fx, -fy, 5 * r.giro);
+        this.ferir(r, 1.5 * r.giro, null);
+        this.efeito('impacto', hx, hy, a, 22, 0.3);
+        r.cabAnim = this.t;
+        r.giro = 0;
       }
       return;
     }
     if (!alvos.length) return;
     const o = alvos[0];
     if (tipo === 'galo') {
-      // serra: dano contínuo
+      // serra: dano contínuo; a lâmina a morder empurra aos solavancos (não fica colado)
       this.ferir(o, 18 * DT, r, hx, hy);
       if (Math.floor(this.t * 10) % 2 === 0) this.efeito('faisca', hx, hy, a, 14, 0.12);
+      if (this.t >= r.cabPronto) {
+        this.choque(r, o, 5, 0.8);
+        r.cabPronto = this.t + 0.5;
+      }
       r.cabAnim = this.t;
       return;
     }
@@ -314,19 +378,28 @@ export class Combate {
     r.cabAnim = this.t;
     if (tipo === 'crocodilo') {
       this.ferir(o, 14, r, hx, hy);
-      r.agarra = { id: o.id, ate: this.t + 1.2 };
+      // procura um perigo por perto para lá levar a presa (serra, picos, espinhos, fogo, água eletrificada)
+      const destino = this.perigoPerto(o.corpo.position.x, o.corpo.position.y, 520);
+      r.agarra = { id: o.id, ate: this.t + (destino ? 3 : 1.2), destino };
       r.cabPronto = this.t + 2.2;
     } else if (tipo === 'rino') {
       const vel = r.corpo.velocity.x * fx + r.corpo.velocity.y * fy;
-      if (vel < 1.5) return;
+      if (vel < 1.5) {
+        // encostado sem velocidade: só um empurrão para ganhar espaço
+        this.choque(r, o, 4, 0.6);
+        r.cabPronto = this.t + 0.6;
+        return;
+      }
       this.ferir(o, Math.min(20, 4 + vel * 2.6), r, hx, hy);
-      this.empurrar(o, fx, fy, 2 + vel * 0.6);
-      this.efeito('impacto', hx, hy, a, 22, 0.25);
+      this.empurrar(o, fx, fy, 5 + vel * 1.4);
+      this.empurrar(r, -fx, -fy, 2 + vel * 0.3);
+      this.efeito('impacto', hx, hy, a, 26, 0.3);
       r.cabPronto = this.t + 0.8;
     } else if (tipo === 'bode') {
       this.ferir(o, 4, r, hx, hy);
-      this.empurrar(o, fx, fy, 11);
+      this.empurrar(o, fx, fy, 18);
       o.empurradoAte = this.t + 1;
+      this.efeito('impacto', hx, hy, a, 20, 0.25);
       r.cabPronto = this.t + 1.6;
     }
   }
@@ -366,7 +439,10 @@ export class Combate {
       } else if (m === 'martelo') {
         const alvos = this.noSetor(r, dir, 32 * D2R, R * 2 + 52);
         if (!alvos.length) return;
-        for (const o of alvos) this.ferir(o, 18, r, ex, ey);
+        for (const o of alvos) {
+          this.ferir(o, 18, r, ex, ey);
+          this.empurrar(o, dx, dy, 7);
+        }
         this.efeito('pancada', ex + dx * 40, ey + dy * 40, dir, 30, 0.35);
         disparar(2.8);
       } else if (m === 'chamas') {
@@ -395,7 +471,7 @@ export class Combate {
         if (!alvos.length) return;
         for (const o of alvos) {
           this.ferir(o, 4, r, ex, ey);
-          this.empurrar(o, dx, dy, 11);
+          this.empurrar(o, dx, dy, 16);
           o.empurradoAte = this.t + 1;
         }
         disparar(2);
@@ -448,7 +524,13 @@ export class Combate {
           if (o) h.alvo = { x: o.corpo.position.x, y: o.corpo.position.y };
         }
         if (h.estado === 'on' && antes !== 'on' && h.alvo) {
-          for (const o of this.vivos()) if (Math.hypot(o.corpo.position.x - h.alvo.x, o.corpo.position.y - h.alvo.y) < 58) this.ferir(o, 18, null);
+          for (const o of this.vivos()) {
+            const dx = o.corpo.position.x - h.alvo.x;
+            const dy = o.corpo.position.y - h.alvo.y;
+            if (Math.hypot(dx, dy) > 58) continue;
+            this.ferir(o, 18, null);
+            this.empurrar(o, dx || 1, dy, 11);
+          }
           this.efeito('pancada', h.alvo.x, h.alvo.y, 0, 58, 0.4);
         }
       }
@@ -456,18 +538,36 @@ export class Combate {
         const p = o.corpo.position;
         const chao = o.robo.loco !== 'pernas';
         const dentroRet = Math.abs(p.x - h.x) < h.w / 2 + R * 0.6 && Math.abs(p.y - h.y) < h.h / 2 + R * 0.6;
-        if (h.tipo === 'serra' && h.estado === 'on' && chao && Math.hypot(p.x - h.x, p.y - h.y) < h.w / 2 + R * 0.8) {
-          this.ferir(o, 14 * DT, null);
-          if (Math.floor(this.t * 8) % 2 === 0) this.efeito('faisca', p.x, p.y, 0, 14, 0.12);
+        // serra a girar: morde e cospe o robô para fora (como ferro a tocar num disco)
+        if (h.tipo === 'serra' && h.estado === 'on' && Math.hypot(p.x - h.x, p.y - h.y) < h.w / 2 + R + 8) {
+          if (chao) this.ferir(o, 14 * DT, null);
+          if (this.t - (o.toques['serra'] ?? -9) > 0.35) {
+            o.toques['serra'] = this.t;
+            // empurra para fora e um pouco de lado (o disco arrasta no sentido em que gira)
+            const fora = angulo(p.x - h.x, p.y - h.y) + h.dir * 0.6;
+            const [kx, ky] = frente(fora);
+            this.empurrar(o, kx, ky, 10);
+            this.efeito('faisca', (p.x + h.x) / 2, (p.y + h.y) / 2, fora, 20, 0.25);
+          }
         }
-        if (h.tipo === 'espinhos' && h.estado === 'on' && chao && dentroRet) this.ferir(o, 10 * DT, null);
-        if (h.tipo === 'parede' && dentroRet && this.t - (o.toques['parede'] ?? -9) > 0.7) {
+        if (h.tipo === 'espinhos' && h.estado === 'on' && chao && dentroRet) {
+          this.ferir(o, 10 * DT, null);
+          if (this.t - (o.toques['espinhos'] ?? -9) > 0.5) {
+            o.toques['espinhos'] = this.t;
+            this.empurrar(o, p.x - h.x || 1, p.y - h.y, 6);
+          }
+        }
+        if (h.tipo === 'parede' && Math.abs(p.x - h.x) < h.w / 2 + R && Math.abs(p.y - h.y) < h.h / 2 + R + 6 && this.t - (o.toques['parede'] ?? -9) > 0.6) {
           o.toques['parede'] = this.t;
           this.ferir(o, 6, null);
-          this.empurrar(o, 0, h.y < ALT / 2 ? 1 : -1, 5);
-          this.efeito('faisca', p.x, h.y, 0, 16, 0.2);
+          this.empurrar(o, 0, h.y < ALT / 2 ? 1 : -1, 10);
+          this.efeito('faisca', p.x, h.y, 0, 18, 0.2);
         }
-        if (h.tipo === 'pistao' && h.estado === 'on' && Math.abs(p.y - h.y) < h.h / 2 + R && Math.abs(p.x - h.x) < 120) this.empurrar(o, h.x < LARG / 2 ? 1 : -1, 0, 1.4);
+        // pistão de parede: um soco seco quando sai (só empurra)
+        if (h.tipo === 'pistao' && h.estado === 'on' && Math.abs(p.y - h.y) < h.h / 2 + R && Math.abs(p.x - h.x) < 120 && this.t - (o.toques['pistao'] ?? -9) > 0.5) {
+          o.toques['pistao'] = this.t;
+          this.empurrar(o, h.x < LARG / 2 ? 1 : -1, 0, 15);
+        }
         if (h.tipo === 'tapete' && dentroRet && chao) {
           const forca = o.robo.loco === 'lagartas' ? 0.08 : 0.32;
           Matter.Body.setVelocity(o.corpo, { x: o.corpo.velocity.x + h.dir * forca, y: o.corpo.velocity.y });
@@ -523,57 +623,205 @@ export class Combate {
     }
   }
 
-  /** IA: para onde ir e como (personalidade da cabeça) */
+  /** o perigo que dá dano mais perto de (x, y), até `max` px (para o crocodilo arrastar a presa) */
+  private perigoPerto(x: number, y: number, max: number): { x: number; y: number; r: number } | null {
+    const lista: { x: number; y: number; r: number }[] = [];
+    for (const h of this.perigos) {
+      if (h.tipo === 'serra') lista.push({ x: h.x, y: h.y, r: h.w / 2 + 6 });
+      if (h.tipo === 'espinhos') lista.push({ x: h.x, y: h.y, r: h.w / 2 - 10 });
+      if (h.tipo === 'parede') lista.push({ x: Math.max(h.x - h.w / 2 + 30, Math.min(h.x + h.w / 2 - 30, x)), y: h.y + (h.y < ALT / 2 ? 14 : -14), r: 24 });
+    }
+    for (const q of this.pocas) if (q.tipo === 'fogo' || q.tipo === 'eletrica') lista.push({ x: q.x, y: q.y, r: q.r * 0.6 });
+    let melhor: { x: number; y: number; r: number } | null = null;
+    for (const d of lista) {
+      const l = Math.hypot(d.x - x, d.y - y);
+      if (l < max && (!melhor || l < Math.hypot(melhor.x - x, melhor.y - y))) melhor = d;
+    }
+    return melhor;
+  }
+
+  /** alcance a que cada arma dispara (−1 = cabeça) */
+  private alcanceArma(r: RoboF, arma: number): number {
+    if (arma < 0) return R * 2.4;
+    const m = r.robo.modulos[arma];
+    return { martelo: R * 2 + 40, pistao: R * 2 + 36, picos: R * 2 + 4, chamas: 130, agua: 160, bobina: 105, fogos: 240 }[m as string] ?? R * 2.4;
+  }
+
+  /** escolhe com que vai atacar: a cabeça ou um módulo que dispare para fora (cada robô tem o seu gosto) */
+  private escolherArma(r: RoboF): number {
+    const ofensivos = r.robo.modulos.map((m, k) => (m && ['martelo', 'pistao', 'chamas', 'agua', 'bobina', 'fogos', 'picos'].includes(m) && this.t >= r.pronto[k] ? k : -1)).filter((k) => k >= 0);
+    if (!ofensivos.length || this.rnd() > r.pers.modulos) return -1;
+    return ofensivos[Math.floor(this.rnd() * ofensivos.length)];
+  }
+
+  /** ângulo do corpo para a arma apontar ao ponto (os módulos têm direção fixa: mira-se com o corpo) */
+  private mira(r: RoboF, arma: number, x: number, y: number): number {
+    const dir = arma < 0 ? 0 : direcaoEncaixe(r.robo.corpo, arma);
+    return angulo(x - r.corpo.position.x, y - r.corpo.position.y) - dir;
+  }
+
+  /** conduzir até um ponto (com marcha-atrás se estiver mesmo atrás e perto) */
+  private irPara(r: RoboF, x: number, y: number, vel = 1): ComandoF {
+    const p = r.corpo.position;
+    const d = difAng(angulo(x - p.x, y - p.y), r.corpo.angle);
+    const longe = Math.hypot(x - p.x, y - p.y);
+    if (Math.abs(d) > 2.5 && longe < 120) return { f: -0.7 * vel, r: -Math.sign(d) };
+    return { f: (Math.abs(d) < 0.6 ? 1 : Math.abs(d) < 1.3 ? 0.4 : 0) * vel, r: Math.abs(d) < 0.08 ? 0 : Math.sign(d) * Math.min(1, Math.abs(d) * 2) };
+  }
+
+  private mudar(r: RoboF, modo: ModoIa, dur: number) {
+    r.ia = { ...r.ia, modo, ate: this.t + dur };
+  }
+
+  /**
+   * IA (só quando ninguém conduz). Cada robô:
+   * 1. **rodear** — vai a um ponto ao lado/atrás do alvo (lado e ângulo próprios), não de frente;
+   * 2. **alinhar** — para e roda o corpo até a arma (cabeça ou módulo) apontar ao alvo;
+   * 3. **atacar** — carrega a direito (cabeça) ou segura a mira (módulo);
+   * 4. **recuar** — depois de bater, afasta-se e troca de lado (nada de empurra-empurra de frente);
+   * e **esquiva** quando vê um inimigo a carregar de frente contra si.
+   * As cabeças mudam o estilo: Rino carrega de longe, Ouriço gira à distância, Bode põe o alvo entre si e um perigo,
+   * Croco e Galo procuram os flancos.
+   */
   private ia(r: RoboF): ComandoF {
     const p = r.corpo.position;
     const outros = this.vivos().filter((o) => o !== r);
     if (!outros.length) return { f: 0, r: 0 };
-    const alvo = outros.reduce((a, b) => (Math.hypot(a.corpo.position.x - p.x, a.corpo.position.y - p.y) < Math.hypot(b.corpo.position.x - p.x, b.corpo.position.y - p.y) ? a : b));
-    let gx = alvo.corpo.position.x;
-    let gy = alvo.corpo.position.y;
-    const dist = Math.hypot(gx - p.x, gy - p.y);
-    let rec = false;
-    const perigo = (x: number, y: number) =>
-      !this.dentro(x, y, -30) || this.pocasEm(x, y, 10, ['fogo', 'eletrica']).length > 0 || this.perigos.some((h) => h.tipo === 'serra' && h.estado !== 'off' && Math.hypot(x - h.x, y - h.y) < h.w);
-    if (perigo(p.x, p.y)) {
-      gx = LARG / 2;
-      gy = ALT / 2;
-    } else if (r.robo.cabeca === 'rino') {
-      // investe de longe: recua, depois carrega
-      if (r.ia.modo === 'ir' && dist < 110 && this.t > r.cabPronto) r.ia = { modo: 'recuar', ate: this.t + 1.1 };
-      if (r.ia.modo === 'recuar' && this.t > r.ia.ate) r.ia = { modo: 'ir', ate: 0 };
-      rec = r.ia.modo === 'recuar';
-    } else if (r.robo.cabeca === 'bode') {
-      // atira os outros contra perigos: põe-se do lado oposto ao perigo mais próximo do alvo
-      const h = this.perigos.filter((x) => x.tipo !== 'martelo')[0];
-      if (h && dist > 70) {
-        const l = Math.hypot(gx - h.x, gy - h.y) || 1;
-        gx += ((gx - h.x) / l) * 70;
-        gy += ((gy - h.y) / l) * 70;
+    const ia = r.ia;
+    const pers = r.pers;
+    const cab = r.robo.cabeca;
+    const distDe = (o: RoboF) => Math.hypot(o.corpo.position.x - p.x, o.corpo.position.y - p.y);
+
+    // crocodilo com a presa na boca: leva-a até ao perigo (a presa vai à frente)
+    if (r.agarra?.destino) {
+      r.frenteAFrente = 0;
+      return this.irPara(r, r.agarra.destino.x, r.agarra.destino.y, 0.9);
+    }
+
+    // fugir de perigos que dão dano (fogo, eletricidade, borda a arder, serra ligada)
+    const perigo =
+      !this.dentro(p.x, p.y, -30) ||
+      this.pocasEm(p.x, p.y, 10, ['fogo', 'eletrica']).length > 0 ||
+      this.perigos.some((h) => (h.tipo === 'serra' && h.estado !== 'off' && Math.hypot(p.x - h.x, p.y - h.y) < h.w) || (h.tipo === 'espinhos' && h.estado !== 'off' && Math.abs(p.x - h.x) < h.w / 2 + R && Math.abs(p.y - h.y) < h.h / 2 + R));
+    if (perigo) return this.irPara(r, LARG / 2 + ia.lado * 60, ALT / 2);
+
+    // alvo: o oportunista prefere o mais fraco; os outros o mais perto; mantém-no uns segundos
+    let alvo = outros.find((o) => o.id === ia.alvo);
+    if (!alvo || this.t > ia.trocaAlvo) {
+      const nota = (o: RoboF) => distDe(o) * (1 - pers.oportunista * 0.6) + o.hp * 3 * pers.oportunista;
+      alvo = outros.reduce((a, b) => (nota(a) < nota(b) ? a : b));
+      r.ia = { ...ia, alvo: alvo.id, trocaAlvo: this.t + 4 + this.rnd() * 4 };
+    }
+    const ap = alvo.corpo.position;
+    const dist = distDe(alvo);
+    const paraMim = angulo(p.x - ap.x, p.y - ap.y);
+    // o alvo está virado para mim e a vir depressa?
+    const alvoOlha = Math.abs(difAng(alvo.corpo.angle, paraMim)) < 0.5;
+    const vemContraMim = alvoOlha && alvo.corpo.velocity.x * Math.sin(paraMim) - alvo.corpo.velocity.y * Math.cos(paraMim) > 3.2;
+
+    // empurra-empurra de frente: larga ao fim de pouco tempo
+    const deFrente = dist < R * 2 + 16 && Math.abs(difAng(angulo(ap.x - p.x, ap.y - p.y), r.corpo.angle)) < 0.7 && alvoOlha;
+    r.frenteAFrente = deFrente ? r.frenteAFrente + DT : 0;
+    const limiteFrente = cab === 'galo' ? 0.9 : 0.45;
+    if (r.frenteAFrente > limiteFrente && r.ia.modo !== 'recuar') {
+      r.frenteAFrente = 0;
+      r.ia.lado = this.rnd() < 0.7 ? -r.ia.lado : r.ia.lado;
+      this.mudar(r, 'recuar', 0.5 + this.rnd() * 0.5);
+    }
+
+    // esquivar uma carga (os mais cautelosos esquivam mais)
+    if (vemContraMim && dist < 230 && r.ia.modo !== 'esquivar' && r.ia.modo !== 'atacar' && this.rnd() < 0.01 + (1 - pers.agressivo) * 0.03) {
+      r.ia.lado = this.rnd() < 0.5 ? 1 : -1;
+      this.mudar(r, 'esquivar', 0.6 + this.rnd() * 0.3);
+    }
+
+    const m = r.ia;
+    switch (m.modo) {
+      case 'esquivar': {
+        if (this.t > m.ate) this.mudar(r, 'rodear', 1.5 + this.rnd() * 1.5);
+        const [sx, sy] = frente(angulo(ap.x - p.x, ap.y - p.y) + m.lado * Math.PI / 2);
+        return this.irPara(r, p.x + sx * 150, p.y + sy * 150);
       }
-    } else if (r.robo.cabeca === 'ourico') {
-      // ganha rotação longe, depois ataca: mantém a distância do mangual
-      if (r.giro < 0.8 && dist < 150) rec = true;
-      else if (dist < 120) {
-        const tang = angulo(gx - p.x, gy - p.y) + Math.PI / 2;
-        const [tx, ty] = frente(tang);
-        gx = p.x + tx * 100;
-        gy = p.y + ty * 100;
+      case 'recuar': {
+        if (this.t > m.ate) {
+          m.arma = this.escolherArma(r);
+          this.mudar(r, 'rodear', 1.5 + this.rnd() * 2);
+        }
+        // marcha-atrás a curvar para o lado escolhido
+        return { f: -1, r: m.lado * 0.7 };
+      }
+      case 'rodear': {
+        // ponto de chegada: atrás/ao lado do alvo, à distância preferida (ou à distância da arma)
+        let distPref = Math.max(this.alcanceArma(r, m.arma) * 0.85, cab === 'rino' && m.arma < 0 ? 240 : cab === 'ourico' ? 150 : pers.distancia);
+        let ang = alvo.corpo.angle + Math.PI + m.lado * pers.flanco;
+        if (cab === 'bode' && m.arma < 0) {
+          // pôr o alvo entre mim e um perigo: vou para o lado oposto ao perigo
+          const h = this.perigos.filter((x) => x.tipo !== 'martelo').sort((a, b) => Math.hypot(a.x - ap.x, a.y - ap.y) - Math.hypot(b.x - ap.x, b.y - ap.y))[0];
+          if (h) ang = angulo(ap.x - h.x, ap.y - h.y);
+          distPref = 150;
+        }
+        // ouriço: espera longe até o tambor ganhar rotação
+        if (cab === 'ourico' && m.arma < 0 && r.giro < 0.75) distPref = Math.max(distPref, 200);
+        const [ox, oy] = frente(ang);
+        let gx = ap.x + ox * distPref;
+        let gy = ap.y + oy * distPref;
+        gx = Math.max(80 + this.borda, Math.min(LARG - 80 - this.borda, gx));
+        gy = Math.max(70 + this.borda * 0.63, Math.min(ALT - 70 - this.borda * 0.63, gy));
+        const chegou = Math.hypot(gx - p.x, gy - p.y) < 45;
+        // demasiado perto sem estar de flanco: abre distância pelo lado
+        if (dist < R * 2.6 && !chegou) {
+          const [sx, sy] = frente(angulo(ap.x - p.x, ap.y - p.y) + m.lado * Math.PI * 0.6);
+          return this.irPara(r, p.x + sx * 120, p.y + sy * 120);
+        }
+        if (cab === 'ourico' && m.arma < 0 && r.giro < 0.75) {
+          // tambor ainda devagar: fica a rondar, sem atacar
+          return this.irPara(r, gx, gy, 0.6);
+        }
+        if (chegou || this.t > m.ate) this.mudar(r, 'alinhar', pers.paciencia + (cab === 'rino' ? 0.4 : 0));
+        return this.irPara(r, gx, gy, 0.6 + pers.agressivo * 0.4);
+      }
+      case 'alinhar': {
+        // parado a rodar o corpo até a arma apontar ao alvo (prevê um pouco o movimento dele)
+        const px = ap.x + alvo.corpo.velocity.x * 10;
+        const py = ap.y + alvo.corpo.velocity.y * 10;
+        const d = difAng(this.mira(r, m.arma, px, py), r.corpo.angle);
+        if ((Math.abs(d) < 0.1 && this.t > m.ate - pers.paciencia * 0.5) || this.t > m.ate + 1.2) this.mudar(r, 'atacar', m.arma < 0 ? 0.9 + pers.agressivo * 0.9 : 1.4);
+        // se o alvo fugir para longe, volta a rodear
+        if (dist > 420) this.mudar(r, 'rodear', 2);
+        return { f: 0, r: Math.abs(d) < 0.05 ? 0 : Math.sign(d) * Math.min(1, Math.abs(d) * 3) };
+      }
+      case 'atacar': {
+        const acertou = m.arma < 0 ? this.t - r.cabAnim < 0.1 && cab !== 'galo' : this.t - (r.disparou[m.arma] ?? -9) < 0.1;
+        const galoFeito = cab === 'galo' && this.t - r.cabAnim < 0.1 && this.t > m.ate - 0.2;
+        if (acertou || galoFeito || this.t > m.ate) {
+          r.ia.lado = this.rnd() < 0.6 ? -m.lado : m.lado;
+          this.mudar(r, 'recuar', 0.4 + this.rnd() * 0.5 + (cab === 'rino' ? 0.5 : 0));
+          return { f: -1, r: 0 };
+        }
+        const d = difAng(this.mira(r, m.arma, ap.x, ap.y), r.corpo.angle);
+        if (m.arma < 0) {
+          // carga a direito, a corrigir a pontaria
+          return { f: Math.abs(d) < 0.8 ? 1 : 0.3, r: Math.abs(d) < 0.05 ? 0 : Math.sign(d) * Math.min(1, Math.abs(d) * 2.5) };
+        }
+        // módulo: segura a mira; aproxima/afasta só se estiver de frente/de costas para o alvo
+        const alc = this.alcanceArma(r, m.arma);
+        const dirMod = direcaoEncaixe(r.robo.corpo, m.arma);
+        const frenteAoAlvo = Math.cos(dirMod);
+        const f = Math.abs(frenteAoAlvo) > 0.5 ? Math.sign(frenteAoAlvo) * (dist > alc * 0.9 ? 0.6 : dist < alc * 0.5 ? -0.4 : 0) : 0;
+        return { f, r: Math.abs(d) < 0.05 ? 0 : Math.sign(d) * Math.min(1, Math.abs(d) * 3) };
       }
     }
-    const quer = angulo(gx - p.x, gy - p.y);
-    const d = difAng(quer, r.corpo.angle);
-    return { f: rec ? -1 : Math.abs(d) < 0.9 ? 1 : 0.25, r: Math.abs(d) < 0.12 ? 0 : Math.sign(d) };
   }
 
   private mover(r: RoboF, c: ComandoF) {
     const pr = PARAM[r.robo.loco];
     const oleo = r.robo.loco !== 'pernas' && this.pocasEm(r.corpo.position.x, r.corpo.position.y, R * 0.4, ['oleo']).length > 0;
-    const grip = oleo ? pr.grip * 0.12 : pr.grip;
+    const tonto = this.t < r.atordoado;
+    const grip = (oleo ? pr.grip * 0.12 : pr.grip) * (tonto ? 0.08 : 1);
     const [fx, fy] = frente(r.corpo.angle);
     const v = c.f * pr.vel;
     Matter.Body.setVelocity(r.corpo, { x: r.corpo.velocity.x + (fx * v - r.corpo.velocity.x) * grip, y: r.corpo.velocity.y + (fy * v - r.corpo.velocity.y) * grip });
-    Matter.Body.setAngularVelocity(r.corpo, r.corpo.angularVelocity + (c.r * pr.rodar - r.corpo.angularVelocity) * (oleo ? 0.05 : 0.3));
+    Matter.Body.setAngularVelocity(r.corpo, r.corpo.angularVelocity + (c.r * pr.rodar - r.corpo.angularVelocity) * (oleo ? 0.05 : tonto ? 0.04 : 0.3));
   }
 
   /** um passo de 1/60 s; `humanos`: robôs que têm alguém a conduzir agora */
@@ -586,9 +834,24 @@ export class Combate {
       this.mover(r, h ?? this.ia(r));
       // crocodilo: o agarrado vai colado à boca
       if (r.agarra) {
-        const o = this.robos.find((x) => x.id === r.agarra!.id);
-        if (!o || o.ko || this.t > r.agarra.ate) r.agarra = null;
-        else Matter.Body.setVelocity(o.corpo, { x: r.corpo.velocity.x, y: r.corpo.velocity.y });
+        const g = r.agarra;
+        const o = this.robos.find((x) => x.id === g.id);
+        const op = o?.corpo.position;
+        // chegou ao perigo: atira-o lá para dentro
+        const noDestino = !!g.destino && !!op && Math.hypot(op.x - g.destino.x, op.y - g.destino.y) < g.destino.r + R * 0.6;
+        if (!o || o.ko) r.agarra = null;
+        else if (this.t > g.ate || noDestino) {
+          const [fx, fy] = g.destino ? [g.destino.x - op!.x, g.destino.y - op!.y] : frente(r.corpo.angle + r.ia.lado * Math.PI * 0.4);
+          this.empurrar(o, fx, fy, 12);
+          r.agarra = null;
+          r.ia = { ...r.ia, modo: 'recuar', ate: this.t + 0.7 };
+        } else {
+          // colado à boca: segue o crocodilo e é puxado para a frente dele
+          const [fx, fy] = frente(r.corpo.angle);
+          const bx = r.corpo.position.x + fx * R * 2.1;
+          const by = r.corpo.position.y + fy * R * 2.1;
+          Matter.Body.setVelocity(o.corpo, { x: r.corpo.velocity.x + (bx - op!.x) * 0.15, y: r.corpo.velocity.y + (by - op!.y) * 0.15 });
+        }
       }
       if (Math.floor(this.t / DT) % 8 === 0 && Math.hypot(r.corpo.velocity.x, r.corpo.velocity.y) > 0.8) {
         this.rastos.push({ x: r.corpo.position.x, y: r.corpo.position.y, a: r.corpo.angle, t: this.t, loco: r.robo.loco });

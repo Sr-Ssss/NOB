@@ -73,7 +73,7 @@ export function DemoRei() {
   if (zoom !== 1) (document.documentElement.style as unknown as { zoom: string }).zoom = String(zoom);
   const eu = p.get('eu') ?? 'j1';
   return p.get('ecra') === 'tel' ? (
-    <TelemovelRei sala={sala} v={v} agora={Date.now} eu={eu} privado={privadoRei(e, eu)} enviar={nada} idAberta={p.get('id') === '1'} />
+    <TelemovelRei sala={sala} v={v} agora={Date.now} eu={eu} privado={privadoRei(e, eu)} enviar={nada} />
   ) : (
     <TvRei sala={sala} v={v} agora={Date.now} onOutraVez={nada} onMenu={nada} />
   );

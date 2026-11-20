@@ -5,7 +5,9 @@ import { nomeDe } from '../5050/tv';
 import { Fichas, PlacarWifi, Resultado, Router, Tempo, faseTexto, nomeEquipa, rondaTexto, textoPista } from './comuns';
 import { MAX_PISTA, outro, pistaBloqueada, textoPalavra, type Lado, type PrivadoWifi } from './regras';
 import { Palco, type PropsWifi } from './tv';
+import { AcabarPartida } from '../../ui/acabarPartida';
 import { useRascunho, useSoRascunho } from '../../ui/rascunho';
+import { Feito } from '../../ui/comuns';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
@@ -71,7 +73,7 @@ function Criptografo({ sala, v, p, enviar }: { sala: PropsWifi['sala']; v: Props
         {t('enviar')}
       </button>
       <div class="centro mini">
-        {t('swCriptografo')} {nomeEquipa(o)}: {v.enviaram.includes(o) ? '✅' : '❌'}
+        {t('swCriptografo')} {nomeEquipa(o)}: <Feito ok={v.enviaram.includes(o)} />
       </div>
     </div>
   );
@@ -116,7 +118,7 @@ function RespostaPartilhada({ sala, v, eu, enviar }: { sala: PropsWifi['sala']; 
       <div class="confirmaram">
         {quem.map((id) => (
           <span key={id}>
-            {r.confirmados.includes(id) ? '✅' : '❌'} {nomeDe(sala, id)}
+            <Feito ok={r.confirmados.includes(id)} /> {nomeDe(sala, id)}
           </span>
         ))}
       </div>
@@ -275,6 +277,7 @@ export function TelemovelWifi({ sala, v, agora, eu, privado, enviar }: PropsWifi
         <button class="chip" aria-label={t('comoJogar')} onClick={() => setAjuda(!ajuda)}>
           ⓘ
         </button>
+        <AcabarPartida sala={sala} eu={eu} enviar={enviar} />
         <Tempo v={v} agora={agora} />
       </div>
       {ajuda && (
@@ -288,7 +291,7 @@ export function TelemovelWifi({ sala, v, agora, eu, privado, enviar }: PropsWifi
       {/* sem TV, um só ecrã: os 2 routers (o que a TV mostraria) por baixo */}
       {sala.semTv && v.ronda > 0 && (
         <div class="palco-tel">
-          <Palco sala={sala} v={v} agora={agora} />
+          <Palco sala={sala} v={v} agora={agora} tel semRes={!!p} />
         </div>
       )}
     </div>
