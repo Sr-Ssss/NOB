@@ -21,7 +21,7 @@ import {
   type Face,
 } from './regras';
 import { MAX_BYTES_DESENHO, foraDuelo, importanteDuelo, limparDesenho, sairDuelo } from './regras';
-import { N_OBSTACULOS, distancia, emLinha, ligado, linhaLivre, novoTabuleiro, vizinhas } from './tabuleiro';
+import { LADO, N_OBSTACULOS, distancia, emLinha, ligado, linhaLivre, novoTabuleiro, vizinhas } from './tabuleiro';
 
 const T = 1_000;
 const ids = (n: number) => Array.from({ length: n }, (_, i) => `j${i + 1}`);
@@ -41,6 +41,8 @@ function preparar(exercitos: Exercito[], roupas: RoupaMago[] = ['trovoada', 'pij
 function cena(postas: [string, Criatura, string][], mais: { gemas?: number; dados?: Face[]; roupas?: RoupaMago[] } = {}): EstadoDuelo {
   const jogadores = Math.max(...postas.map(([d]) => Number(d.slice(1))));
   let e = preparar(Array.from({ length: jogadores }, () => ({ duende: 6 })), mais.roupas);
+  // as regras das criaturas não dependem da forma da colmeia: um retângulo 10×10 deixa usar casas fixas
+  e.tabuleiro = { casas: Array.from({ length: 100 }, (_, k) => `${k % 10},${Math.floor(k / 10)}`), cantos: e.tabuleiro.cantos, obstaculos: [] };
   const modelo = e.criaturas[0];
   e.criaturas = postas.map(([dono, tipo, casa], i) => ({ ...modelo, id: i + 1, dono, tipo, casa, ferimentos: 0, marcas: [] }));
   e.proximoId = 100;
@@ -74,15 +76,18 @@ describe('colmeia', () => {
           expect(t.obstaculos).toHaveLength(N_OBSTACULOS[o]);
           expect(t.cantos.every((k) => t.casas.includes(k) && !t.obstaculos.includes(k))).toBe(true);
           expect(ligado(t.casas.filter((x) => !t.obstaculos.includes(x)))).toBe(true);
+          // hexágono grande; com 2 e 3, um mago em cada ponta (as pontas só têm 3 vizinhas); com 4, também a meio dos lados (4)
+          expect(t.casas).toHaveLength(3 * LADO[n] * (LADO[n] + 1) + 1);
+          for (const k of t.cantos) expect(vizinhas(k).filter((x) => t.casas.includes(x)).length).toBeLessThanOrEqual(n === 4 ? 4 : 3);
         }
   });
-  it('com 3 e 4 os cantos ficam mais longe do que com 2', () => {
+  it('com 3 e 4 os cantos não ficam mais perto do que com 2', () => {
     const perto = (n: number) => {
       const { cantos } = novoTabuleiro(n, 'nenhum', 1);
       return Math.min(...cantos.flatMap((a, i) => cantos.slice(i + 1).map((b) => distancia(a, b))));
     };
     expect(perto(3)).toBeGreaterThan(perto(2));
-    expect(perto(4)).toBeGreaterThan(perto(2));
+    expect(perto(4)).toBeGreaterThanOrEqual(perto(2));
   });
 });
 

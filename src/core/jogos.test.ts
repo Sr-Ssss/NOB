@@ -12,7 +12,8 @@ describe('menu de jogos', () => {
     expect(motivo(j('rei'), 8)).toBeNull();
     expect(motivo(j('ragerob'), 8)).toBeNull();
     // Fase 10 (20/11): todos os jogos dão sem TV
-    for (const x of CATALOGO) expect(motivo(x, 8, true)).toBeNull();
+    for (const x of CATALOGO.filter((y) => y.max >= 8)) expect(motivo(x, 8, true)).toBeNull();
+    expect(motivo(j('duelo'), 8, true)).toEqual({ tipo: 'muitos', max: 4, tem: 8 });
     expect(CATALOGO.some((x) => x.precisaTv)).toBe(false);
   });
 

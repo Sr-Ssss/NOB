@@ -61,7 +61,7 @@ Não há poder comum. Usar o 2.º poder também deixa relançar grátis 1 dado d
 
 ## Colmeia
 - Obstáculos: só bloqueiam (não se passa nem se atira através; o Corvo passa por cima).
-- 2 magos: 8×8 hexágonos, em lados opostos. 3: triângulo. 4: mais (+). Um canto por mago. Nos de 3 e 4, os cantos ficam mais longe do que no de 2.
+- **Hexágono sempre** (26/11, do utilizador): um mago em cada ponta. Lado 6 com 2 magos (127 casas, pontas opostas), 7 com 3 (169, pontas alternadas), 8 com 4 (217: pontas da esquerda e da direita e meio dos lados de cima e de baixo; em 4 pontas, os vizinhos obrigavam a lado 13). Os exércitos começam a 7 ou mais: na 1.ª volta nenhuma criatura chega a um inimigo parado (teste em `bot.test.ts`); se os dois avançarem na mesma volta, ainda podem lutar no fim dela. Substitui o 8×8, o triângulo e o +.
 
 ## Ecrãs
 - **TV**: colmeia de papel, criaturas desenhadas com ícone da classe e ferimentos; magos nos cantos com gemas; faixa com de quem é a vez; dados grandes e marca no golpe.
@@ -164,3 +164,13 @@ Não há poder comum. Usar o 2.º poder também deixa relançar grátis 1 dado d
 - **Animações**: peça a aparecer/andar, batalha a entrar, marca do golpe; nada com "reduzir movimento".
 - **Sons** (`sons.ts`, Web Audio sem ficheiros): dados a rolar e golpe; na TV, e no telemóvel sem TV.
 - **Falta (fase 6)**: arte do Sono e dos outros efeitos (ainda emojis); jogar a sério (duração, custos, variantes B); mostrar o jogo (linha no `CATALOGO`); ver o zoom de dois dedos num telemóvel verdadeiro; ouvir os sons numa TV.
+
+## Depois da fase 5 (26/11)
+- Jogo no menu (`CATALOGO`), 2–4 jogadores; com mais fica "muitos".
+- Colmeia em hexágono (ver "Colmeia"). Obstáculos continuam 6/12: numa colmeia grande são poucos; rever na fase 6.
+- **Aprovado (26/11), ligado por defeito** (`3d=0` = vista de cima): vista de lado/cima com perspetiva a sério (cada ponto do chão projetado) e criaturas de pé, com tamanho por classe (Lacaio 72%, Batedor 85%, Pescador/Arqueiro 88%, Guardião/Duelista 100%, Bárbaro 115%; de pé 1,6× a casa). Liga-se com `3d=1` no endereço (`colmeia.tsx`, `perspetivaLigada`).
+- Obstáculos em grupos de casas coladas (3; com 3 magos, 2), separados entre si; na perspetiva, cada grupo é um objeto só, maior, de pé em X (como árvore de cartão) e com sombra; a poça fica deitada. Ruínas: 5 versões (arco, colunas, torre caída).
+- Perspetiva mais inclinada (54°); sombra das criaturas mais pequena; sem moldura colorida (só sombra na cor do dono e o símbolo da forma).
+- Estilo de maquete de papel (ao jeito de Paper Mario): criaturas de pé como autocolantes (borda branca e espessura de cartão, pés no centro da casa); obstáculos com um recorte por casa (o grupo é do mesmo tipo: bosque, pedras, ruínas), com pé de cartão, tamanho e lado variados; casas com obstáculo cinzentas e casas com tropa na cor do dono, clarinha (sem sombra). `Recorte` em `artes/obstaculos.tsx`.
+- Obstáculos como estruturas inteiras que ligam as casas do grupo (`estruturas.tsx`): ruína (muros partidos com tijolos e colunas nas pontas), sebe com arbustos, tronco caído a atravessar 2 casas (+ cepo na 3.ª), lago que junta as casas, monte de pedras (pedras soltas no meio), bosque (arbusto entre as árvores). Demo: `obst=nenhum|poucos|muitos`.
+- (26/11, do utilizador) Obstáculos: poucos 9, muitos 18 casas; grupos de 1 a 4 casas (4 = bloco em losango), separados; com 2 e 4 magos vão aos pares e o ímpar fecha com uma casa no centro. Tipos por tamanho (`ESTRUTURAS_POR_TAMANHO`): + casa partida, montanha em pirâmide, cerca, carroça partida (torre recusada). Criaturas: fundo branco cheio (envolvente do desenho, sem buracos); sem forma geométrica, o símbolo da classe fica em baixo à esquerda com a borda na cor do dono. Galeria: `#/demo-duelo?galeria=1`.

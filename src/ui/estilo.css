@@ -38,6 +38,19 @@ body::before {
 /* palco da TV (src/ui/palco.tsx): ecrã virtual ≥ 1920×1080 escalado; cqw/cqh = medidas do palco */
 .palco-tv { position: fixed; top: 0; left: 0; transform-origin: 0 0; container-type: size; overflow: auto; }.pag.tv { max-width: none; padding: clamp(16px, 3cqw, 48px); font-size: clamp(18px, 2.2cqw, 32px); }
 .centro { text-align: center; }
+/* montra (só dev, src/montra/Montra.tsx) */
+.montra { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.montra-barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 99; background: var(--noite); padding: 6px 0; }
+.montra-barra select, .montra-barra input { width: auto; padding: 4px 8px; font-size: 15px; }
+.montra-fases { display: flex; flex-wrap: wrap; gap: 6px; }
+.montra-fases button { font: inherit; font-size: 13px; border-radius: 999px; padding: 4px 10px; background: var(--noite-2); color: var(--creme); border: 2px solid transparent; }
+.montra-fases button.foco { border-color: var(--coral); }
+.montra-ecras { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.montra-ecras figure { margin: 0 0 24px; position: relative; }
+.montra-ecras figcaption { position: absolute; bottom: -22px; left: 0; font-size: 13px; }
+.montra-tv, .montra-tel { transform-origin: 0 0; overflow: auto; background: var(--noite); outline: 2px solid #000; }
+.montra-tv { width: 1920px; height: 1080px; container-type: size; }
+.montra-tel { width: 412px; height: 915px; container-type: inline-size; }
 .linha { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .entre { justify-content: space-between; }
 .cresce { flex: 1; }
@@ -217,17 +230,22 @@ details summary { cursor: pointer; min-height: 32px; }
 .tecla.larga { font-size: 20px; padding: 12px 22px; }
 
 /* lobby da TV = menu de jogos + faixa inferior */
-.tv-lobby { min-height: 100cqh; display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: 1fr auto; gap: 24px; padding: clamp(16px, 2.5cqw, 40px); font-size: clamp(16px, 1.6cqw, 26px); }
+.tv-lobby { height: 100cqh; box-sizing: border-box; display: grid; grid-template-columns: 1.35fr 1fr; grid-template-rows: minmax(0, 1fr) auto; gap: 24px; padding: clamp(16px, 2.5cqw, 40px); font-size: clamp(20px, 2.2cqw, 40px); }
 .destaque { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .destaque h1 { margin: 0; font-size: clamp(36px, 4.4cqw, 72px); color: var(--coral); line-height: 1; }
 .destaque .desc { margin: 0; font-size: 1.25em; }
 .video { aspect-ratio: 16 / 9; max-height: 38cqh; background: repeating-linear-gradient(45deg, #322b75, #322b75 14px, #2c2668 14px, #2c2668 28px); border-radius: 22px; border: 4px solid #ffffff22; display: flex; align-items: center; justify-content: center; color: #ffffffaa; font-weight: 700; }
 .porque { background: #ffffff14; border-radius: 14px; padding: 10px 14px; margin: 0; font-weight: 700; }
 .lista-jogos { display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
-/* 2 colunas, sem scroll próprio: a lista toda cabe no ecrã (fase 3) */
-.lista-jogos ol { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* 1 coluna com scroll próprio; o jogo em foco segue o scroll (TV longe = letra grande) */
+.lista-jogos ol { list-style: none; padding: 0 6px 0 0; margin: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; min-height: 0; flex: 1; scroll-padding: 12px; }
 .lista-jogos li { display: flex; }
-.lista-jogos .item-jogo { justify-content: center; }
+.lista-jogos .item-jogo { flex-direction: row; align-items: center; gap: 0.6em; }
+.item-jogo-txt { display: flex; flex-direction: column; min-width: 0; }
+.icone-jogo { width: 2.2em; height: 2.2em; flex: none; }
+.item-tel:has(> .icone-jogo) { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 12px; align-items: center; }
+.item-tel > .icone-jogo { grid-row: 1 / span 9; width: 56px; height: 56px; }
+.item-tel > :not(.icone-jogo) { grid-column: 2; }
 .pesquisa { background: var(--noite-2); color: var(--creme); border-radius: 999px; font-size: 1em; }
 .item-jogo { width: 100%; text-align: left; background: var(--noite-2); color: var(--creme); border-radius: 16px; padding: 10px 18px; font-size: 1.15em; display: flex; flex-direction: column; border: 3px solid transparent; }
 .item-jogo small { font-size: 0.7em; font-weight: 600; opacity: 0.9; }

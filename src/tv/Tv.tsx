@@ -4,6 +4,7 @@ import { t, usarIdioma } from '../core/i18n';
 import { CATALOGO, descricao, motivo, nome, ordenarMenu, type InfoJogo } from '../core/jogos';
 import { jogoAtivo, ligados, podeComecar, vistaSala, type Idioma, type Tecla } from '../core/sala';
 import { Boneco } from '../ui/comuns';
+import { IconeJogo } from '../ui/IconeJogo';
 import { emCurso } from '../jogos/ecras';
 import { AvisoSaidasTv } from '../ui/saidas';
 import { Qr, linkJogar } from '../ui/qr';
@@ -177,11 +178,15 @@ function EcraTv({ idioma }: { idioma: Idioma }) {
               <li key={j.id}>
                 <button
                   class={'item-jogo' + (i === sel ? ' foco' : '') + (m ? ' esbatido' : '')}
+                  ref={i === sel ? (el: HTMLButtonElement | null) => el?.scrollIntoView({ block: 'nearest' }) : undefined}
                   onClick={() => setSel(i)}
                   onDblClick={() => lancar(j)}
                 >
-                  <b>{nome(j, s.idioma)}</b>
-                  {m && <small>{m}</small>}
+                  <IconeJogo id={j.id} />
+                  <span class="item-jogo-txt">
+                    <b>{nome(j, s.idioma)}</b>
+                    {m && <small>{m}</small>}
+                  </span>
                 </button>
               </li>
             );

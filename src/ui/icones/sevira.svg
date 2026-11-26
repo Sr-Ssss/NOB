@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <rect x="4" y="4" width="152" height="152" rx="34" fill="#26215C" stroke="#000" stroke-width="6"/>
+  <rect x="22" y="32" width="116" height="80" rx="8" fill="#F1EFE8" stroke="#000" stroke-width="5"/>
+  <text x="80" y="96" text-anchor="middle" font-size="64" font-weight="800" fill="#F0997B" font-family="'Baloo 2', sans-serif">?</text>
+  <path d="M40 130h80" stroke="#F1EFE8" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="124" cy="124" r="10" fill="#FAC775" stroke="#000" stroke-width="4"/>
+</svg>

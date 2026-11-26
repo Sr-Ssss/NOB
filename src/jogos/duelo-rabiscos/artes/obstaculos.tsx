@@ -25,15 +25,55 @@ export const OBSTACULOS = {
   ruina: [
     [['M18 84L18 34L26 34L26 24L40 26L44 44L54 50L66 60L72 84Z', '#dcd2c2', 5], ['M18 50L50 50M18 67L66 67M32 50L32 67M46 67L46 84M30 34L30 50', undefined, 3], ['M76 84L78 72L90 74L92 84Z', '#dcd2c2', 4]],
     [['M28 80L30 36L26 28L48 18L58 26L72 24L68 36L72 80Z', '#dcd2c2', 5], ['M20 80L80 80L84 90L16 90Z', '#dcd2c2', 5], ['M30 36L68 36M42 44L41 72M56 44L58 72', undefined, 3]],
+    // arco partido
+    [['M14 88L14 40Q14 14 50 12Q70 12 78 26L70 32Q62 24 50 24Q28 26 28 44L28 88Z', '#dcd2c2', 5], ['M66 88L66 52L80 50L82 88Z', '#dcd2c2', 5], ['M14 56L28 56M14 72L28 72M66 68L82 68M36 20L40 30M56 14L56 25', undefined, 3]],
+    // colunas: uma de pé, uma caída
+    [['M22 88L24 22L42 22L42 88Z', '#e3dacb', 5], ['M18 22L46 22L46 14L18 14Z', '#e3dacb', 5], ['M50 88L54 74L92 78L90 92Z', '#e3dacb', 5], ['M30 30L30 82M36 30L36 82M62 78L60 88M74 80L72 90', undefined, 3]],
+    // torre caída com pedras soltas
+    [['M30 88L30 30L36 26L36 18L46 18L46 26L56 26L56 18L66 18L70 34L70 88Z', '#d6cbb9', 5], ['M42 50a6 8 0 1 0 12 0a6 8 0 1 0 -12 0', '#5b5864', 3], ['M8 88L12 78L24 80L22 90Z', '#d6cbb9', 4], ['M78 90L82 82L92 84L92 92Z', '#d6cbb9', 4], ['M30 64L70 64M48 64L48 88', undefined, 3]],
   ],
-} satisfies Record<string, [Camada[], Camada[]]>;
+} satisfies Record<string, Camada[][]>;
 export type TipoObstaculo = keyof typeof OBSTACULOS;
 
 /** centrado em (0,0): usar dentro de <Hexagono> */
-export function Obstaculo({ tipo, versao = 0 }: { tipo: TipoObstaculo; versao?: 0 | 1 }) {
+export function Obstaculo({ tipo, versao = 0 }: { tipo: TipoObstaculo; versao?: number }) {
   return (
     <g class="dr-obstaculo" transform="scale(.72) translate(-50 -52)">
-      <Riscos c={OBSTACULOS[tipo][versao]} />
+      <Riscos c={OBSTACULOS[tipo][versao % OBSTACULOS[tipo].length]} />
+    </g>
+  );
+}
+
+/** cartão: cor da espessura e do pé */
+const CARTAO = '#b9ad98';
+const cheio = (c: Camada[], mais: number, cor: string): Camada[] => c.map(([d, , g]) => [d, cor, (g ?? 4) + mais]);
+
+/**
+ * Recorte de papel de pé (estilo maquete de cartão): borda branca, espessura de cartão por trás e um pé.
+ * Os pés em (0,0). `vira`: ao contrário, para variar. A poça fica deitada no chão.
+ */
+export function Recorte({ tipo, versao = 0, vira = false }: { tipo: TipoObstaculo; versao?: number; vira?: boolean }) {
+  const c = OBSTACULOS[tipo][versao % OBSTACULOS[tipo].length];
+  if (tipo === 'poca')
+    return (
+      <g transform="scale(.8 .42) translate(-50 -60)">
+        <Riscos c={c} />
+      </g>
+    );
+  const arte = `scale(${vira ? -0.8 : 0.8} .8) translate(-50 -90)`;
+  return (
+    <g class="dr-obstaculo">
+      {/* pé de cartão, atrás */}
+      <path d="M-14 0L-8 -12L8 -12L14 0Z" fill={CARTAO} stroke="#2b2a33" stroke-width="2" stroke-linejoin="round" />
+      {/* espessura do cartão */}
+      <g transform={`translate(4 3) ${arte}`}>
+        <Riscos c={cheio(c, 14, CARTAO)} cor={CARTAO} />
+      </g>
+      {/* borda branca do recorte */}
+      <g transform={arte}>
+        <Riscos c={cheio(c, 14, '#fff')} cor="#fff" />
+        <Riscos c={c} />
+      </g>
     </g>
   );
 }

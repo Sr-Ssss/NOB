@@ -15,10 +15,13 @@ export const HEXAGONOS = {
 } satisfies Record<string, Camada[]>;
 export type EstadoHex = keyof typeof HEXAGONOS;
 
-export function Hexagono({ estado = 'normal', x = 0, y = 0, children }: { estado?: EstadoHex; x?: number; y?: number; children?: ComponentChildren }) {
+/** as camadas do hexágono, com outra cor de fundo (`cor`: casa ocupada) */
+export const camadasHex = (estado: EstadoHex, cor?: string): Camada[] => (cor ? HEXAGONOS[estado].map((l, i) => (i ? l : ([l[0], cor, l[2], l[3]] as Camada))) : HEXAGONOS[estado]);
+
+export function Hexagono({ estado = 'normal', x = 0, y = 0, cor, children }: { estado?: EstadoHex; x?: number; y?: number; cor?: string; children?: ComponentChildren }) {
   return (
     <g class={`dr-hex dr-hex-${estado}`} transform={`translate(${x} ${y})`}>
-      <Riscos c={HEXAGONOS[estado]} />
+      <Riscos c={camadasHex(estado, cor)} />
       {children}
     </g>
   );

@@ -6,6 +6,7 @@ import { textoMotivo } from '../tv/Tv';
 import { COM_ECRAS, acaoDefinir, opcoesNaVista } from '../jogos/ecras';
 import { Boneco, Pensando } from '../ui/comuns';
 import { PopupModos } from '../ui/modos';
+import { IconeJogo } from '../ui/IconeJogo';
 
 /**
  * Menu de jogos do telemóvel do líder (com e sem TV; pedido de 20/11):
@@ -37,6 +38,7 @@ export function MenuJogos({ vista, enviar, fechar }: { vista: VistaSala; enviar:
           return (
             <li key={j.id}>
               <button class={'cartao item-tel' + (m ? ' esbatido' : '')} onClick={() => setAberto(j.id)}>
+                <IconeJogo id={j.id} />
                 <span class="item-tel-cab">
                   <b>{nome(j, vista.idioma)}</b>
                   <small>

@@ -1,4 +1,4 @@
-# Próxima sessão
+﻿# Próxima sessão
 
 ## 25/11/2026 — Sem Juízo (jogo 10) programado, por commitar
 - Estado, escolhas por confirmar e o que falta ver: `info/jogos/sem-juizo.md` → Estado. Testes: `src/jogos/semjuizo/regras.test.ts`, `e2e/semjuizo.spec.ts`. 460 vitest, tsc e lint a 0.
@@ -362,3 +362,9 @@ Falta:
 ## 25/11 — passagem de sessão
 - Ragerob: equilíbrio das cabeças e controlo 15 s feitos (sem commit). Leilão ao vivo, botões visuais e apostas por pódio em curso na sessão "Ragerob: leilão ao vivo e botões visuais"; não tocar em `src/jogos/ragerob/` enquanto trabalha.
 - Novo jogo por decidir: `info/NOVO_JOGO.md`. Duelo de Rabiscos (magos): `info/jogos/guerra-de-desenhos.md`; regras aprovadas (25/11); plano aprovado (25/11), sem (P); artes na sessão "Duelo de Rabiscos: artes simples"; fase 1 (regras) e artes/cartas feitas, sem commit; decisões no fim do `.md`; fase 2 em sessão própria (25/11).
+
+## Ícones dos jogos (26/11/2026)
+- Um a um, pela ordem de PLANO_JOGOS.md: SVG em src/ui/icones/<id>.svg, aparece sozinho (src/ui/IconeJogo.tsx) no menu TV e telemóvel.
+- Feito: pensa (A, cérebro de giz), wifi (B, router), sevira (C, slide ?). Próximo: mona. Ficheiro = id do registo.
+- Menu TV: 1 coluna com scroll, letra maior (estilo.css .tv-lobby/.lista-jogos).
+- Montra (só dev): `npm run dev` → `localhost:5173/#/montra?jogo=<id>&n=6&semtv=0`. Joga sozinho com bots (motor de ia.test.ts) e mostra TV + 3 telemóveis em cada fase. src/montra/Montra.tsx. Usar para rever designs sem gastar tokens.

@@ -33,6 +33,7 @@ import { DemoSemJuizo } from './jogos/semjuizo/demo';
 import { DemoRagerob } from './jogos/ragerob/demo';
 import { DemoDuelo } from './jogos/duelo-rabiscos/demo';
 import { Definicoes } from './ui/Definicoes';
+import { Montra } from './montra/Montra';
 import { NpnTeste } from './npn/Npn';
 import { Avatar } from './ui/comuns';
 import { CHAVE_AVISO } from './core/ligacao';
@@ -162,6 +163,7 @@ function App() {
   if (r === '/tv') return <Tv idioma={idioma} />;
   if (r === '/jogar') return <Jogar />;
   if (r === '/criar') return <Criar />;
+  if (import.meta.env.DEV && r === '/montra') return <Montra />;
   if (import.meta.env.DEV && r.startsWith('/demo-')) {
     const Demo = DEMOS[r];
     if (!Demo) return <Inicio />;

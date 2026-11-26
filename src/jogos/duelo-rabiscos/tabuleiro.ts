@@ -4,7 +4,7 @@ import { baralhar } from '../../core/ids';
 /** "coluna,linha" */
 export type Casa = string;
 export type Obstaculos = 'nenhum' | 'poucos' | 'muitos';
-export const N_OBSTACULOS: Record<Obstaculos, number> = { nenhum: 0, poucos: 6, muitos: 12 };
+export const N_OBSTACULOS: Record<Obstaculos, number> = { nenhum: 0, poucos: 9, muitos: 18 };
 
 export interface Tabuleiro {
   casas: Casa[];
@@ -88,35 +88,53 @@ export function ligado(casas: Casa[]): boolean {
   return alcance(casas[0], casas.length, (c) => tudo.has(c), () => false).length === casas.length - 1;
 }
 
-const LADO = 12;
+/** lado da colmeia (hexágono grande) por nº de magos: os exércitos começam a 7 ou mais, por isso na 1.ª volta nenhuma criatura chega a um inimigo parado (Elfo: anda 3 e atira a 3) */
+export const LADO: Record<number, number> = { 2: 6, 3: 7, 4: 8 };
+/** em que pontas do hexágono ficam os magos (0 = direita, depois contra os ponteiros: 1 cima-direita, 2 cima-esquerda…) */
+const PONTAS: Record<number, number[]> = { 2: [3, 0], 3: [2, 0, 4] };
+const DIRECOES = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
 
-/** 2 magos: 8×8; 3: triângulo; 4: mais (+). Obstáculos sorteados mas simétricos */
+/** colmeia em hexágono, sempre; muda o tamanho e em que pontas ficam os magos. Obstáculos sorteados mas simétricos */
 export function novoTabuleiro(magos: number, obstaculos: Obstaculos, seed: number): Tabuleiro {
+  const n = Math.min(4, Math.max(2, magos));
+  const R = LADO[n];
+  // centro em (linha R, coluna R): as linhas começam em 0, para a paridade das linhas ímpares ficar certa
+  const [qc, rc] = [R - (R - (R & 1)) / 2, R];
+  const em = (dq: number, dr: number) => deAxial(qc + dq, rc + dr);
   const casas: Casa[] = [];
-  let cantos: Casa[];
-  let gira: (c: Casa) => Casa;
-  if (magos === 3) {
-    for (let r = 0; r < LADO; r++) for (let q = 0; q + r < LADO; q++) casas.push(deAxial(q, r));
-    cantos = [deAxial(0, 0), deAxial(0, LADO - 1), deAxial(LADO - 1, 0)];
-    gira = (c) => {
-      const [q, r] = cubo(c);
-      return deAxial(r, LADO - 1 - q - r);
-    };
-  } else {
-    const n = magos === 4 ? LADO : 8;
-    const braco = (v: number) => v >= 4 && v <= 7;
-    for (let l = 0; l < n; l++) for (let c = 0; c < n; c++) if (magos !== 4 || braco(c) || braco(l)) casas.push(casa(c, l));
-    cantos = magos === 4 ? [casa(5, 0), casa(11, 5), casa(6, 11), casa(0, 6)] : [casa(3, 0), casa(4, 7)];
-    gira = (c) => {
-      const [x, y] = ler(c);
-      return casa(n - 1 - x, n - 1 - y);
-    };
-  }
-  let postos: Casa[] = [];
-  for (const c of baralhar(casas, seed)) {
-    const orbita = [...new Set([c, gira(c), gira(gira(c))])];
-    if (postos.length + orbita.length > N_OBSTACULOS[obstaculos]) continue;
-    if (orbita.some((o) => postos.includes(o) || cantos.some((k) => distancia(o, k) < 3))) continue;
+  for (let dr = -R; dr <= R; dr++) for (let dq = Math.max(-R, -dr - R); dq <= Math.min(R, -dr + R); dq++) casas.push(em(dq, dr));
+  // 4 magos: nas pontas da esquerda e da direita e a meio dos lados de cima e de baixo (em 4 pontas, os vizinhos ficavam perto demais)
+  const meio = Math.floor(R / 2);
+  const cantos = n === 4 ? [em(-R, 0), em(meio, -R), em(R, 0), em(-meio, R)] : PONTAS[n].map((k) => em(DIRECOES[k][0] * R, DIRECOES[k][1] * R));
+  const rel = (c: Casa): [number, number] => {
+    const [q, r] = cubo(c);
+    return [q - qc, r - rc];
+  };
+  // 3 magos: roda 120°; 2 e 4: meia volta
+  const gira = (c: Casa): Casa => {
+    const [q, r] = rel(c);
+    return n === 3 ? em(-q - r, q) : em(-q, -r);
+  };
+  // obstáculos em grupos de 1 a 4 casas coladas (cada grupo é uma coisa só: uma montanha, uma casa partida…), separados entre si
+  const N = N_OBSTACULOS[obstaculos];
+  const copias = n === 3 ? 3 : 2;
+  const ordem = baralhar(casas, seed);
+  const existe = new Set(casas);
+  const centro = em(0, 0);
+  // com 2 e 4 magos tudo vai aos pares; um nº ímpar fecha com uma casa no centro (a única que é a sua própria cópia)
+  let postos: Casa[] = N % copias ? [centro] : [];
+  for (const [i, c] of ordem.entries()) {
+    if (postos.length >= N) break;
+    const k = 1 + ((seed + i * 7) % 4);
+    const grupo = [c];
+    // 4 casas: um bloco compacto (losango), cada casa nova colada a duas das outras
+    const cola = (x: Casa) => grupo.filter((g) => distancia(g, x) === 1).length >= (grupo.length >= 2 && k === 4 ? 2 : 1);
+    for (const x of ordem) if (grupo.length < k && !grupo.includes(x) && existe.has(x) && cola(x)) grupo.push(x);
+    const orbita = [...new Set(grupo.flatMap((g) => [g, gira(g), gira(gira(g))]))];
+    // um grupo perto do centro sobrepunha-se à sua cópia
+    if (orbita.length !== grupo.length * copias) continue;
+    if (postos.length + orbita.length > N) continue;
+    if (orbita.some((o) => postos.includes(o) || vizinhas(o).some((v) => postos.includes(v)) || cantos.some((q) => distancia(o, q) < 3))) continue;
     const tenta = [...postos, ...orbita];
     if (ligado(casas.filter((x) => !tenta.includes(x)))) postos = tenta;
   }

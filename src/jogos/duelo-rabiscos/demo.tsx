@@ -8,9 +8,11 @@ import { jogadaBot } from './bot';
 import { DEF_PADRAO_DUELO, desenhosDuelo, novoDuelo, podeRelancar, privadoDuelo, reduzDuelo, vistaDuelo, type AcaoDuelo, type EstadoDuelo } from './regras';
 import { TelemovelDuelo } from './telemovel';
 import { TvDuelo } from './tv';
+import { GaleriaEstruturas } from './galeria';
+import type { Obstaculos } from './tabuleiro';
 
 /**
- * Só em dev: `#/demo-duelo?fase=mago|exercito|desenhar|rodar|vez|batalha|lobo|fim&ecra=tv|tel[&n=2..4][&avatar=0..17][&semtv=1][&opcoes=1]`.
+ * Só em dev: `#/demo-duelo?fase=mago|exercito|desenhar|rodar|vez|batalha|lobo|fim&ecra=tv|tel[&n=2..4][&avatar=0..17][&semtv=1][&opcoes=1][&obst=nenhum|poucos|muitos]`.
  * `roupa=trovoada|lencol|…` escolhe o teu mago; `gemas=7` dá gemas; `ritmo=ms` muda a espera entre jogadas dos outros.
  * No telemóvel joga-se mesmo (j1); os outros jogam sozinhos. Na TV, da batalha em diante, jogam todos sozinhos.
  */
@@ -60,7 +62,7 @@ const RABISCO = [
 
 function inicio(fase: string, n: number, roupa: RoupaMago, gemas: number): EstadoDuelo {
   const agora = Date.now();
-  let e = novoDuelo(NOMES.slice(0, n).map((_, i) => `j${i + 1}`), {}, agora);
+  let e = novoDuelo(NOMES.slice(0, n).map((_, i) => `j${i + 1}`), { obstaculos: (paramsHash().get('obst') ?? undefined) as Obstaculos | undefined }, agora);
   if (fase === 'mago') return outros(e, agora);
   e = reduzDuelo(e, { tipo: 'dr_mago', id: 'j1', roupa }, agora);
   e = outros(e, agora);
@@ -91,6 +93,7 @@ export function DemoDuelo() {
       clearInterval(k);
     };
   }, []);
+  if (p.get('galeria')) return <GaleriaEstruturas />;
   if (p.get('opcoes'))
     return (
       <div class="pag">
