@@ -47,6 +47,18 @@
 .dr-luta { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .dr-lado { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
 .dr-vs { font-size: 1.6em; }
+/* resultado da batalha: quem caiu fica cinzento e pequeno, com a marca do golpe; quem ficou de pé dá um salto */
+.dr-retrato-luta { position: relative; display: inline-flex; }
+.dr-golpe { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; animation: dr-golpe 0.5s ease-out; }
+.dr-caiu .dr-retrato-luta > :first-child, .dr-caiu .dr-dados, .dr-caiu > span, .dr-caiu > b { filter: grayscale(1); opacity: 0.55; }
+.dr-caiu .dr-retrato-luta { transform: scale(0.72) rotate(-8deg); transition: transform 0.4s ease-out; }
+.dr-de-pe .dr-retrato-luta { animation: dr-salta 0.5s ease-out; }
+@keyframes dr-salta { 40% { transform: translateY(-10%) scale(1.08); } }
+/* fumo na colmeia onde uma criatura caiu */
+.dr-fumo circle { fill: #e4e0d6; stroke: #2b2a33; stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: dr-fumo 1.4s ease-out both; }
+@keyframes dr-fumo { 0% { transform: scale(0.2); opacity: 0; } 25% { transform: scale(1.1); opacity: 1; } 100% { transform: translateY(-60%) scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dr-fumo circle { animation: none; opacity: 0.8; } }
+.dr-so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .dr-resultado p { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 0; font-weight: 800; }
 .dr-placar li { display: flex; align-items: center; gap: 12px; }
 .tv.jogo-duelo .dr-mesa { display: grid; grid-template-columns: 22cqw 1fr 22cqw; gap: 16px; height: calc(100cqh - 150px); min-height: 0; }
@@ -86,7 +98,7 @@
 @keyframes dr-aparece { from { transform: translateY(-50%) scale(0.9); opacity: 0; } }
 .dr-luta { animation-name: dr-aparece-tel; }
 @keyframes dr-aparece-tel { from { transform: scale(0.95); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .dr-peca, .dr-resultado .dr-marca, .dr-por-cima, .dr-luta { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .dr-peca, .dr-resultado .dr-marca, .dr-por-cima, .dr-luta, .dr-golpe, .dr-de-pe .dr-retrato-luta { animation: none; } .dr-caiu .dr-retrato-luta { transition: none; } }
 .dr-rivais { display: flex; justify-content: flex-end; gap: 8px; margin: -4px 0 0; }
 .dr-rival { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; }
 .dr-rival.on { background: var(--noite-2); box-shadow: 0 0 0 2px #ffd25a; }

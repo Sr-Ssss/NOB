@@ -8,7 +8,12 @@ const QUADRADO = 'M14 9Q50 6 87 9Q92 10 92 16Q94 50 91 86Q91 91 85 92Q50 94 14 9
 const ATAQUE: Camada = [QUADRADO, '#ffd3c7', 5];
 const DEFESA: Camada = [QUADRADO, '#cfe3ff', 5];
 /** ferimento: redondo e rachado */
-const FERIDO: Camada[] = [[QUADRADO, '#e6d3f0', 5], ['M14 9L22 20L18 28M85 92L78 82L83 76', undefined, 4]];
+/** dados fracos: cor mais apagada que os normais e rachados (vermelho-acinzentado no ataque, azul-acinzentado na defesa) */
+const RACHAS: Camada = ['M14 9L22 20L18 28M85 92L78 82L83 76', undefined, 4];
+const FERIDO: Camada[] = [[QUADRADO, '#d9a79f', 5], RACHAS];
+const FERIDO_D: Camada[] = [[QUADRADO, '#a9b9d3', 5], RACHAS];
+const GEMA_ICONE: Camada[] = [['M36 30L64 30L78 47L50 78L22 47Z', '#c9f0e4', 6], ['M22 47L78 47', undefined, 4]];
+const CORACAO: Camada = ['M50 78Q20 56 24 40Q28 28 40 31Q48 33 50 41Q52 33 60 31Q72 28 76 40Q80 56 50 78Z', '#f7b3b3', 6];
 const VAZIO: Camada = ['M42 50a8 8 0 1 0 16 0a8 8 0 1 0 -16 0', '#fff', 3, '4 6'];
 
 /** duas pegadas: a face Andar e o número de passos da carta (o mesmo símbolo) */
@@ -26,13 +31,21 @@ export const DADOS = {
   ataqueVazio: [ATAQUE, VAZIO],
   ataque1: [ATAQUE, ['M70 24L72 38L48 64L36 53L59 26Z', '#e9eef2', 5], ['M30 48L53 70M41 59L28 73', undefined, 7]],
   ataque2: [ATAQUE, ['M28 24L26 36L56 66L65 57L40 26Z', '#e9eef2', 5], ['M69 50L50 71M60 61L72 74', undefined, 6], ['M72 24L74 36L44 66L35 57L60 26Z', '#e9eef2', 5], ['M31 50L50 71M40 61L28 74', undefined, 6]],
+  // ferimento: gota vermelha com risco (fere o inimigo que sobreviver)
+  ataqueFere: [ATAQUE, ['M50 20Q72 46 72 60Q70 80 50 80Q30 80 28 60Q28 46 50 20Z', '#e8505b', 5], ['M56 40L44 56L56 62L46 74', '#fff', 4]],
+  ataqueGema: [ATAQUE, ['M36 30L64 30L78 47L50 78L22 47Z', '#c9f0e4', 6], ['M22 47L78 47', undefined, 4]],
   defesaVazio: [DEFESA, VAZIO],
+  defesaGema: [DEFESA, ['M36 30L64 30L78 47L50 78L22 47Z', '#c9f0e4', 6], ['M22 47L78 47', undefined, 4]],
+  defesaFere: [DEFESA, ['M50 20Q72 46 72 60Q70 80 50 80Q30 80 28 60Q28 46 50 20Z', '#e8505b', 5], ['M56 40L44 56L56 62L46 74', '#fff', 4]],
   defesa1: [DEFESA, ['M50 22Q63 29 76 30Q77 61 50 78Q23 61 24 30Q37 29 50 22Z', '#8fbce8', 5], ['M36 49L47 60L65 38', undefined, 8]],
   feridaEspada: [...FERIDO, ['M66 26L70 38L46 66L36 57L60 30Z', '#ffd9a8', 5], ['M31 52L51 70M40 61L28 75', undefined, 6]],
-  feridaEscudo: [...FERIDO, ['M50 28Q62 35 74 36Q75 63 50 78Q25 63 26 36Q38 35 50 28Z', '#8fbce8', 6]],
-  feridaCoracao: [...FERIDO, ['M50 78Q20 56 24 40Q28 28 40 31Q48 33 50 41Q52 33 60 31Q72 28 76 40Q80 56 50 78Z', '#f7b3b3', 6]],
-  feridaGema: [...FERIDO, ['M36 30L64 30L78 47L50 78L22 47Z', '#c9f0e4', 6], ['M22 47L78 47', undefined, 4]],
+  feridaCoracao: [...FERIDO, CORACAO],
+  feridaGema: [...FERIDO, ...GEMA_ICONE],
   feridaVazio: [...FERIDO, VAZIO],
+  feridaDefEscudo: [...FERIDO_D, ['M50 28Q62 35 74 36Q75 63 50 78Q25 63 26 36Q38 35 50 28Z', '#8fbce8', 6]],
+  feridaDefCoracao: [...FERIDO_D, CORACAO],
+  feridaDefGema: [...FERIDO_D, ...GEMA_ICONE],
+  feridaDefVazio: [...FERIDO_D, VAZIO],
 } satisfies Record<string, Camada[]>;
 export type FaceDado = keyof typeof DADOS;
 
@@ -42,9 +55,10 @@ export function Dado({ face, tam = 48 }: { face: FaceDado; tam?: number }) {
 
 const GRUPOS: FaceDado[][] = [
   ['andar', 'fazerAlgo', 'habilidade', 'coringa'],
-  ['ataqueVazio', 'ataque1', 'ataque2'],
-  ['defesaVazio', 'defesa1'],
-  ['feridaEspada', 'feridaEscudo', 'feridaCoracao', 'feridaGema', 'feridaVazio'],
+  ['ataqueVazio', 'ataque1', 'ataque2', 'ataqueFere', 'ataqueGema'],
+  ['defesaVazio', 'defesa1', 'defesaFere', 'defesaGema'],
+  ['feridaEspada', 'feridaCoracao', 'feridaGema', 'feridaVazio'],
+  ['feridaDefEscudo', 'feridaDefCoracao', 'feridaDefGema', 'feridaDefVazio'],
 ];
 const calmo = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 

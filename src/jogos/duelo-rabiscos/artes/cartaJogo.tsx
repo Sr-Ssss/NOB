@@ -8,8 +8,8 @@ import { Arte, type Camada } from './lapis';
 import { Molde } from './moldes';
 import './cartaJogo.css';
 
-/** os 3 estilos por escolher (26/11) */
-export type EstiloCarta = 'pergaminho' | 'classe' | 'noite';
+/** estilo escolhido (26/11): cor da classe; os outros 2 saíram */
+export type EstiloCarta = 'classe';
 export type Ranhura = 'andar' | 'atacar' | 'especial';
 /** livre; acesa = o dado escolhido encaixa aqui; usada = já fez isto nesta volta (o dado fica lá dentro) */
 export type EstadoRanhura = 'livre' | 'acesa' | 'usada' | 'fechada';
@@ -130,27 +130,37 @@ export function CartaJogo({
   const lista: Ranhura[] = t.habilidade ? ['andar', 'atacar', 'especial'] : ['andar', 'atacar'];
   return (
     <div class={`cj cj-e-${estilo}`} style={{ '--cj-cor': COR_CLASSE[f.classe] }}>
-      <div class="cj-topo">
-        <b class="cj-nome">{t.nome}</b>
-        <span class="cj-classe">
-          <IconeClasse classe={f.classe} tam={24} />
-        </span>
-      </div>
+      {/* o desenho ocupa a carta toda; tudo o resto fica por cima dele */}
       <div class="cj-imagem">
         <div class="cj-desenho">{children ?? <Molde criatura={criatura} tam={150} cheio />}</div>
+        <div class="cj-faixa">
+          <b class="cj-nome">{t.nome}</b>
+          <span class="cj-sub" role="img" aria-label={NOME_CLASSE[f.classe]} title={NOME_CLASSE[f.classe]}>
+            <IconeClasse classe={f.classe} tam={18} />
+          </span>
+        </div>
         <div class="cj-stats" aria-label={`ataque ${f.dados}, defesa ${f.defesa}, passos ${f.passos}`}>
           <Stat s="ataque" n={f.dados} />
           <Stat s="defesa" n={f.defesa} />
           <Stat s="passos" n={f.passos} />
         </div>
-        {ferimentos > 0 && (
-          <span class="cj-feridas" aria-label={`ferimentos ${ferimentos}`}>
-            <Arte c={ICONES_STATUS.ferimento} tam={14} />
-            <b>{ferimentos}</b>
-          </span>
-        )}
-        {efeitos}
-        <span class="cj-nome-classe">{NOME_CLASSE[f.classe]}</span>
+        {/* custo em tinta: no canto de cima à esquerda, numa gota */}
+        <span class="cj-tinta" aria-label={`custa ${f.tinta} de tinta`}>
+          <Arte c={ICONES_STATUS.tinta} tam={34} />
+          <b>{f.tinta}</b>
+        </span>
+        <div class="cj-direita">
+          {ferimentos > 0 && (
+            <span class="cj-feridas" aria-label={`ferimentos ${ferimentos}`}>
+              <Arte c={ICONES_STATUS.ferimento} tam={14} />
+              <b>{ferimentos}</b>
+            </span>
+          )}
+          {efeitos}
+        </div>
+        <p class="cj-especial">
+          <ComSimbolos texto={t.especial} />
+        </p>
       </div>
       <div class="cj-ranhuras">
         {lista.map((r) => {
@@ -158,7 +168,7 @@ export function CartaJogo({
           return (
             <button
               key={r}
-              class={`cj-ranhura cj-${e}`}
+              class={`cj-ranhura cj-r-${r} cj-${e}`}
               aria-label={NOME_MODO[r]}
               disabled={e !== 'acesa' || !aoTocar}
               onClick={(ev) => {
@@ -171,9 +181,6 @@ export function CartaJogo({
           );
         })}
       </div>
-      <p class="cj-especial">
-        <ComSimbolos texto={t.especial} />
-      </p>
     </div>
   );
 }

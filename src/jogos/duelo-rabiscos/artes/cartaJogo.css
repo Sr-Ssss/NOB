@@ -1,49 +1,47 @@
-/* Carta da batalha (cartaJogo.tsx): 220 px de largura; 3 estilos por escolher */
-.cj { box-sizing: border-box; width: 220px; height: 330px; padding: 9px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px; border: 3px solid #2b2a33; color: #2b2a33; text-align: center; position: relative; overflow: hidden; font: inherit; }
-.cj-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 8px; border-radius: 10px; }
-.cj-nome { font-size: 17px; line-height: 1.1; text-align: left; }
-.cj-classe { display: inline-flex; padding: 2px; border-radius: 50%; background: #fffdf2; border: 2px solid #2b2a33; }
-.cj-imagem { position: relative; flex: 1; min-height: 0; border-radius: 10px; border: 2px solid #2b2a33; overflow: hidden; }
-.cj-desenho { position: absolute; inset: 4px 4px 18px 30px; display: flex; align-items: center; justify-content: center; }
+/* Carta da batalha (cartaJogo.tsx): 220×330. O desenho enche a carta; nome, números e especial por cima;
+   ranhuras dos dados numa barra escura em baixo. Moldura na cor da classe. */
+.cj { box-sizing: border-box; width: 220px; height: 330px; padding: 6px; display: flex; flex-direction: column; gap: 6px; border-radius: 16px; border: 4px solid var(--cj-cor); background: color-mix(in srgb, var(--cj-cor) 55%, #15131b); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cj-cor) 55%, #15131b), inset 0 0 0 3px color-mix(in srgb, var(--cj-cor) 60%, #fff); color: #2b2a33; text-align: center; position: relative; overflow: hidden; font: inherit; }
+
+/* o desenho: papel com um halo suave na cor da classe */
+.cj-imagem { position: relative; flex: 1; min-height: 0; border-radius: 10px; border: 2px solid #2b2a33; overflow: hidden; background: radial-gradient(circle at 50% 48%, #fffdf2 38%, color-mix(in srgb, var(--cj-cor) 30%, #fffdf2) 100%); }
+.cj-desenho { position: absolute; inset: 44px 30px 50px 30px; display: flex; align-items: center; justify-content: center; }
 .cj-desenho > * { max-width: 100%; max-height: 100%; height: auto; }
-/* cada número numa caixinha que sai da lateral esquerda */
-.cj-stats { position: absolute; left: 0; top: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 1; }
-.cj-stat { display: flex; align-items: center; gap: 2px; padding: 2px 5px 2px 3px; line-height: 1; font-size: 13px; background: #fffdf2; border: 2px solid #2b2a33; border-left: 0; border-radius: 0 8px 8px 0; box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25); }
-.cj-efeitos { position: absolute; right: 4px; top: 34px; display: flex; flex-direction: column; gap: 2px; }
+
+/* faixa do nome em cima, ao centro */
+.cj-faixa { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); max-width: 68%; display: flex; flex-direction: row; align-items: center; gap: 5px; padding: 3px 6px 3px 10px; border-radius: 9px; background: color-mix(in srgb, var(--cj-cor) 40%, #15131b); border: 2px solid var(--cj-cor); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); z-index: 2; }
+.cj-nome { color: #fffdf2; font-size: 15px; line-height: 1.05; text-align: left; }
+.cj-sub { flex: none; }
+.cj-sub { display: inline-flex; align-items: center; gap: 3px; color: color-mix(in srgb, var(--cj-cor) 55%, #fff); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.cj-sub svg { background: #fffdf2; border-radius: 50%; }
+
+/* números à esquerda e custo/ferimentos/efeitos à direita, como etiquetas coladas à borda */
+.cj-stats { position: absolute; left: 0; top: 52px; display: flex; flex-direction: column; gap: 4px; z-index: 1; }
+.cj-direita { position: absolute; right: 0; top: 52px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; z-index: 1; }
+.cj-stat, .cj-feridas { display: flex; align-items: center; gap: 2px; line-height: 1; font-size: 13px; background: #fffdf2; border: 2px solid #2b2a33; box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25); }
+.cj-stat { padding: 2px 5px 2px 3px; border-left: 0; border-radius: 0 8px 8px 0; }
+.cj-feridas { padding: 2px 3px 2px 5px; border-right: 0; border-radius: 8px 0 0 8px; }
+/* custo: gota grande com o número dentro, diferente das etiquetas */
+.cj-tinta { position: absolute; left: 3px; top: 3px; width: 34px; height: 34px; display: grid; place-items: center; z-index: 2; filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.3)); }
+.cj-tinta > * { grid-area: 1 / 1; }
+.cj-tinta b { margin-top: 9px; font-size: 14px; line-height: 1; }
+.cj-feridas { background: #ffe1e1; }
+.cj-efeitos { display: flex; flex-direction: column; gap: 2px; margin-right: 3px; }
 .cj-efeitos > span { display: flex; padding: 1px; border-radius: 50%; background: #fffdf2; border: 2px solid #2b2a33; }
-.cj-nome-classe { position: absolute; right: 6px; bottom: 2px; font-size: 11px; font-weight: 700; opacity: 0.75; }
-.cj-ranhuras { display: flex; justify-content: center; gap: 8px; }
-.cj-ranhura { width: 46px; height: 46px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 2.5px dashed #2b2a33; background: rgba(255, 255, 255, 0.55); }
-.cj-fantasma { opacity: 0.28; filter: grayscale(1); line-height: 0; }
-.cj-acesa { border-style: solid; border-color: #ff7a2f; background: #fff3c4; box-shadow: 0 0 0 3px rgba(255, 196, 70, 0.7); animation: cj-pisca 0.9s ease-in-out infinite alternate; cursor: pointer; }
-.cj-acesa .cj-fantasma { opacity: 0.75; filter: none; }
-.cj-usada { border-style: solid; background: #fffdf2; }
-.cj-fechada { opacity: 0.35; }
-@keyframes cj-pisca { to { box-shadow: 0 0 0 6px rgba(255, 196, 70, 0.35); } }
-@media (prefers-reduced-motion: reduce) { .cj-acesa { animation: none; } }
+
+/* o especial num pergaminho por cima do fundo do desenho */
+.cj-especial { position: absolute; left: 5px; right: 5px; bottom: 5px; margin: 0; padding: 4px 6px; font-size: 11.5px; line-height: 1.2; border-radius: 7px; background: linear-gradient(#fbf1d6, #f1dfb4); border: 2px solid #7a5631; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); z-index: 1; }
 .cj-simbolo { display: inline-flex; align-items: center; gap: 1px; vertical-align: middle; font-weight: 700; margin: 0 2px; }
-.cj-especial { margin: 0; font-size: 12px; line-height: 1.2; min-height: 2.4em; }
 
-/* 1. Pergaminho: papel envelhecido, moldura castanha e cantos */
-.cj-e-pergaminho { background: radial-gradient(circle at 30% 20%, #fff8e3, #f1dfb4 70%, #e6cd96); border-color: #6b4a2b; box-shadow: inset 0 0 0 4px #f8ecc9, inset 0 0 0 6px #b58a55; }
-.cj-e-pergaminho::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.25; background-image: radial-gradient(#a07a45 0.8px, transparent 1px); background-size: 7px 7px; }
-.cj-e-pergaminho .cj-topo { background: #f8ecc9; border: 2px solid #6b4a2b; }
-.cj-e-pergaminho .cj-imagem { background: #fffaf0; border-color: #6b4a2b; }
-.cj-feridas { position: absolute; right: 0; top: 8px; display: flex; align-items: center; gap: 2px; padding: 2px 3px 2px 5px; line-height: 1; font-size: 13px; background: #ffe1e1; border: 2px solid #2b2a33; border-right: 0; border-radius: 8px 0 0 8px; }
-.cj-e-pergaminho .cj-stat { border-color: #6b4a2b; }
-
-/* 2. Cor da classe: moldura e topo na cor da classe, imagem com riscas suaves */
-.cj-e-classe { background: var(--cj-cor); }
-.cj-e-classe .cj-topo { background: #fffdf2; border: 2px solid #2b2a33; }
-.cj-e-classe .cj-imagem { background: #fffdf2; }
-.cj-e-classe .cj-ranhura { background: #fffdf2; }
-.cj-e-classe .cj-especial { background: #fffdf2; border-radius: 8px; padding: 3px 4px; border: 2px solid #2b2a33; }
-
-/* 3. Noite mágica: azul-noite com estrelas, moldura dourada, letras claras */
-.cj-e-noite { background: radial-gradient(circle at 50% 0%, #3a3580, #1d1b46 75%); border-color: #d9a93c; box-shadow: inset 0 0 0 3px #1d1b46, inset 0 0 0 5px #d9a93c; color: #fff4d6; }
-.cj-e-noite::before { content: ''; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(#fff 1px, transparent 1.4px), radial-gradient(#ffe9a8 0.8px, transparent 1.2px); background-size: 37px 41px, 23px 29px; background-position: 3px 7px, 15px 2px; opacity: 0.5; }
-.cj-e-noite .cj-topo { background: rgba(255, 255, 255, 0.08); border: 2px solid #d9a93c; }
-.cj-e-noite .cj-imagem { background: radial-gradient(circle at 50% 40%, #fffdf2 55%, #e8e1ff); border-color: #d9a93c; color: #2b2a33; }
-.cj-e-noite .cj-ranhura { border-color: #d9a93c; background: rgba(255, 255, 255, 0.12); }
-.cj-e-noite .cj-usada { background: #fffdf2; }
-.cj-e-noite .cj-fantasma { filter: grayscale(1) brightness(2); }
+/* barra das ranhuras: cada ranhura com a borda da cor do seu dado */
+.cj-ranhuras { display: flex; justify-content: center; gap: 8px; padding: 2px 0 1px; }
+.cj-ranhura { --r: #8a8794; width: 50px; height: 46px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 2.5px dashed var(--r); background: rgba(0, 0, 0, 0.18); }
+.cj-r-andar { --r: #7bd36b; }
+.cj-r-atacar { --r: #ffcc33; }
+.cj-r-especial { --r: #b98cf0; }
+.cj-fantasma { opacity: 0.4; filter: grayscale(0.5); line-height: 0; }
+.cj-acesa { border-style: solid; background: color-mix(in srgb, var(--r) 30%, #15131b); box-shadow: 0 0 0 3px color-mix(in srgb, var(--r) 70%, transparent); animation: cj-pisca 0.9s ease-in-out infinite alternate; cursor: pointer; }
+.cj-acesa .cj-fantasma { opacity: 1; filter: none; }
+.cj-usada { border-style: solid; background: color-mix(in srgb, var(--r) 25%, #15131b); }
+.cj-fechada { opacity: 0.35; }
+@keyframes cj-pisca { to { box-shadow: 0 0 0 6px color-mix(in srgb, var(--r) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .cj-acesa { animation: none; } }

@@ -3,7 +3,9 @@ import { bytesTracos } from '../../ui/tracos';
 import { CRIATURAS, MAGOS_PODERES, custoExercito, motivoNaoSomar, mudarExercito, exercitosProntos, validarExercito, type Criatura, type Exercito, type RoupaMago } from './criaturas';
 import {
   T_VEZ,
+  alvoAoChegar,
   alvosAtaque,
+  alvosLuta,
   alvosEspecial,
   casasEspecial,
   casasAndar,
@@ -11,6 +13,7 @@ import {
   cria,
   dadosAtaque,
   dadosDefesa,
+  fogoSopro,
   novoDuelo,
   reduzDuelo,
   vistaDuelo,
@@ -188,15 +191,18 @@ describe('volta e vez', () => {
 describe('batalha', () => {
   it('corpo a corpo: perde quem tiver menos; empate = morrem os dois', () => {
     let e = cena([['j1', 'minotauro', '0,0'], ['j2', 'golem', '1,0']]);
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(3, 0, 0, 0, 3));
+    // ataque todo vazio, defesa toda a bloquear: cai quem atacou
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(...Array(CRIATURAS.minotauro.dados).fill(0), 3));
     // o Minotauro fere o Golem ao cair
     expect([cria(e, 1), c(e, 2).ferimentos, e.fase]).toEqual([undefined, 1, 'fim']);
     e = cena([['j1', 'minotauro', '0,0'], ['j1', 'ogre', '7,0'], ['j2', 'golem', '1,0'], ['j2', 'ogre', '7,7']]);
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 3 }, marcados(5, 5, 3, 0, 3));
+    // riscos = bloqueios (= defesa do Golem): caem os dois
+    const golpes = [5, 3, 0, 0, 0, 0, 0, 0].slice(0, CRIATURAS.minotauro.dados);
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 3 }, marcados(...golpes, 3));
     expect(e.criaturas.map((x) => x.id)).toEqual([2, 4]);
     expect(e.ultimo).toMatchObject({ morreu: true, morreuQuemAtacou: true });
     e = cena([['j1', 'minotauro', '0,0'], ['j2', 'golem', '1,0'], ['j2', 'ogre', '7,7']]);
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(5, 5, 5, 0, 3));
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(...Array(CRIATURAS.minotauro.dados).fill(5), 0));
     expect(cria(e, 2)).toBeUndefined();
     expect(e.ultimo).toMatchObject({ morreu: true, marca: 'soco' });
   });
@@ -207,7 +213,7 @@ describe('batalha', () => {
   });
   it('as últimas dos dois caem juntas: acaba empatado', () => {
     let e = cena([['j1', 'duende', '0,0'], ['j2', 'duende', '1,0']]);
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(0));
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(0));
     expect(e.fase).toBe('fim');
     expect(classificacao(e).map((p) => p.lugar)).toEqual([1, 1]);
   });
@@ -215,9 +221,9 @@ describe('batalha', () => {
     const e = cena([['j1', 'elfo', '0,0'], ['j2', 'golem', '2,0']], { gemas: 1 });
     c(e, 1).ferimentos = 1;
     c(e, 2).ferimentos = 2;
-    const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(0, 0, 3, 3, 3, 1, 2));
-    expect(f.batalha).toMatchObject({ ataque: [0], feridaAtaque: ['espada'], defesa: [1, 1, 1], feridaDefesa: ['escudo', 'coracao'] });
-    const g = ap(f, { tipo: 'dr_relancar', id: 'j1', i: 1 }, () => 3);
+    const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(0, 0, 0, 3, 1, 2));
+    expect(f.batalha).toMatchObject({ ataque: [0, 0], feridaAtaque: ['espada'], defesa: [1], feridaDefesa: ['escudo', 'coracao'] });
+    const g = ap(f, { tipo: 'dr_relancar', id: 'j1', i: 2 }, () => 3);
     expect(g.batalha!.feridaAtaque).toEqual(['gema']);
     // coração cura 1 ao sobrevivente; a gema paga de volta o relançar
     const h = ap(g, { tipo: 'dr_pronto', id: 'j2' });
@@ -234,21 +240,21 @@ describe('batalha', () => {
   });
   it('uma gema relança 1 dado da batalha, do lado certo', () => {
     let e = cena([['j1', 'minotauro', '0,0'], ['j2', 'golem', '1,0']], { gemas: 1 });
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(0));
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(0));
     expect(e.fase).toBe('batalha');
     e = ap(e, { tipo: 'dr_relancar', id: 'j1', i: 0 }, () => 5);
     expect(e.magos.j1.gemas).toBe(0);
-    expect(e.batalha!.ataque).toEqual([2, 0, 0, 0]);
+    expect(e.batalha!.ataque).toEqual([2, ...Array(CRIATURAS.minotauro.dados - 1).fill(0)]);
     e = ap(e, { tipo: 'dr_pronto', id: 'j2' });
     expect(e.fase).toBe('fim');
   });
   it('quem perde uma criatura ganha 1 gema; a última acaba o jogo', () => {
     let e = cena([['j1', 'ogre', '0,0'], ['j2', 'duende', '1,0'], ['j2', 'duende', '0,1']]);
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(5, 5, 5, 0));
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(5, 5, 5, 0));
     expect(cria(e, 2)).toBeUndefined();
     expect(e.magos.j2.gemas).toBe(1);
     const f = cena([['j1', 'ogre', '0,0'], ['j2', 'duende', '1,0']]);
-    const g = ap(f, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(5, 5, 5, 0));
+    const g = ap(f, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(5, 5, 5, 0));
     expect(g.fase).toBe('fim');
     expect(classificacao(g).map((p) => [p.id, p.lugar])).toEqual([['j1', 1], ['j2', 2]]);
   });
@@ -257,11 +263,11 @@ describe('batalha', () => {
 describe('especiais das criaturas', () => {
   it('Duende: +1 com outro Lacaio colado ao alvo', () => {
     const e = cena([['j1', 'duende', '1,0'], ['j1', 'duende', '0,1'], ['j2', 'golem', '0,0']]);
-    expect(dadosAtaque(e, c(e, 1), c(e, 3))).toBe(2);
+    expect(dadosAtaque(e, c(e, 1), c(e, 3))).toBe(CRIATURAS.duende.dados + 1);
   });
   it('Sapinho: quem o mata leva 1 ferimento', () => {
     let e = cena([['j1', 'ogre', '0,0'], ['j2', 'sapinho', '1,0'], ['j2', 'ogre', '7,7']]);
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(5, 5, 5, 0));
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(5, 5, 5, 0));
     expect(c(e, 1).ferimentos).toBe(1);
   });
   it('Corvo passa por cima; os outros não', () => {
@@ -274,11 +280,11 @@ describe('especiais das criaturas', () => {
   });
   it('Lobo anda mais 1 depois de atacar', () => {
     let e = cena([['j1', 'lobo', '0,0'], ['j2', 'ogre', '1,0'], ['j2', 'ogre', '7,7']]);
-    e = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(5, 5, 0));
+    e = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(5, 5, 0));
     expect(e.fase).toBe('lobo');
     e = ap(e, { tipo: 'dr_lobo', id: 'j1', casa: '0,1' });
     expect(c(e, 1).casa).toBe('0,1');
-    expect(e.vez).toBe('j2');
+    expect([e.vez, e.fase]).toEqual(['j1', 'vez']);
   });
   it('Velho Pescador puxa (sem gastar gemas), fere e luta', () => {
     const postas: [string, Criatura, string][] = [['j1', 'velhoPescador', '0,0'], ['j1', 'ogre', '7,0'], ['j2', 'ogre', '3,0'], ['j2', 'ogre', '7,7']];
@@ -303,8 +309,9 @@ describe('especiais das criaturas', () => {
   it('Elfo atira a 2–3; Dragãozinho luta colado ou a 2', () => {
     const e = cena([['j1', 'elfo', '0,0'], ['j1', 'dragaozinho', '0,2'], ['j2', 'ogre', '1,0'], ['j2', 'ogre', '3,0'], ['j2', 'ogre', '1,2'], ['j2', 'ogre', '2,3']]);
     expect(alvosAtaque(e, c(e, 1)).map((x) => x.id)).toEqual(e.criaturas.filter((x) => x.dono === 'j2' && [2, 3].includes(distancia(x.casa, '0,0'))).map((x) => x.id));
-    expect(alvosAtaque(e, c(e, 2)).map((x) => x.id)).toEqual(expect.arrayContaining([5]));
-    expect(alvosAtaque(e, c(e, 2)).every((x) => distancia(x.casa, '0,2') <= 2)).toBe(true);
+    expect(alvosLuta(e, c(e, 2)).map((x) => x.id)).toEqual([5]);
+    expect(alvosLuta(e, c(e, 1))).toEqual([]);
+    expect(alvosAtaque(e, c(e, 2)).every((x) => distancia(x.casa, '0,2') === 2)).toBe(true);
     const m = cena([['j1', 'elfo', '0,0'], ['j2', 'ogre', '3,0']]);
     m.muralhas = [{ casa: '1,0', ate: 9 }];
     expect(alvosAtaque(m, c(m, 1))).toEqual([]);
@@ -313,12 +320,12 @@ describe('especiais das criaturas', () => {
     const tiro = (casa: string) => ap(cena([['j1', 'dragaozinho', '0,0'], ['j1', 'ogre', '7,0'], ['j2', 'golem', casa]]), { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 3 }, marcados(0, 0, 3));
     const longe = tiro('2,0');
     expect([c(longe, 1).tipo, c(longe, 3).ferimentos, c(longe, 3).marcas]).toEqual(['dragaozinho', 1, ['queimado']]);
-    const perto = tiro('1,0');
+    const perto = ap(cena([['j1', 'dragaozinho', '0,0'], ['j1', 'ogre', '7,0'], ['j2', 'golem', '1,0']]), { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 3 }, marcados(0, 0, 3));
     expect([cria(perto, 1), c(perto, 3).ferimentos]).toEqual([undefined, 0]);
   });
   it('Golem dá +1 de defesa aos amigos colados', () => {
     const e = cena([['j1', 'ogre', '7,7'], ['j2', 'golem', '0,0'], ['j2', 'elfo', '1,0'], ['j2', 'elfo', '4,4']]);
-    expect([2, 3, 4].map((i) => dadosDefesa(e, c(e, i)))).toEqual([5, 3, 2]);
+    expect([2, 3, 4].map((i) => dadosDefesa(e, c(e, i)))).toEqual([CRIATURAS.golem.defesa, CRIATURAS.elfo.defesa + 1, CRIATURAS.elfo.defesa]);
   });
   it('o especial usa a Habilidade (ou a coringa); a Habilidade não ataca nem anda', () => {
     const e = cena([['j1', 'mumia', '0,0'], ['j1', 'ogre', '1,0'], ['j2', 'ogre', '0,1']], { dados: ['fazer', 'habilidade'] });
@@ -343,13 +350,13 @@ describe('especiais das criaturas', () => {
   });
   it('Cavaleiro relança 1 dado vazio, a atacar e a defender', () => {
     const e = cena([['j1', 'cavaleiro', '0,0'], ['j2', 'cavaleiro', '1,0']], { gemas: 1 });
-    const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(0, 3, 3, 5, 0, 3, 3, 3, 4));
-    expect(f.batalha).toMatchObject({ ataque: [2, 1, 1], defesa: [1, 1, 1, 1] });
+    const f = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(0, 3, 3, 3, 5, 0, 3, 3, 3, 4));
+    expect(f.batalha).toMatchObject({ ataque: [2, 1, 1, 1], defesa: [1, 1, 1, 1] });
   });
   it('Raposa sobrevive ao empate corpo a corpo, a atacar e a defender', () => {
     const empate = (a: Criatura, b: Criatura) => {
       const e = cena([['j1', a, '0,0'], ['j2', b, '1,0']]);
-      return ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(0)).criaturas.map((x) => x.id);
+      return ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(0)).criaturas.map((x) => x.id);
     };
     expect(empate('raposa', 'golem')).toEqual([1]);
     expect(empate('golem', 'raposa')).toEqual([2]);
@@ -364,9 +371,9 @@ describe('especiais das criaturas', () => {
   it('Ogre: +1 por ferimento; bónus nunca passa de +2', () => {
     const e = cena([['j1', 'ogre', '0,0'], ['j2', 'ogre', '1,0']]);
     c(e, 1).ferimentos = 1;
-    expect(dadosAtaque(e, c(e, 1), c(e, 2))).toBe(5);
+    expect(dadosAtaque(e, c(e, 1), c(e, 2))).toBe(CRIATURAS.ogre.dados + 1);
     c(e, 1).furia = true;
-    expect(dadosAtaque(e, c(e, 1), c(e, 2))).toBe(6);
+    expect(dadosAtaque(e, c(e, 1), c(e, 2))).toBe(CRIATURAS.ogre.dados + 2);
   });
 });
 
@@ -378,7 +385,7 @@ describe('poderes dos magos', () => {
     const e = com('lencol', par);
     const f = ap(e, { tipo: 'dr_poder', id: 'j1', poder: 'escudo', alvo: { criatura: 1 } });
     expect([f.magos.j1.gemas, f.magos.j1.dados.length, f.vez]).toEqual([6, 4, 'j1']);
-    expect(dadosDefesa(f, c(f, 1))).toBe(6);
+    expect(dadosDefesa(f, c(f, 1))).toBe(CRIATURAS.ogre.defesa + 1);
     expect(f.magos.j1.gratis).toBe(1);
     expect(ap(f, { tipo: 'dr_poder', id: 'j1', poder: 'copia', alvo: { casa: '1,0' } })).toBe(f);
     expect(ap(e, { tipo: 'dr_poder', id: 'j1', poder: 'furia', alvo: { criatura: 1 } })).toBe(e);
@@ -406,7 +413,7 @@ describe('poderes dos magos', () => {
     g.vez = 'j2';
     g.magos.j1.gemas = g.magos.j2.gemas = 0;
     c(g, 2).casa = '0,1';
-    const fim = ap(g, { tipo: 'dr_atacar', id: 'j2', i: 0, criatura: 2, alvo: 1 }, marcados(5, 5, 5, 0));
+    const fim = ap(g, { tipo: 'dr_lutar', id: 'j2', criatura: 2, alvo: 1 }, marcados(5, 5, 5, 0));
     expect(fim.fase).toBe('fim');
     expect(vivos(fim)).toEqual(['j2']);
   });
@@ -430,9 +437,9 @@ describe('poderes dos magos', () => {
     const perto: [string, Criatura, string][] = [['j1', 'minotauro', '0,0'], ['j2', 'golem', '1,0']];
     let e = com('peles', perto, 3);
     e = ap(e, { tipo: 'dr_poder', id: 'j1', poder: 'furia', alvo: { criatura: 1 } });
-    expect(dadosAtaque(e, c(e, 1), c(e, 2))).toBe(6);
+    expect(dadosAtaque(e, c(e, 1), c(e, 2))).toBe(CRIATURAS.minotauro.dados + 2);
     e.magos.j2.gemas = 0;
-    const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(5, 5, 5, 5, 5, 5, 0));
+    const f = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(5, 5, 5, 5, 5, 5, 0));
     expect(c(f, 1).furia).toBe(false);
     const g = com('pedreiro', perto);
     c(g, 1).escudo = true;
@@ -465,8 +472,10 @@ describe('partidas inteiras', () => {
         if (e.fase === 'vez' && k) {
           const i0 = acaso(e.magos[e.vez].dados.length);
           const alvo = alvosAtaque(e, k)[0];
+          const luta = alvosLuta(e, k)[0];
           const onde = casasAndar(e, k);
-          if (alvo) e = ap(e, { tipo: 'dr_atacar', id: e.vez, i: i0, criatura: k.id, alvo: alvo.id });
+          if (luta) e = ap(e, { tipo: 'dr_lutar', id: e.vez, criatura: k.id, alvo: luta.id });
+          else if (alvo) e = ap(e, { tipo: 'dr_atacar', id: e.vez, i: i0, criatura: k.id, alvo: alvo.id });
           else if (onde.length) e = ap(e, { tipo: 'dr_andar', id: e.vez, i: i0, criatura: k.id, casa: onde[acaso(onde.length)] });
         }
         if (e === antes) e = reduzDuelo(e, { tipo: 'tick' }, e.terminaEm);
@@ -558,5 +567,78 @@ describe('saída a meio', () => {
     expect(s.batalha).toBeNull();
     expect(s.fase).not.toBe('batalha');
     expect(s.criaturas.map((x) => x.dono)).toEqual(['j1', 'j3']);
+  });
+});
+
+describe('corpo a corpo ao andar e habilidades novas (26/11)', () => {
+  it('acabar de andar colado a um inimigo luta logo, sem outro dado', () => {
+    const e = cena([['j1', 'duende', '0,0'], ['j2', 'ogre', '3,0']], { dados: ['andar', 'andar'] });
+    const f = ap(e, { tipo: 'dr_andar', id: 'j1', i: 0, criatura: 1, casa: '2,0' }, marcados(0));
+    expect(f.ultimo).toMatchObject({ de: 1, alvo: 2 });
+    expect(f.magos.j1.dados).toHaveLength(1);
+  });
+  it('com vários inimigos colados luta com o mais fraco; o Elfo não luta colado', () => {
+    const e = cena([['j1', 'duende', '0,0'], ['j2', 'ogre', '3,0'], ['j2', 'sapinho', '2,1']], { dados: ['andar'] });
+    c(e, 3).ferimentos = 1;
+    expect(alvoAoChegar(e, { ...c(e, 1), casa: '2,0' })?.id).toBe(3);
+    const g = cena([['j1', 'elfo', '0,0'], ['j2', 'ogre', '3,0']], { dados: ['andar'] });
+    const h = ap(g, { tipo: 'dr_andar', id: 'j1', i: 0, criatura: 1, casa: '2,0' });
+    expect([h.ultimo, h.vez]).toEqual([null, 'j2']);
+  });
+  it('Sopro do Dragãozinho: 1 ferimento em 2 casas em linha, amigos também', () => {
+    const e = cena([['j1', 'dragaozinho', '2,2'], ['j2', 'ogre', '3,2'], ['j1', 'duende', '4,2'], ['j2', 'golem', '9,9']], { dados: ['habilidade', 'andar'] });
+    expect(fogoSopro(e, c(e, 1), '3,2')).toEqual(['3,2', '4,2']);
+    expect(casasEspecial(e, c(e, 1))).toEqual(['3,2']);
+    const f = ap(e, { tipo: 'dr_especial', id: 'j1', i: 0, criatura: 1, casa: '3,2' });
+    expect([c(f, 2).ferimentos, c(f, 3).ferimentos, c(f, 4).ferimentos]).toEqual([1, 1, 0]);
+    expect(c(f, 1).agiu).toBe(true);
+  });
+  it('Cavaleiro em guarda: +1 defesa nesta volta e +1 no próximo ataque, uma vez', () => {
+    const e = cena([['j1', 'cavaleiro', '0,0'], ['j2', 'ogre', '7,7']], { dados: ['habilidade', 'andar'] });
+    expect(alvosEspecial(e, c(e, 1)).map((x) => x.id)).toEqual([1]);
+    const f = ap(e, { tipo: 'dr_especial', id: 'j1', i: 0, criatura: 1, alvo: 1 });
+    expect([c(f, 1).escudo, c(f, 1).maisAtaque, c(f, 1).agiu]).toEqual([true, true, true]);
+    expect(alvosEspecial(f, c(f, 1))).toEqual([]);
+  });
+});
+
+describe('dado Habilidade sem uso (26/11)', () => {
+  it('passar com ele dá 1 gema; os outros perdem-se', () => {
+    const e = cena([['j1', 'duende', '0,0'], ['j2', 'ogre', '7,7']], { dados: ['habilidade', 'andar'] });
+    const f = ap(e, { tipo: 'dr_passar', id: 'j1', i: 0 });
+    expect(f.magos.j1.gemas).toBe(1);
+    const g = cena([['j1', 'duende', '0,0'], ['j2', 'ogre', '7,7']], { dados: ['andar', 'andar'] });
+    expect(ap(g, { tipo: 'dr_passar', id: 'j1', i: 0 }).magos.j1.gemas).toBe(0);
+  });
+});
+
+describe('face de ferimento nos dados de batalha (26/11)', () => {
+  it('fere o inimigo que sobrevive; de longe, o alvo não fere quem atirou', () => {
+    const e = cena([['j1', 'elfo', '0,0'], ['j2', 'golem', '2,0'], ['j2', 'ogre', '7,7']]);
+    const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(2, 0, 0, 2));
+    expect([c(f, 1).ferimentos, c(f, 2).ferimentos]).toEqual([0, 1]);
+  });
+  it('corpo a corpo: as faces de ferimento de quem perdeu ferem quem ganhou', () => {
+    const e = cena([['j1', 'cavaleiro', '0,0'], ['j2', 'golem', '1,0'], ['j2', 'ogre', '7,7']]);
+    const f = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(5, 5, 0, 0, 0, 2, 2, 0));
+    expect([cria(f, 2), c(f, 1).ferimentos]).toEqual([undefined, 2]);
+  });
+});
+
+describe('face de gema e dados fracos de cada lado (26/11)', () => {
+  it('cada gema nos dados normais dá 1 gema ao dono', () => {
+    const e = cena([['j1', 'elfo', '0,0'], ['j2', 'golem', '2,0'], ['j2', 'ogre', '7,7']]);
+    const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(1, 0, 0, 1));
+    expect([f.magos.j1.gemas, f.magos.j2.gemas]).toEqual([1, CRIATURAS.golem.defesa]);
+  });
+  it('o dado fraco de ataque nunca mostra escudo e o de defesa nunca mostra espada', () => {
+    const e = cena([['j1', 'elfo', '0,0'], ['j2', 'golem', '2,0'], ['j2', 'ogre', '7,7']], { gemas: 1 });
+    c(e, 1).ferimentos = CRIATURAS.elfo.dados;
+    c(e, 2).ferimentos = CRIATURAS.golem.defesa;
+    for (let k = 0; k < 6; k++) {
+      const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, () => k);
+      expect(f.batalha!.feridaAtaque).not.toContain('escudo');
+      expect(f.batalha!.feridaDefesa).not.toContain('espada');
+    }
   });
 });

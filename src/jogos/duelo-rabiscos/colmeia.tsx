@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useMemo } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { CORES, GROSSURAS, type Traco } from '../../ui/tracos';
 import { ICONES_CLASSE, MARCAS } from './artes/icones';
 import { Riscos, type Camada } from './artes/lapis';
@@ -198,6 +198,41 @@ function NoChao({ c, ox, oy, p }: { c: Camada[]; ox: number; oy: number; p: Proj
 const MARCADA: Camada = ['M0 -45L39 -23L39 23L0 45L-39 23L-39 -23Z', undefined, 8, '14 7'];
 const ALVO: Camada = ['M0 -46L40 -23L40 23L0 46L-40 23L-40 -23Z', 'rgba(255, 90, 74, 0.22)', 9];
 
+/** quanto tempo a batalha acabada fica à vista (TV e telemóvel); depois sai fumo onde alguém caiu */
+export const MOSTRAR_BATALHA = 5_000;
+const FUMO = 1_600;
+/** casas com fumo agora: quando a batalha acabada deixa de estar à vista */
+function useFumo(v: VistaDuelo): { k: number; casas: Casa[] } | null {
+  const n = v.ultimo?.n ?? 0;
+  const visto = useRef(n);
+  const [fumo, setFumo] = useState<{ k: number; casas: Casa[] } | null>(null);
+  useEffect(() => {
+    if (visto.current === n) return;
+    visto.current = n;
+    const casas = v.ultimo?.caidas ?? [];
+    if (!casas.length) return;
+    const a = setTimeout(() => setFumo({ k: n, casas }), MOSTRAR_BATALHA);
+    const b = setTimeout(() => setFumo(null), MOSTRAR_BATALHA + FUMO);
+    return () => {
+      clearTimeout(a);
+      clearTimeout(b);
+    };
+  }, [n]);
+  return fumo;
+}
+
+/** nuvem de fumo de papel (bolas cinzentas que crescem, sobem e desaparecem) */
+function Fumo({ x, y, f }: { x: number; y: number; f: number }) {
+  const bolas: [number, number, number, number][] = [[0, 0, 32, 0], [-30, -10, 24, 0.1], [28, -14, 26, 0.15], [-6, -36, 22, 0.25], [14, 8, 20, 0.05], [-20, 14, 18, 0.2]];
+  return (
+    <g class="dr-fumo" transform={`translate(${x} ${y}) scale(${f})`} aria-hidden="true">
+      {bolas.map(([dx, dy, r, atraso], i) => (
+        <circle key={i} cx={dx} cy={dy - 12} r={r} style={{ animationDelay: `${atraso}s` }} />
+      ))}
+    </g>
+  );
+}
+
 interface Props {
   v: VistaDuelo;
   desenhos: Desenhos;
@@ -212,6 +247,7 @@ interface Props {
 /** a colmeia toda; com `aoTocar`, as casas acesas são botões */
 export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome = (x) => x }: Props) {
   const p3 = perspetivaLigada();
+  const fumo = useFumo(v);
   const planos = v.tabuleiro.casas.map((c) => ({ c, ...centroHex(...ler(c)) }));
   const p = projecao(planos);
   // com perspetiva, de trás para a frente: o que está à frente tapa o de trás
@@ -342,6 +378,13 @@ export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome
           });
           const ligacoes = g.flatMap((a, ia) => g.flatMap((b, ib) => (ib > ia && distancia(a, b) === 1 ? [[ia, ib] as [number, number]] : [])));
           objetos.push({ y: Math.max(...pontos.map((q) => q.y)), el: <Barreira key={'b' + g[0]} p={pontos} ligacoes={ligacoes} /> });
+          return null;
+        })}
+      {fumo &&
+        fumo.casas.map((c) => {
+          const q = centroHex(...ler(c));
+          const o = p3 ? p(q.x, q.y) : { ...q, f: 1 };
+          objetos.push({ y: 1e6, el: <Fumo key={'f' + fumo.k + c} x={o.x} y={o.y} f={o.f} /> });
           return null;
         })}
       {objetos.sort((a, b) => a.y - b.y).map((o) => o.el)}

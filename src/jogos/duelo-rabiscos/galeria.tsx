@@ -4,7 +4,7 @@ import { ARTE_EFEITO, EfeitosPeca, type Efeito } from './artes/efeitos';
 import { Arte } from './artes/lapis';
 import type { Cria } from './regras';
 import { CRIATURAS, type Criatura } from './criaturas';
-import { CartaJogo, type EstiloCarta } from './artes/cartaJogo';
+import { CartaJogo } from './artes/cartaJogo';
 import { centroHex } from './artes/tabuleiro';
 import { INCLINA, projecao } from './colmeia';
 import { Estrutura, type TipoEstrutura } from './estruturas';
@@ -66,7 +66,7 @@ export function GaleriaEstruturas() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(470px, 1fr))', gap: '12px', padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
       <figure class="cartao" style={{ margin: 0, gridColumn: '1 / -1', display: 'flex', gap: '16px', justifyContent: 'center', color: 'var(--tinta)' }}>
-        {(['andar', 'fazerAlgo', 'habilidade', 'coringa', 'ataqueVazio', 'ataque1', 'ataque2', 'defesaVazio', 'defesa1', 'feridaCoracao'] as const).map((f) => (
+        {(['andar', 'fazerAlgo', 'habilidade', 'coringa', 'ataqueVazio', 'ataque1', 'ataque2', 'ataqueFere', 'ataqueGema', 'defesaVazio', 'defesa1', 'defesaFere', 'defesaGema', 'feridaEspada', 'feridaCoracao', 'feridaDefEscudo', 'feridaDefGema'] as const).map((f) => (
           <span key={f} style={{ textAlign: 'center' }}>
             <Dado face={f} tam={64} />
             <br />
@@ -74,15 +74,11 @@ export function GaleriaEstruturas() {
           </span>
         ))}
       </figure>
-      {(['pergaminho', 'classe', 'noite'] as EstiloCarta[]).map((e, i) => (
-        <figure key={e} class="cartao" style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--tinta)' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <CartaJogo criatura="mumia" estilo={e} ranhuras={{ andar: 'usada', especial: 'acesa' }} ferimentos={1} />
-            <CartaJogo criatura={(['ogre', 'elfo', 'raposa'] as const)[i]} estilo={e} ranhuras={{ atacar: 'acesa' }} />
-          </div>
-          <figcaption><b>{i + 1}. {['Pergaminho', 'Cor da classe', 'Noite mágica'][i]}</b></figcaption>
-        </figure>
-      ))}
+      <figure class="cartao cartas-exemplo" style={{ margin: 0, display: 'flex', gap: '8px', color: 'var(--tinta)' }}>
+        <CartaJogo criatura="mumia" estilo="classe" ranhuras={{ andar: 'usada', especial: 'acesa' }} ferimentos={1} />
+        <CartaJogo criatura="ogre" estilo="classe" ranhuras={{ atacar: 'acesa' }} />
+        <CartaJogo criatura="elfo" estilo="classe" ranhuras={{ andar: 'acesa' }} />
+      </figure>
       <figure class="cartao efeitos-galeria" style={{ margin: 0, display: 'flex', gap: '16px', alignItems: 'center', color: 'var(--tinta)' }}>
         {(Object.keys(ARTE_EFEITO) as Efeito[]).map((e) => (
           <span key={e} style={{ textAlign: 'center' }}>

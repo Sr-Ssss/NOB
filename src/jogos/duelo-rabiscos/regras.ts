@@ -1,7 +1,7 @@
 import { irPara, pausaPorFalta, podio, quantosLigados, type Podio } from '../../core/jogo';
 import { bytesTracos, limparTracos, type Traco } from '../../ui/tracos';
 import { CRIATURAS, CUSTO, MAGOS_PODERES, custoExercito, exercitosProntos, validarExercito, type Criatura, type Exercito, type Marca, type Poder, type RoupaMago } from './criaturas';
-import { N_OBSTACULOS, alcance, distancia, linhaLivre, novoTabuleiro, vizinhas, type Casa, type Obstaculos, type Tabuleiro } from './tabuleiro';
+import { N_OBSTACULOS, alcance, distancia, linhaLivre, novoTabuleiro, seguinte, vizinhas, type Casa, type Obstaculos, type Tabuleiro } from './tabuleiro';
 
 /** Duelo de Rabiscos: regras em info/jogos/guerra-de-desenhos.md */
 
@@ -29,16 +29,26 @@ export const T_RODAR = 12;
 export const T_VEZ = 30;
 export const T_BATALHA = 8;
 export const T_LOBO = 10;
-export const TIPOS_DUELO = ['dr_mago', 'dr_exercito', 'dr_desenho', 'dr_rodar', 'dr_pronto', 'dr_andar', 'dr_atacar', 'dr_especial', 'dr_poder', 'dr_relancar', 'dr_passar', 'dr_lobo'];
+export const TIPOS_DUELO = ['dr_mago', 'dr_exercito', 'dr_desenho', 'dr_rodar', 'dr_pronto', 'dr_andar', 'dr_atacar', 'dr_especial', 'dr_poder', 'dr_relancar', 'dr_passar', 'dr_lobo', 'dr_lutar'];
 
 /** Habilidade: só para os especiais das criaturas (Velho Pescador, Múmia, Carvalho Vivo); a coringa serve para tudo */
 export type Face = 'andar' | 'fazer' | 'habilidade' | 'coringa';
 const FACES: Face[] = ['andar', 'andar', 'fazer', 'fazer', 'habilidade', 'coringa'];
-const ATAQUE = [0, 0, 0, 1, 1, 2];
-const DEFESA = [0, 0, 0, 1, 1, 1];
+/** face de ferimento dos dados de batalha (26/11): não conta como risco/bloqueio, mas fere a criatura inimiga que sobreviver */
+export const FERE = 3;
+/** face de gema dos dados de batalha (26/11): não conta como risco/bloqueio; dá 1 gema a quem a tirou */
+export const GEMA = 4;
+const ATAQUE = [0, GEMA, FERE, 1, 1, 2];
+const DEFESA = [0, GEMA, FERE, 1, 1, 1];
+/** riscos (ou bloqueios) de uma lista de dados normais */
+export const acertos = (l: number[]): number => l.reduce((t, v) => t + (v === FERE || v === GEMA ? 0 : v), 0);
+const gemasDe = (l: number[]): number => l.filter((v) => v === GEMA).length;
+export const ferimentosDe = (l: number[]): number => l.filter((v) => v === FERE).length;
 /** dado de ferimento: substitui um dado normal, no ataque e na defesa, por cada ferimento */
 export type FaceFerida = 'espada' | 'escudo' | 'coracao' | 'gema' | 'vazio';
-const FERIDA: FaceFerida[] = ['espada', 'escudo', 'coracao', 'gema', 'vazio', 'vazio'];
+/** dados fracos (26/11): um de ataque (nunca mostra escudo) e um de defesa (nunca mostra espada); mesmas hipóteses de antes */
+const FERIDA_ATAQUE: FaceFerida[] = ['espada', 'vazio', 'coracao', 'gema', 'vazio', 'vazio'];
+const FERIDA_DEFESA: FaceFerida[] = ['vazio', 'escudo', 'coracao', 'gema', 'vazio', 'vazio'];
 
 export interface Cria {
   id: number;
@@ -98,6 +108,8 @@ export interface UltimaBatalha {
   dados: Batalha;
   quemAtacou: Pick<Cria, 'dono' | 'tipo'>;
   quemDefendeu: Pick<Cria, 'dono' | 'tipo'>;
+  /** casas de quem caiu nesta batalha (também em cadeia: Minotauro, ferimentos), para o fumo na colmeia */
+  caidas?: Casa[];
 }
 
 export type FaseDuelo = 'mago' | 'exercito' | 'desenhar' | 'rodar' | 'vez' | 'batalha' | 'lobo' | 'fim';
@@ -125,6 +137,8 @@ export interface EstadoDuelo {
   batalha: Batalha | null;
   /** Lobo que acabou de atacar e pode andar mais 1 */
   lobo: number | null;
+  /** a ação em curso foi uma luta colada (não gasta dado): no fim, a vez fica com o mesmo mago */
+  semDado: boolean;
   ultimo: UltimaBatalha | null;
   /** por ordem de eliminação (quem cai ao mesmo tempo fica no mesmo grupo) */
   eliminados: string[][];
@@ -150,6 +164,7 @@ type AcaoJogador =
   | { tipo: 'dr_poder'; id: string; poder: Poder; alvo: AlvoPoder }
   | { tipo: 'dr_relancar'; id: string; i: number }
   | { tipo: 'dr_passar'; id: string; i: number }
+  | { tipo: 'dr_lutar'; id: string; criatura: number; alvo: number }
   | { tipo: 'dr_lobo'; id: string; casa: Casa | null };
 export type AcaoDuelo = AcaoJogador | { tipo: 'ligados'; ids: string[] } | { tipo: 'tick' };
 
@@ -194,6 +209,7 @@ export function novoDuelo(ids: string[], def: Partial<DefDuelo>, agora: number, 
     vez: '',
     batalha: null,
     lobo: null,
+    semDado: false,
     ultimo: null,
     eliminados: [],
     semente: semente >>> 0,
@@ -223,15 +239,39 @@ function chega(e: VistaDuelo, c: Cria, o: Cria, min: number, max: number): boole
   return d >= min && d <= max && linhaLivre(c.casa, o.casa, tapada(e));
 }
 
-/** inimigos que pode atacar agora */
+/** inimigos que pode atingir à distância com o dado Fazer algo (só o Elfo e o Dragãozinho) */
 export function alvosAtaque(e: VistaDuelo, c: Cria): Cria[] {
   if (c.agiu || !podeAgir(e, c)) return [];
   return e.criaturas.filter((o) => {
     if (o.dono === c.dono) return false;
     if (c.tipo === 'elfo') return chega(e, c, o, 2, 3);
-    if (c.tipo === 'dragaozinho') return chega(e, c, o, 1, 2);
-    return colados(c, o);
+    if (c.tipo === 'dragaozinho') return chega(e, c, o, 2, 2);
+    return false;
   });
+}
+
+/** inimigos colados com quem pode lutar sem dado (26/11); o Elfo não luta colado */
+export function alvosLuta(e: VistaDuelo, c: Cria): Cria[] {
+  if (c.agiu || !podeAgir(e, c) || c.tipo === 'elfo') return [];
+  return e.criaturas.filter((o) => o.dono !== c.dono && colados(c, o));
+}
+
+/**
+ * Corpo a corpo ao andar (26/11): se acabar de andar colada a um inimigo, luta logo com ele (sem gastar outro dado).
+ * Com vários, escolhe o mais fraco (menos defesa que lhe resta). O Elfo não luta colado.
+ */
+export function alvoAoChegar(e: VistaDuelo, c: Cria): Cria | undefined {
+  if (c.agiu || !podeAgir(e, c) || c.tipo === 'elfo') return undefined;
+  const resta = (o: Cria) => CRIATURAS[o.tipo].defesa - o.ferimentos;
+  return e.criaturas.filter((o) => o.dono !== c.dono && colados(c, o)).sort((a, b) => resta(a) - resta(b) || a.id - b.id)[0];
+}
+
+/** Sopro do Dragãozinho: a casa colada escolhida e a seguinte na mesma reta (se o fogo lá chegar) */
+export function fogoSopro(e: VistaDuelo, c: Cria, casa: Casa): Casa[] {
+  const l = [casa];
+  const a = seguinte(c.casa, casa);
+  if (!tapada(e)(casa) && existe(e)(a)) l.push(a);
+  return l;
 }
 
 /** casa livre colada ao Velho Pescador, a mais perto de `o` */
@@ -242,16 +282,22 @@ function casaPuxar(e: VistaDuelo, c: Cria, o: Cria): Casa | undefined {
 /** o especial gasta o dado Habilidade (ou a coringa) e a ação de atacar dessa volta; não gasta gemas */
 const podeEspecial = (e: VistaDuelo, c: Cria) => !c.agiu && podeAgir(e, c);
 
-/** alvos do especial: Velho Pescador (inimigo a puxar) e Múmia (amigo ferido a curar) */
+/** alvos do especial: Velho Pescador (inimigo a puxar), Múmia (amigo ferido a curar), Cavaleiro (ele próprio: em guarda) */
 export function alvosEspecial(e: VistaDuelo, c: Cria): Cria[] {
   if (!podeEspecial(e, c)) return [];
   if (c.tipo === 'velhoPescador') return e.criaturas.filter((o) => o.dono !== c.dono && chega(e, c, o, 2, 3) && casaPuxar(e, c, o) !== undefined);
   if (c.tipo === 'mumia') return e.criaturas.filter((o) => o !== c && o.dono === c.dono && o.ferimentos > 0 && distancia(c.casa, o.casa) <= 2);
+  if (c.tipo === 'cavaleiro') return c.escudo || c.maisAtaque ? [] : [c];
   return [];
 }
 
-/** casas onde o Carvalho Vivo pode pôr a parede */
-export const casasEspecial = (e: VistaDuelo, c: Cria): Casa[] => (c.tipo === 'carvalho' && podeEspecial(e, c) ? vizinhas(c.casa).filter((v) => livre(e, v)) : []);
+/** casas do especial: parede do Carvalho Vivo (casa livre colada); Sopro do Dragãozinho (casa colada, se o fogo apanhar alguém) */
+export function casasEspecial(e: VistaDuelo, c: Cria): Casa[] {
+  if (!podeEspecial(e, c)) return [];
+  if (c.tipo === 'carvalho') return vizinhas(c.casa).filter((v) => livre(e, v));
+  if (c.tipo === 'dragaozinho') return vizinhas(c.casa).filter((v) => existe(e)(v) && fogoSopro(e, c, v).some((x) => e.criaturas.some((o) => o.casa === x)));
+  return [];
+}
 
 /** que face serve para quê */
 export const serve = (face: Face, para: 'andar' | 'atacar' | 'especial'): boolean => face === 'coringa' || face === { andar: 'andar', atacar: 'fazer', especial: 'habilidade' }[para];
@@ -449,6 +495,17 @@ function verFim(s: EstadoDuelo, agora: number): boolean {
   return true;
 }
 
+/** fim de uma batalha ou do passo do Lobo: a luta colada não gasta dado, por isso o mesmo mago continua (se tiver dados) */
+function depoisDaAcao(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
+  if (!s.semDado) return acabarVez(s, agora, rnd);
+  s.semDado = false;
+  s.batalha = null;
+  s.lobo = null;
+  if (verFim(s, agora)) return;
+  if (vivos(s).includes(s.vez) && s.magos[s.vez].dados.length) return mudarFase(s, 'vez', T_VEZ, agora);
+  acabarVez(s, agora, rnd);
+}
+
 function acabarVez(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
   s.batalha = null;
   s.lobo = null;
@@ -487,9 +544,8 @@ function resolver(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
   const b = s.batalha!;
   const de = cria(s, b.de)!;
   const alvo = cria(s, b.alvo)!;
-  const soma = (l: number[]) => l.reduce((x, y) => x + y, 0);
-  const riscos = soma(b.ataque) + b.feridaAtaque.filter((f) => f === 'espada').length;
-  const bloqueios = soma(b.defesa) + b.feridaDefesa.filter((f) => f === 'escudo').length;
+  const riscos = acertos(b.ataque) + b.feridaAtaque.filter((f) => f === 'espada').length;
+  const bloqueios = acertos(b.defesa) + b.feridaDefesa.filter((f) => f === 'escudo').length;
   // corpo a corpo: perde quem tiver menos e no empate caem os dois; de longe só o alvo arrisca
   const perto = colados(de, alvo);
   const empate = perto && riscos === bloqueios;
@@ -500,17 +556,24 @@ function resolver(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
   const quem = ({ dono, tipo }: Cria) => ({ dono, tipo });
   s.ultimo = { n: (s.ultimo?.n ?? 0) + 1, de: de.id, alvo: alvo.id, morreu, morreuQuemAtacou, marca, dados: b, quemAtacou: quem(de), quemDefendeu: quem(alvo) };
   de.furia = de.maisAtaque = false;
+  const antes = s.criaturas.map((c) => [c, c.casa] as const);
   if (morreu) matar(s, alvo, de);
   if (morreuQuemAtacou) matar(s, de, alvo);
   if (!perto && !morreu && de.tipo === 'dragaozinho') ferir(s, alvo, de, marca);
+  // cada face de ferimento fere o inimigo que sobreviveu; de longe, o alvo não fere quem atirou
+  for (let k = 0; k < ferimentosDe(b.ataque); k++) ferir(s, alvo, de, marca);
+  if (perto) for (let k = 0; k < ferimentosDe(b.defesa); k++) ferir(s, de, alvo, CRIATURAS[alvo.tipo].marca);
   depoisDoCombate(s, de, b.feridaAtaque);
   depoisDoCombate(s, alvo, b.feridaDefesa);
+  // gemas dos dados normais vão para o dono, viva ou não a criatura
+  for (const [c, l] of [[de, b.ataque], [alvo, b.defesa]] as const) s.magos[c.dono].gemas = Math.min(MAX_GEMAS, s.magos[c.dono].gemas + gemasDe(l));
+  s.ultimo.caidas = antes.filter(([c]) => !s.criaturas.includes(c)).map(([, casa]) => casa);
   s.batalha = null;
   if (de.tipo === 'lobo' && s.criaturas.includes(de) && vivos(s).length > 1 && casasLobo(s, de).length) {
     s.lobo = de.id;
     return mudarFase(s, 'lobo', T_LOBO, agora);
   }
-  acabarVez(s, agora, rnd);
+  depoisDaAcao(s, agora, rnd);
 }
 
 function atacar(s: EstadoDuelo, de: Cria, alvo: Cria, agora: number, rnd?: Rodar): void {
@@ -526,10 +589,10 @@ function atacar(s: EstadoDuelo, de: Cria, alvo: Cria, agora: number, rnd?: Rodar
     if (c.tipo === 'cavaleiro' && vazio >= 0) l[vazio] = faces[dar(s, rnd)];
   };
   outraVez(de, ataque, ATAQUE);
-  const feridaAtaque = rodar(fracosA, FERIDA);
+  const feridaAtaque = rodar(fracosA, FERIDA_ATAQUE);
   const defesa = rodar(nDefesa - fracosD, DEFESA);
   outraVez(alvo, defesa, DEFESA);
-  s.batalha = { de: de.id, alvo: alvo.id, ataque, defesa, feridaAtaque, feridaDefesa: rodar(fracosD, FERIDA) };
+  s.batalha = { de: de.id, alvo: alvo.id, ataque, defesa, feridaAtaque, feridaDefesa: rodar(fracosD, FERIDA_DEFESA) };
   s.magos[de.dono].pronto = s.magos[alvo.dono].pronto = false;
   mudarFase(s, 'batalha', T_BATALHA, agora);
   if (!podeRelancar(s, de.dono) && !podeRelancar(s, alvo.dono)) resolver(s, agora, rnd);
@@ -585,6 +648,12 @@ function aplicarPoder(s: EstadoDuelo, id: string, poder: Poder, a: AlvoPoder): b
   }
 }
 
+/** tira o dado `i` da mão; Habilidade e Fazer algo que não se usam viram 1 gema (26/11) */
+function largarDado(m: Mago, i: number): void {
+  const [face] = m.dados.splice(i, 1);
+  if (face === 'habilidade' || face === 'fazer') m.gemas = Math.min(MAX_GEMAS, m.gemas + 1);
+}
+
 function tempoEsgotado(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
   switch (s.fase) {
     case 'mago':
@@ -596,12 +665,12 @@ function tempoEsgotado(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
     case 'rodar':
       return darVez(s, s.comecou, agora, rnd);
     case 'vez':
-      s.magos[s.vez].dados.shift();
+      largarDado(s.magos[s.vez], 0);
       return acabarVez(s, agora, rnd);
     case 'batalha':
       return resolver(s, agora, rnd);
     case 'lobo':
-      return acabarVez(s, agora, rnd);
+      return depoisDaAcao(s, agora, rnd);
   }
 }
 
@@ -610,8 +679,9 @@ function saltarVezesSemUso(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
   while (s.fase === 'vez') {
     const m = s.magos[s.vez];
     if (m.dados.some((f) => dadoServe(s, s.vez, f))) return;
+    if (s.criaturas.some((c) => c.dono === s.vez && alvosLuta(s, c).length)) return;
     if (!m.poderUsado && MAGOS_PODERES[m.roupa!].some((p) => CUSTO[p] <= m.gemas)) return;
-    m.dados.shift();
+    largarDado(m, 0);
     acabarVez(s, agora, rnd);
   }
 }
@@ -663,7 +733,11 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
       m.dados.splice(a.i, 1);
       c.casa = a.casa;
       c.andou = true;
-      acabarVez(s, agora, rnd);
+      const alvo = alvoAoChegar(s, c);
+      if (alvo) {
+        c.agiu = true;
+        atacar(s, c, alvo, agora, rnd);
+      } else acabarVez(s, agora, rnd);
       return true;
     }
     case 'dr_atacar':
@@ -672,6 +746,16 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
       const alvo = cria(s, a.alvo);
       const face = m.dados[a.i];
       if (!minhaVez || !c || c.dono !== a.id || !face || !serve(face, a.tipo === 'dr_atacar' ? 'atacar' : 'especial')) return false;
+      if (a.tipo === 'dr_especial' && c.tipo === 'dragaozinho') {
+        if (!a.casa || !casasEspecial(s, c).includes(a.casa)) return false;
+        m.dados.splice(a.i, 1);
+        c.agiu = true;
+        // conta quem está no fogo antes de alguém cair; amigos também
+        const fogo = fogoSopro(s, c, a.casa);
+        for (const o of s.criaturas.filter((x) => fogo.includes(x.casa))) ferir(s, o, c, CRIATURAS.dragaozinho.marca);
+        acabarVez(s, agora, rnd);
+        return true;
+      }
       if (a.tipo === 'dr_especial' && c.tipo === 'carvalho') {
         if (!a.casa || !casasEspecial(s, c).includes(a.casa)) return false;
         m.dados.splice(a.i, 1);
@@ -688,6 +772,7 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
         return true;
       }
       if (c.tipo === 'mumia') alvo.ferimentos--;
+      else if (c.tipo === 'cavaleiro') Object.assign(c, { escudo: true, maisAtaque: true });
       else {
         // puxa, fere e luta já, se ambos continuarem vivos
         alvo.casa = casaPuxar(s, c, alvo)!;
@@ -720,7 +805,7 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
       if (!Number.isInteger(a.i) || a.i < 0 || a.i >= l.length + fracos.length) return false;
       // os dados de ferimento vêm a seguir aos normais
       if (a.i < l.length) l[a.i] = (ataca ? ATAQUE : DEFESA)[dar(s, rnd)];
-      else fracos[a.i - l.length] = FERIDA[dar(s, rnd)];
+      else fracos[a.i - l.length] = (ataca ? FERIDA_ATAQUE : FERIDA_DEFESA)[dar(s, rnd)];
       if (m.gratis > 0) m.gratis--;
       else m.gemas--;
       if (!s.participantes.some((id) => podeRelancar(s, id))) resolver(s, agora, rnd);
@@ -728,7 +813,7 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
     }
     case 'dr_passar':
       if (!minhaVez || !m.dados[a.i]) return false;
-      m.dados.splice(a.i, 1);
+      largarDado(m, a.i);
       acabarVez(s, agora, rnd);
       return true;
     case 'dr_lobo': {
@@ -738,7 +823,16 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
         if (!casasLobo(s, c).includes(a.casa)) return false;
         c.casa = a.casa;
       }
-      acabarVez(s, agora, rnd);
+      depoisDaAcao(s, agora, rnd);
+      return true;
+    }
+    case 'dr_lutar': {
+      const c = cria(s, a.criatura);
+      const alvo = cria(s, a.alvo);
+      if (!minhaVez || !c || c.dono !== a.id || !alvo || !alvosLuta(s, c).includes(alvo)) return false;
+      c.agiu = true;
+      s.semDado = true;
+      atacar(s, c, alvo, agora, rnd);
       return true;
     }
     default:

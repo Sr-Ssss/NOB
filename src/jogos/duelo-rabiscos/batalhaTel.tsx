@@ -5,7 +5,7 @@ import { nomeDe } from '../5050/tv';
 import { Dado, DadoRola } from './artes/dados';
 import type { EstadoHex } from './artes/tabuleiro';
 import { CORES_MAGO, ColmeiaDuelo, Retrato, indice } from './colmeia';
-import { BatalhaOuUltima, Classificacao, Gemas, NomeMago, faixa, useBatalhaNova, type PropsDuelo } from './comuns';
+import { BatalhaOuUltima, Classificacao, Gemas, NomeMago, faixa, useBatalhaNova, useEsperaBatalha, type PropsDuelo } from './comuns';
 import { Baralho } from './baralho';
 import { EfeitosHtml, efeitosTexto } from './artes/efeitos';
 import { CartaJogo, type EstadoRanhura, type Ranhura } from './artes/cartaJogo';
@@ -78,7 +78,10 @@ function ranhurasDe(c: Cria, podem: Modo[] = []): Partial<Record<Ranhura, Estado
   if (c.andou) r.andar = 'usada';
   // o especial conta como o ataque da volta
   if (c.agiu) Object.assign(r, { atacar: 'usada', especial: 'fechada' });
-  for (const m of podem) if (!r[m]) r[m] = 'acesa';
+  for (const m of podem) {
+    const k: Ranhura = m === 'lutar' ? 'atacar' : m;
+    if (!r[k]) r[k] = 'acesa';
+  }
   return r;
 }
 
@@ -165,12 +168,12 @@ function Vez(p: PropsBatalha) {
   if (poder) return <UsarPoder {...p} poder={poder} fechar={() => setPoder(null)} />;
   const face = dado === null ? undefined : m.dados[dado];
   const c = qual === null ? undefined : cria(v, qual);
-  const l = face && c ? modos(v, c, face) : [];
+  const l = c ? modos(v, c, face) : [];
   const modo = querModo && l.includes(querModo) ? querModo : l[0];
   const o = c && modo ? opcoesModo(v, c, modo) : { casas: [], alvos: [] };
   const acesas = acender(v, o);
   const alvo = v.criaturas.find((x) => x.casa === casa && o.alvos.includes(x.id))?.id;
-  const algumServe = !!face && minhas.some((x) => modos(v, x, face).length > 0);
+  const algumServe = minhas.some((x) => modos(v, x, face).length > 0);
   return (
     <>
       <div class="cartao dr-bloco">
@@ -195,16 +198,16 @@ function Vez(p: PropsBatalha) {
             </button>
           ))}
         </div>
-        {face && (
+        {(face || algumServe) && (
           <>
-            <b>{TXT.passoCriatura}</b>
+            <b>{face ? TXT.passoCriatura : TXT.lutarSemDado}</b>
             {!algumServe && <p>{TXT.semJogada}</p>}
             <Baralho
               cartas={minhas.map((x) =>
                 cartaDe(x, desenhos, !modos(v, x, face).length, modos(v, x, face), (r) => {
-                  // tocar numa ranhura acesa escolhe a criatura e a ação
+                  // tocar numa ranhura acesa escolhe a criatura e a ação; Atacar colado = lutar sem dado
                   setQual(x.id);
-                  setModo(r);
+                  setModo(r === 'atacar' && modos(v, x, face).includes('lutar') ? 'lutar' : r);
                   setCasa(null);
                 }),
               )}
@@ -240,12 +243,12 @@ function Vez(p: PropsBatalha) {
           </>
         )}
         <Mesa v={v} sala={sala} desenhos={desenhos} acesas={acesas} marcadas={[...(c ? [c.casa] : []), ...(casa ? [casa] : [])]} aoTocar={setCasa} />
-        <button class="botao grande" disabled={!casa || !acesas.has(casa)} onClick={() => casa && c && modo && jogo(enviar, acaoModo(modo, dado!, c.id, casa, alvo))}>
+        <button class="botao grande" disabled={!casa || !acesas.has(casa)} onClick={() => casa && c && modo && jogo(enviar, acaoModo(modo, dado ?? 0, c.id, casa, alvo))}>
           {TXT.confirmarJogada}
         </button>
         {dado !== null && face && (
           <button class="botao sec" onClick={() => jogo(enviar, { tipo: 'dr_passar', i: dado })}>
-            {TXT.passar}
+            {face === 'habilidade' ? TXT.passarGema : TXT.passar}
           </button>
         )}
       </div>
@@ -337,7 +340,8 @@ export function BatalhaTel(p: PropsBatalha) {
   const jogador = v.participantes.includes(eu);
   const vivo = jogador && !foraDuelo(v, eu);
   const relanco = vivo && v.fase === 'batalha' && podeRelancar(v, eu);
-  const luta = v.fase === 'batalha' || nova;
+  const espera = useEsperaBatalha(v);
+  const luta = (v.fase === 'batalha' || nova) && !espera;
   const minhaVez = vivo && v.fase === 'vez' && v.vez === eu;
   return (
     <>

@@ -35,6 +35,22 @@ export function emLinha(a: Casa, b: Casa): boolean {
   return x.some((v, i) => v === y[i]);
 }
 
+/** a casa a seguir a `b` na reta que vem de `a` (coladas) */
+export function seguinte(a: Casa, b: Casa): Casa {
+  const [aq, ar] = cubo(a);
+  const [bq, br] = cubo(b);
+  return deAxial(2 * bq - aq, 2 * br - ar);
+}
+
+/** casas entre `a` e `b` numa linha reta (vazio se não estão em linha) */
+export function entre(a: Casa, b: Casa): Casa[] {
+  if (!emLinha(a, b)) return [];
+  const n = distancia(a, b);
+  const [aq, ar] = cubo(a);
+  const [bq, br] = cubo(b);
+  return Array.from({ length: n - 1 }, (_, i) => deAxial(aq + ((bq - aq) / n) * (i + 1), ar + ((br - ar) / n) * (i + 1)));
+}
+
 export function vizinhas(c: Casa): Casa[] {
   const [q, r] = cubo(c);
   return [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]].map(([dq, dr]) => deAxial(q + dq, r + dr));

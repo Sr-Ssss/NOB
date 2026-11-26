@@ -5,11 +5,11 @@ import type { VistaSala } from '../../core/sala';
 import { MAGOS_PODERES, exercitosProntos, type Criatura, type RoupaMago } from './criaturas';
 import { DefinicoesDuelo } from './definicoes';
 import { jogadaBot } from './bot';
-import { DEF_PADRAO_DUELO, desenhosDuelo, novoDuelo, podeRelancar, privadoDuelo, reduzDuelo, vistaDuelo, type AcaoDuelo, type EstadoDuelo } from './regras';
+import { DEF_PADRAO_DUELO, desenhosDuelo, livre, novoDuelo, podeRelancar, privadoDuelo, reduzDuelo, vistaDuelo, type AcaoDuelo, type EstadoDuelo } from './regras';
 import { TelemovelDuelo } from './telemovel';
 import { TvDuelo } from './tv';
 import { GaleriaEstruturas } from './galeria';
-import type { Obstaculos } from './tabuleiro';
+import { vizinhas, type Obstaculos } from './tabuleiro';
 
 /**
  * Só em dev: `#/demo-duelo?fase=mago|exercito|desenhar|rodar|vez|batalha|lobo|fim&ecra=tv|tel[&n=2..4][&avatar=0..17][&semtv=1][&opcoes=1][&obst=nenhum|poucos|muitos]`.
@@ -73,7 +73,15 @@ function inicio(fase: string, n: number, roupa: RoupaMago, gemas: number): Estad
   const criatura = Object.keys(e.magos.j1.exercito!)[0] as Criatura;
   e = reduzDuelo(e, { tipo: 'dr_desenho', id: 'j1', criatura, tracos: RABISCO, pronto: true }, agora);
   if (gemas) for (const id of e.participantes) e.magos[id].gemas = gemas;
-  return avancar(e, fase, agora);
+  e = avancar(e, fase, agora);
+  // colado=1: uma criatura tua já ao lado de um inimigo (para ver a luta sem dado)
+  if (paramsHash().get('colado')) {
+    const minha = e.criaturas.find((c) => c.dono === 'j1');
+    const inimiga = e.criaturas.find((c) => c.dono !== 'j1');
+    const casa = inimiga && vizinhas(inimiga.casa).find((x) => livre(e, x));
+    if (minha && casa) minha.casa = casa;
+  }
+  return e;
 }
 
 export function DemoDuelo() {
