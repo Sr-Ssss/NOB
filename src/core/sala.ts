@@ -1,5 +1,6 @@
 import { MIN_LIGADOS } from '../jogos/5050/regras';
 import { LISTA, jogoEmCurso, jogoPorId, type AcaoDefinir, type AcaoJogo, type DefsJogos, type EstadosJogos, type JogoComum, type JogoQualquer, type VistasJogos } from './registo';
+import { MAX_FOTOS, MAX_URL_FOTO } from '../jogos/semjuizo/regras';
 import { marca } from './cripto';
 import { filtrarTextos } from './filtro';
 import { idAleatorio } from './ids';
@@ -77,9 +78,13 @@ export interface EstadoSala extends EstadosJogos, DefsJogos {
   /** modos (src/core/modos.ts): a roleta a girar e o torneio em curso */
   roleta?: Roleta | null;
   torneio?: Torneio | null;
+  /** Sem Juízo: fotos da galeria que cada um juntou na sala de espera (nunca na vista; fora das cópias: `semFotos`) */
+  fotos?: Record<string, string[]>;
 }
 
 export type AcaoSala =
+  /** Sem Juízo: junta uma foto (a lista limpa-se com `url: null`) */
+  | { tipo: 'sj_foto'; id: string; url: string | null }
   | { tipo: 'entrar'; id: string; nome: string; avatar: number; tag: string }
   | { tipo: 'ligados'; ids: string[] }
   /** opções de um jogo: 'definir' (50/50), 'definir_pensa'… (ver `definir` no registo) */
@@ -111,6 +116,8 @@ export type AcaoSala =
   | { tipo: 'bot_del'; id: string; bot: string }
   /** o líder liga/desliga a "IA jogável" de um bot */
   | { tipo: 'bot_ia'; id: string; bot: string; ia: boolean }
+  /** os bots com IA ficaram parados: o líder manda-os tentar outra vez, já */
+  | { tipo: 'bots_recarregar'; id: string }
   /** o líder age como um bot (só ações de jogo e "Pronto") */
   | { tipo: 'como'; id: string; bot: string; acao: AcaoSala }
   /** saídas a meio (src/core/saidas.ts), só o líder: seguir sem quem saiu, ou pôr um espectador no lugar dele */
@@ -192,14 +199,14 @@ export const P_BOT = 0.12;
 const MAX_POR_CHAVE = 1;
 
 /** "IA jogável": cada bot com a IA ligada experimenta jogadas ao acaso; fica a primeira que o jogo aceita */
-function jogarBots(s: EstadoSala, agora: number): EstadoSala {
+function jogarBots(s: EstadoSala, agora: number, ja = false): EstadoSala {
   if (s.tutorial || s.pausaSaida) return s;
   for (const b of s.jogadores) {
     const ativo = jogoEmCurso(s);
     if (!ativo?.j.bot || ativo.g.fase === 'fim') return s;
-    if (!b.bot || !b.ia || !ativo.g.participantes.includes(b.id)) continue;
+    if (!b.bot || !b.ia || !(ativo.g.participantes.includes(b.id) || ativo.g.audiencia.includes(b.id))) continue;
     const r = sorteDe(hashTexto(b.id) ^ agora);
-    if (r() >= P_BOT) continue;
+    if (r() >= P_BOT && !ja) continue;
     const { g } = ativo;
     const ia = ativo.j.bot;
     const k = ia.chave?.(g, b.id) ?? `${g.fase}:${g.terminaEm}`;
@@ -225,7 +232,7 @@ export function jogoAtivo(s: EstadoSala | VistaSala): JogoComum | null {
 function comecar(s: EstadoSala, j: JogoQualquer, agora: number, usadas: string[]): EstadoSala {
   const n = ligados(s).length;
   if ((j.soTv && s.semTv) || n < j.min || (j.max !== undefined && n > j.max)) return s;
-  return com(s, j.chave, j.novo(ligados(s), opcoesDe(s, j), agora, usadas, s.idioma));
+  return com(s, j.chave, j.novo(ligados(s), opcoesDe(s, j), agora, usadas, s.idioma, s.fotos ?? {}));
 }
 
 /** começa o jogo pedido (desconhecido = o 50/50) */
@@ -302,6 +309,9 @@ export function assumirSemTv(s: EstadoSala, agora: number): EstadoSala {
   const r: EstadoSala = { ...s, semTv: true, novaTv: null };
   return jogoEmCurso(r)?.j.soTv || (r.tutorial && jogoPorId(r.tutorial.jogo)?.soTv) ? reduzSala({ ...r, tutorial: null }, { tipo: 'acabar', id: ID_TV }, agora) : r;
 }
+
+/** sem as fotos da galeria: cópias ao herdeiro (limite do canal); quem assume mostra o emoji no lugar delas */
+export const semFotos = (s: EstadoSala): EstadoSala => ({ ...s, fotos: {}, ...(s.semjuizo ? { semjuizo: { ...s.semjuizo, fotos: {} } } : {}) });
 
 const igual = (x: string, y: string) => x.trim().toLowerCase() === y.trim().toLowerCase();
 
@@ -470,6 +480,13 @@ function reduzBase(s: EstadoSala, acao: AcaoSala, agora: number): EstadoSala {
       // durante a barra, "saltar" tira só o tutorial (a barra pré-carrega o jogo)
       if (s.tutorial.fase === 'carregar') return s.tutorial.ver ? { ...s, tutorial: { ...s.tutorial, ver: false } } : s;
       return reduzSala({ ...s, tutorial: { ...s.tutorial, ate: agora } }, { tipo: 'tick' }, agora);
+    case 'sj_foto': {
+      if (jogoAtivo(s) || !s.jogadores.some((j) => j.id === a.id && !j.bot)) return s;
+      const minhas = s.fotos?.[a.id] ?? [];
+      if (a.url === null) return minhas.length ? { ...s, fotos: { ...s.fotos, [a.id]: [] } } : s;
+      if (minhas.length >= MAX_FOTOS || typeof a.url !== 'string' || !/^data:image\/(webp|jpeg);base64,/.test(a.url) || a.url.length > MAX_URL_FOTO) return s;
+      return { ...s, fotos: { ...s.fotos, [a.id]: [...minhas, a.url] } };
+    }
     case 'comando':
       return s;
     case 'pronto': {
@@ -501,6 +518,8 @@ function reduzBase(s: EstadoSala, acao: AcaoSala, agora: number): EstadoSala {
       if (!manda(s, a.id) || !s.jogadores.some((j) => j.id === a.bot && j.bot)) return s;
       return { ...s, jogadores: s.jogadores.map((j) => (j.id === a.bot ? { ...j, ia: !!a.ia } : j)) };
     }
+    case 'bots_recarregar':
+      return manda(s, a.id) ? jogarBots({ ...s, iaBots: {} }, agora, true) : s;
     case 'como': {
       const bot = s.jogadores.find((j) => j.id === a.bot && j.bot);
       // com a IA ligada, o bot joga sozinho: o líder já não joga por ele
@@ -568,6 +587,8 @@ export interface VistaSala extends VistasJogos {
   fechada?: boolean;
   barrados?: string[];
   expulsos?: string[];
+  /** Sem Juízo: quantas fotos cada um juntou */
+  nFotos?: Record<string, number>;
 }
 
 /**
@@ -618,6 +639,7 @@ export function vistaSala(s: EstadoSala): VistaSala {
     fechada: !!s.fechada,
     barrados: s.barrados ?? [],
     expulsos: s.expulsos ?? [],
+    nFotos: Object.fromEntries(Object.entries(s.fotos ?? {}).map(([id, l]) => [id, l.length])),
   };
 }
 

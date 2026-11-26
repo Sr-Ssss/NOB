@@ -39,6 +39,7 @@ export const JOGOS: { id: string; pt: string; en: string; ativo: boolean }[] = [
   { id: 'rei', pt: 'O Rei e o Dragão', en: 'The King and the Dragon', ativo: false },
   { id: 'maquinas', pt: 'Revolução das Máquinas', en: 'Machine Uprising', ativo: false },
   { id: 'wifi', pt: 'Senha do Wi-Fi', en: 'Wi-Fi Password', ativo: false },
+  { id: 'semjuizo', pt: 'Sem Juízo', en: 'Out of Order', ativo: false },
   { id: 'ragerob', pt: 'Ragerob', en: 'Ragerob', ativo: false },
 ];
 

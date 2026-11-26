@@ -20,6 +20,7 @@ const SEGREDOS: Record<string, (g: Record<string, unknown>) => string[]> = {
   pirata: (g) => pares(g.papeis as Record<string, unknown>),
   maquinas: (g) => [...pares(g.papeis as Record<string, unknown>), ...((g.mao as unknown[]).length ? [JSON.stringify(g.mao)] : [])],
   rei: (g) => pares(g.cartas as Record<string, unknown>),
+  semjuizo: (g) => Object.values(g.maos as Record<string, unknown[]>).flatMap((l) => l.map((p) => JSON.stringify(p))),
   wifi: (g) => Object.values(g.palavras as Record<string, unknown[]>).flatMap((l) => l.map((p) => JSON.stringify(p))),
 };
 

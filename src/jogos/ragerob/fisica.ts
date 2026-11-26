@@ -84,6 +84,8 @@ export interface RoboF {
   fase: number;
   /** crocodilo: quem está agarrado e até quando */
   agarra: { id: string; ate: number; destino: { x: number; y: number; r: number } | null } | null;
+  /** galo: golpes da serra já dados a cada inimigo desde o último empurrão */
+  golpes: Record<string, number>;
   empurradoAte: number;
   chamasAte: number;
   /** picos: último toque por inimigo */
@@ -111,6 +113,14 @@ export interface EstadoIa {
   /** quando volta a escolher alvo */
   trocaAlvo: number;
 }
+/** galo: a serra dá um golpe a cada GALO_CADENCIA s; só ao GALO_GOLPES.º golpe no mesmo inimigo é que o empurra (se ficar fraco: 10) */
+export const GALO_CADENCIA = 0.25;
+export const GALO_DANO = 4.5;
+export const GALO_GOLPES = 5;
+/** crocodilo: quanto dura a mordida e a espera depois de largar (s) */
+export const CROCO_MORDIDA = 4;
+export const CROCO_ESPERA = 2;
+
 export interface Personalidade {
   /** 0 = cauteloso, 1 = vai a tudo */
   agressivo: number;
@@ -202,7 +212,7 @@ export class Combate {
       this.robos.push({
         id: robo.id, robo, corpo, hp: 100, ko: false, dano: 0, kos: 0, ultimo: null,
         pronto: robo.modulos.map(() => 1 + this.rnd() * 1.5), disparou: robo.modulos.map(() => -9),
-        cabPronto: 0, cabAnim: -9, giro: 0, fase: 0, agarra: null, empurradoAte: -9, chamasAte: -9, toques: {},
+        cabPronto: 0, cabAnim: -9, giro: 0, fase: 0, agarra: null, golpes: {}, empurradoAte: -9, chamasAte: -9, toques: {},
         ia: { modo: 'rodear', ate: 2 + this.rnd() * 2, alvo: null, arma: -1, lado: this.rnd() < 0.5 ? 1 : -1, trocaAlvo: 0 },
         pers: {
           agressivo: this.rnd(),
@@ -347,11 +357,11 @@ export class Combate {
     if (tipo === 'ourico') {
       // tambor pequeno à frente (o ouriço enrolado a girar como um disco): ganha rotação devagar,
       // e no impacto projeta os 2 robôs (mais o inimigo); área pequena, dano moderado
-      r.giro = Math.min(1, r.giro + DT / 2.5);
+      r.giro = Math.min(1, r.giro + DT / 3);
       r.fase += (2 + 18 * r.giro) * DT;
       if (r.giro > 0.25 && alvos.length) {
         const o = alvos[0];
-        this.ferir(o, 3 + 9 * r.giro, r, hx, hy);
+        this.ferir(o, 2.3 + 7.5 * r.giro, r, hx, hy);
         this.empurrar(o, o.corpo.position.x - hx, o.corpo.position.y - hy, 12 * r.giro + 4);
         this.empurrar(r, -fx, -fy, 5 * r.giro);
         this.ferir(r, 1.5 * r.giro, null);
@@ -364,24 +374,27 @@ export class Combate {
     if (!alvos.length) return;
     const o = alvos[0];
     if (tipo === 'galo') {
-      // serra: dano contínuo; a lâmina a morder empurra aos solavancos (não fica colado)
-      this.ferir(o, 18 * DT, r, hx, hy);
+      // serra: golpes seguidos sem empurrar; ao fim de uns quantos, empurra o inimigo
       if (Math.floor(this.t * 10) % 2 === 0) this.efeito('faisca', hx, hy, a, 14, 0.12);
       if (this.t >= r.cabPronto) {
-        this.choque(r, o, 5, 0.8);
-        r.cabPronto = this.t + 0.5;
+        r.cabPronto = this.t + GALO_CADENCIA;
+        this.ferir(o, GALO_DANO, r, hx, hy);
+        r.golpes[o.id] = (r.golpes[o.id] ?? 0) + 1;
+        if (r.golpes[o.id] >= GALO_GOLPES) {
+          r.golpes[o.id] = 0;
+          this.choque(r, o, 5, 0.8);
+        }
       }
       r.cabAnim = this.t;
       return;
     }
-    if (this.t < r.cabPronto) return;
+    if (this.t < r.cabPronto || r.agarra) return;
     r.cabAnim = this.t;
     if (tipo === 'crocodilo') {
       this.ferir(o, 14, r, hx, hy);
       // procura um perigo por perto para lá levar a presa (serra, picos, espinhos, fogo, água eletrificada)
       const destino = this.perigoPerto(o.corpo.position.x, o.corpo.position.y, 520);
-      r.agarra = { id: o.id, ate: this.t + (destino ? 3 : 1.2), destino };
-      r.cabPronto = this.t + 2.2;
+      r.agarra = { id: o.id, ate: this.t + CROCO_MORDIDA, destino };
     } else if (tipo === 'rino') {
       const vel = r.corpo.velocity.x * fx + r.corpo.velocity.y * fy;
       if (vel < 1.5) {
@@ -390,17 +403,17 @@ export class Combate {
         r.cabPronto = this.t + 0.6;
         return;
       }
-      this.ferir(o, Math.min(20, 4 + vel * 2.6), r, hx, hy);
+      this.ferir(o, Math.min(24, 6 + vel * 3), r, hx, hy);
       this.empurrar(o, fx, fy, 5 + vel * 1.4);
       this.empurrar(r, -fx, -fy, 2 + vel * 0.3);
       this.efeito('impacto', hx, hy, a, 26, 0.3);
       r.cabPronto = this.t + 0.8;
     } else if (tipo === 'bode') {
-      this.ferir(o, 4, r, hx, hy);
+      this.ferir(o, 6.5, r, hx, hy);
       this.empurrar(o, fx, fy, 18);
       o.empurradoAte = this.t + 1;
       this.efeito('impacto', hx, hy, a, 20, 0.25);
-      r.cabPronto = this.t + 1.6;
+      r.cabPronto = this.t + 1.4;
     }
   }
 
@@ -839,11 +852,14 @@ export class Combate {
         const op = o?.corpo.position;
         // chegou ao perigo: atira-o lá para dentro
         const noDestino = !!g.destino && !!op && Math.hypot(op.x - g.destino.x, op.y - g.destino.y) < g.destino.r + R * 0.6;
-        if (!o || o.ko) r.agarra = null;
-        else if (this.t > g.ate || noDestino) {
+        if (!o || o.ko) {
+          r.agarra = null;
+          r.cabPronto = this.t + CROCO_ESPERA;
+        } else if (this.t > g.ate || noDestino) {
           const [fx, fy] = g.destino ? [g.destino.x - op!.x, g.destino.y - op!.y] : frente(r.corpo.angle + r.ia.lado * Math.PI * 0.4);
           this.empurrar(o, fx, fy, 12);
           r.agarra = null;
+          r.cabPronto = this.t + CROCO_ESPERA;
           r.ia = { ...r.ia, modo: 'recuar', ate: this.t + 0.7 };
         } else {
           // colado à boca: segue o crocodilo e é puxado para a frente dele

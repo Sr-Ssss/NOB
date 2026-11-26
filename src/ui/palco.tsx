@@ -23,7 +23,9 @@ export function novoEncolhe(k: number, v: number, h: number): number {
   if (v <= 0 || h <= 0) return k;
   const natural = v / k;
   const novo = Math.min(1, h / natural);
-  return Math.abs(novo - k) < 0.005 ? k : Math.floor(novo * 1000) / 1000;
+  // a folga (evita andar para trás e para a frente) não vale quando passa da altura: 1085 px em 1080 dava scroll
+  const passa = v > h + 0.5;
+  return !passa && Math.abs(novo - k) < 0.005 ? k : Math.floor(novo * 1000) / 1000;
 }
 
 function medir() {

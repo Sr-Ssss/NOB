@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import Matter from 'matter-js';
 import { Combate, R } from './fisica';
 import { MODULOS, PERIGOS, type Robo } from './pecas';
@@ -57,6 +57,51 @@ describe('Ragerob — física', () => {
     }
     expect(destino).toBe(true);
     expect(perto).toBeLessThan(serra.w / 2 + R + 20);
+  });
+
+  it('crocodilo: a mordida dura 4 s e só volta a morder 2 s depois de largar', () => {
+    const base = { ...robo(0, [null, null, null, null]), corpo: 'quadrado' as const, loco: 'rodas' as const };
+    const c = new Combate([{ ...base, cabeca: 'crocodilo' as const }, { ...robo(1, [null, null, null, null]), cabeca: 'bode' as const }], [], 1);
+    const [a, b] = c.robos;
+    b.cabPronto = 99;
+    const parado = { f: 0, r: 0 };
+    const juntar = () => {
+      Matter.Body.setPosition(a.corpo, { x: 400, y: 300 });
+      Matter.Body.setAngle(a.corpo, Math.PI / 2);
+      Matter.Body.setPosition(b.corpo, { x: 400 + R * 2.1, y: 300 });
+      Matter.Body.setAngle(b.corpo, Math.PI / 2);
+      b.hp = 100;
+    };
+    const mudancas: number[] = [];
+    let antes = false;
+    for (let n = 0; n < 60 * 7; n++) {
+      juntar();
+      c.passo({ [a.id]: parado, [b.id]: parado });
+      if (!!a.agarra !== antes) mudancas.push(c.t);
+      antes = !!a.agarra;
+    }
+    expect(mudancas).toHaveLength(3);
+    expect(mudancas[1] - mudancas[0]).toBeCloseTo(4, 1);
+    expect(mudancas[2] - mudancas[1]).toBeCloseTo(2, 1);
+  });
+
+  it('galo: a serra só empurra ao 5.º golpe', () => {
+    const c = new Combate([{ ...robo(0, [null, null, null, null]), cabeca: 'galo' as const }, { ...robo(1, [null, null, null, null]), cabeca: 'bode' as const }], [], 1);
+    const [a, b] = c.robos;
+    b.cabPronto = 99;
+    const choque = vi.spyOn(c as unknown as { choque: () => void }, 'choque');
+    let golpes = 0;
+    let hp = b.hp;
+    for (let n = 0; n < 60 * 3 && !choque.mock.calls.length; n++) {
+      Matter.Body.setPosition(a.corpo, { x: 400, y: 300 });
+      Matter.Body.setAngle(a.corpo, Math.PI / 2);
+      Matter.Body.setPosition(b.corpo, { x: 400 + R * 2.1, y: 300 });
+      c.passo({ [a.id]: { f: 0, r: 0 }, [b.id]: { f: 0, r: 0 } });
+      if (b.hp < hp) golpes++;
+      hp = b.hp;
+    }
+    expect(choque).toHaveBeenCalled();
+    expect(golpes).toBe(5);
   });
 
   it('o humano conduz: frente anda para a frente', () => {

@@ -1,14 +1,15 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../core/i18n';
 import type { AcaoSala, VistaSala } from '../../core/sala';
 import { Temporizador } from '../../ui/comuns';
 import { AcabarPartida } from '../../ui/acabarPartida';
 import { nomeDe } from '../5050/tv';
-import { ArenaSvg, ModuloSvg, RoboCartao } from './desenho';
+import { ArenaSvg, ModuloMini, PecaSvg, RoboCartao } from './desenho';
 import { T_QUADRO, arenaDe, entre, type Quadro } from './quadro';
-import { CABECAS, CORPOS, ICONE_CABECA, LOCOS, PRECO, type Cabeca, type Corpo, type Loco } from './pecas';
-import { etiquetaModulo, infoModulo, moeda, nomeCabeca, nomeCorpo, nomeFase, nomeLoco, nomeRobo, roboPorId } from './comuns';
-import { PRECO_CONTROLO, T_COMBATE, ativos, classificacao, minimoAposta, roboDe, type VistaRagerob } from './regras';
+import { CABECAS, CORPOS, LOCOS, PRECO, type Cabeca, type Corpo, type Loco } from './pecas';
+import { Apostadores, Palco, Premios, QuemEnviou, Rosto, etiquetaModulo, infoModulo, moeda, nomeCabeca, nomeCorpo, nomeFase, nomeLoco, nomeRobo, roboPorId } from './comuns';
+import { PASSOS_LANCE, PRECO_CONTROLO, T_COMBATE, T_CONTROLO, ativos, classificacao, posicoes, roboDe, type VistaRagerob } from './regras';
 import './ragerob.css';
 
 type Enviar = (a: AcaoSala) => void;
@@ -121,11 +122,11 @@ function Montar({ v, sala, eu, enviar }: PropsTelRagerob) {
   if (!meu) return <p class="centro">{olha(sala)}</p>;
   const feito = v.montados.includes(eu);
   const previa = { ...meu, corpo, loco, cabeca, modulos: [] };
-  const linha = <T extends string>(lista: T[], atual: T, mudar: (x: T) => void, nome: (x: T) => string) => (
-    <div class="opcoes">
+  const linha = <T extends string>(rotulo: string, lista: T[], atual: T, mudar: (x: T) => void, nome: (x: T) => string, desenho: (x: T) => ComponentChildren) => (
+    <div class="rr-pecas" role="group" aria-label={rotulo}>
       {lista.map((x) => (
-        <button key={x} class={'opcao' + (atual === x ? ' on' : '')} aria-pressed={atual === x} onClick={() => mudar(x)}>
-          {nome(x)}
+        <button key={x} class={'rr-escolha' + (atual === x ? ' on' : '')} aria-pressed={atual === x} aria-label={nome(x)} onClick={() => mudar(x)}>
+          {desenho(x)}
         </button>
       ))}
     </div>
@@ -135,69 +136,53 @@ function Montar({ v, sala, eu, enviar }: PropsTelRagerob) {
       <div class="centro">
         <RoboCartao robo={previa} tam={150} />
       </div>
-      <label>{t('rrCarrocaria')}</label>
-      {linha(CORPOS, corpo, setCorpo, nomeCorpo)}
-      <label>{t('rrLocomocao')}</label>
-      {linha(LOCOS, loco, setLoco, nomeLoco)}
-      <label>{t('rrCabeca')}</label>
-      {linha(CABECAS, cabeca, setCabeca, (c) => ICONE_CABECA[c] + ' ' + nomeCabeca(c))}
+      {linha(t('rrCarrocaria'), CORPOS, corpo, setCorpo, nomeCorpo, (x) => (
+        <PecaSvg robo={{ ...previa, corpo: x }} peca="corpo" />
+      ))}
+      {linha(t('rrLocomocao'), LOCOS, loco, setLoco, nomeLoco, (x) => (
+        <PecaSvg robo={{ ...previa, corpo: 'quadrado', loco: x }} peca="loco" />
+      ))}
+      {linha(t('rrCabeca'), CABECAS, cabeca, setCabeca, nomeCabeca, (x) => (
+        <PecaSvg robo={{ ...previa, cabeca: x }} peca="cabeca" />
+      ))}
       <button class="rr-btn-grande" onClick={() => jogo(enviar, { tipo: 'rr_montar', id: '', corpo, loco, cabeca })}>
-        {feito ? '✅ ' + t('rrMontado') : t('rrMontar')}
+        {feito ? '✅ ' : ''}
+        {t('rrMontar')}
       </button>
     </div>
   );
 }
 
-function Leilao({ v, eu, enviar }: PropsTelRagerob) {
-  const [ofertas, setOfertas] = useState<Record<number, string>>({});
-  const [erro, setErro] = useState('');
+/** leilão ao vivo: o palco e os 3 botões (entrada, +50, +100); o valor vai absoluto */
+function Leilao({ v, sala, eu, enviar }: PropsTelRagerob) {
+  const l = v.leilao;
+  if (!l) return null;
   const din = v.carteira[eu] ?? 0;
-  const soma = Object.values(ofertas).reduce((a, x) => a + (Number(x) || 0), 0);
-  const enviou = v.enviaram.includes(eu);
-  const enviarOfertas = () => {
-    const o: Record<string, number> = {};
-    for (const [k, x] of Object.entries(ofertas)) {
-      const n = Math.floor(Number(x));
-      if (!n) continue;
-      if (n < PRECO[v.loja[Number(k)]]) return setErro(t('rrErroMinimo', { m: etiquetaModulo(v.loja[Number(k)]), n: PRECO[v.loja[Number(k)]] }));
-      o[k] = n;
-    }
-    if (soma > din) return setErro(t('rrErroDinheiro'));
-    setErro('');
-    jogo(enviar, { tipo: 'rr_ofertas', id: '', ofertas: o });
+  const base = PRECO[v.loja[l.item]];
+  const meu = l.lance?.id === eu;
+  const lance = (valor: number) => {
+    navigator.vibrate?.(15);
+    jogo(enviar, { tipo: 'rr_lance', id: '', item: l.item, valor });
   };
+  const fechado = l.martelo || meu;
   return (
     <div class="rr-coluna">
-      {v.loja.map((m, k) => {
-        const caro = PRECO[m] > din;
-        return (
-          <div key={k} class={'rr-cartao-mod linha' + (caro ? ' caro' : '')}>
-            <svg viewBox="-30 -44 60 54" width={56} aria-hidden="true">
-              <ModuloSvg m={m} seta />
-            </svg>
-            <div class="cresce">
-              <b>{etiquetaModulo(m)}</b>
-              <small class="rr-info">{infoModulo(m)}</small>
-            </div>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={PRECO[m]}
-              step={10}
-              disabled={caro}
-              placeholder={String(PRECO[m])}
-              aria-label={t('rrOferta', { m: etiquetaModulo(m) })}
-              value={ofertas[k] ?? ''}
-              onInput={(e) => setOfertas({ ...ofertas, [k]: (e.target as HTMLInputElement).value })}
-            />
-          </div>
-        );
-      })}
-      <p class="centro rr-mini">{t('rrTotalOfertas', { n: soma, d: din })}</p>
-      {erro && <p class="erro">{erro}</p>}
-      <button class="rr-btn-grande" onClick={enviarOfertas}>
-        {enviou ? '✅ ' + t('rrReenviar') : t('rrEnviarOfertas')}
-      </button>
+      <Palco v={v} sala={sala} />
+      <div class={'rr-lances' + (meu ? ' meu' : '')}>
+        <button class={'rr-btn-lance entrada' + (!l.lance && !fechado && din >= base ? ' pisca' : '')} disabled={fechado || !!l.lance || din < base} onClick={() => lance(base)}>
+          🙋 {t('rrDarEntrada')}
+          <small>{moeda(base)}</small>
+        </button>
+        {PASSOS_LANCE.map((p) => {
+          const n = (l.lance?.valor ?? base) + p;
+          return (
+            <button key={p} class="rr-btn-lance" disabled={fechado || !l.lance || din < n} aria-label={t('rrCobrir', { n: p, v: n })} onClick={() => lance(n)}>
+              +{p}
+              <small>{moeda(n)}</small>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -206,101 +191,91 @@ function LojaPrivada({ v, eu, enviar }: PropsTelRagerob) {
   const din = v.carteira[eu] ?? 0;
   return (
     <div class="rr-coluna">
-      {(v.lojaPrivada[eu] ?? []).map((m, k) =>
-        m ? (
-          <div key={k} class={'rr-cartao-mod linha' + (PRECO[m] > din ? ' caro' : '')}>
-            <svg viewBox="-30 -44 60 54" width={56} aria-hidden="true">
-              <ModuloSvg m={m} seta />
-            </svg>
-            <div class="cresce">
-              <b>{etiquetaModulo(m)}</b>
-              <small class="rr-info">{infoModulo(m)}</small>
-            </div>
-            <button class="rr-btn-metal pequeno" disabled={PRECO[m] > din} onClick={() => jogo(enviar, { tipo: 'rr_comprar', id: '', item: k })}>
-              {moeda(PRECO[m])}
-            </button>
-          </div>
-        ) : (
-          <div key={k} class="rr-cartao-mod linha caro">
-            ✅ {t('rrComprado')}
-          </div>
-        ),
-      )}
+      <div class="rr-montra">
+        {(v.lojaPrivada[eu] ?? []).map((m, k) => (
+          <button
+            key={k}
+            class="rr-escolha"
+            disabled={!m || PRECO[m] > din}
+            title={m ? infoModulo(m) : undefined}
+            aria-label={m ? t('rrComprar', { m: etiquetaModulo(m), n: PRECO[m] }) + '. ' + infoModulo(m) : t('rrComprado')}
+            onClick={() => jogo(enviar, { tipo: 'rr_comprar', id: '', item: k })}
+          >
+            {m ? (
+              <>
+                <ModuloMini m={m} tam={84} />
+                <span>{etiquetaModulo(m)}</span>
+                <b>{moeda(PRECO[m])}</b>
+              </>
+            ) : (
+              <span class="rr-grande">✅</span>
+            )}
+          </button>
+        ))}
+      </div>
       <button class="rr-btn-grande" onClick={() => jogo(enviar, { tipo: 'rr_pronto', id: '' })}>
-        {v.enviaram.includes(eu) ? '✅ ' + t('rrPronto') : t('rrAcabeiCompras')}
+        {v.enviaram.includes(eu) ? '✅ ' : ''}
+        {t('rrPronto')}
       </button>
     </div>
   );
 }
 
 function Apostar({ v, sala, eu, enviar }: PropsTelRagerob) {
-  const min = minimoAposta(v, eu);
-  const [robo, setRobo] = useState<string | null>(v.apostas[eu]?.robo ?? null);
-  const [valor, setValor] = useState(String(v.apostas[eu]?.valor || min));
-  const [erro, setErro] = useState('');
-  const din = v.carteira[eu] ?? 0;
-  const minha = v.apostas[eu];
-  const apostar = () => {
-    const n = Math.floor(Number(valor));
-    if (!robo) return setErro(t('rrEscolheRobo'));
-    if (!(n >= min && n <= din)) return setErro(t('rrErroAposta', { min, max: din }));
-    setErro('');
-    jogo(enviar, { tipo: 'rr_apostar', id: '', robo, valor: n });
-  };
+  const robo = v.apostas[eu];
   return (
     <div class="rr-coluna">
       <div class="rr-lista-robos">
         {(v.grupos[v.combateIdx] ?? []).map((id) => (
-          <button key={id} class={'rr-escolha' + (robo === id ? ' on' : '')} aria-pressed={robo === id} onClick={() => setRobo(id)}>
-            <RoboCartao robo={roboPorId(v, id)!} tam={70} />
-            <span>{nomeRobo(roboPorId(v, id), sala)}</span>
+          <button key={id} class={'rr-escolha' + (robo === id ? ' on' : '') + (robo ? '' : ' pisca')} aria-pressed={robo === id} onClick={() => (navigator.vibrate?.(15), jogo(enviar, { tipo: 'rr_apostar', id: '', robo: id }))}>
+            <RoboCartao robo={roboPorId(v, id)!} tam={96} />
+            <span>
+              {robo === id ? '✅ ' : ''}
+              {nomeRobo(roboPorId(v, id), sala)}
+            </span>
+            <Apostadores v={v} sala={sala} robo={id} tam={32} />
           </button>
         ))}
       </div>
-      <label>{t('rrValor', { min })}</label>
-      <input type="number" inputMode="numeric" min={min} max={din} step={10} value={valor} onInput={(e) => setValor((e.target as HTMLInputElement).value)} />
-      {erro && <p class="erro">{erro}</p>}
-      <button class="rr-btn-grande" onClick={apostar}>
-        {minha?.robo ? '✅ ' + t('rrApostado', { n: minha.valor }) : t('rrApostar')}
-      </button>
-      <button class="botao sec" onClick={() => jogo(enviar, { tipo: 'rr_apostar', id: '', robo: null, valor: 0 })}>
-        {minha && !minha.robo ? '✅ ' : ''}
-        {t('rrSemAposta', { n: Math.min(v.def.entrada, din) })}
-      </button>
+      <Premios v={v} />
     </div>
   );
 }
 
 function Instalar({ v, sala, eu, enviar }: PropsTelRagerob) {
-  const [sel, setSel] = useState<number | null>(null);
-  const roboId = roboDe(v, eu);
-  const robo = roboPorId(v, roboId);
+  const [escolhido, setSel] = useState<number | null>(null);
+  const robo = roboPorId(v, roboDe(v, eu));
   const inv = v.inventario[eu] ?? [];
-  if (!robo || !inv.length)
-    return (
-      <p class="centro">
-        {t('rrNadaInstalar')}
-        <br />
-        {olha(sala)}
-      </p>
-    );
+  if (!robo || (!inv.length && v.prontos.includes(eu))) return <p class="centro">{olha(sala)}</p>;
+  // só um módulo: já vai escolhido
+  const sel = inv.length === 1 ? 0 : escolhido !== null && escolhido < inv.length ? escolhido : null;
+  const troca = sel !== null && robo.modulos.some(Boolean) ? Math.ceil(PRECO[inv[sel]] / 2) : 0;
+  const tocar = (k: number) => {
+    if (sel === null) return;
+    navigator.vibrate?.(15);
+    jogo(enviar, { tipo: 'rr_instalar', id: '', inv: sel, encaixe: k });
+    setSel(null);
+  };
   return (
     <div class="rr-coluna">
       <b class="centro">{nomeRobo(robo, sala)}</b>
       <div class="centro">
-        <RoboCartao robo={robo} tam={220} seta aoTocar={(k) => sel !== null && (jogo(enviar, { tipo: 'rr_instalar', id: '', inv: sel, encaixe: k }), setSel(null))} />
+        <RoboCartao robo={robo} tam={240} seta pisca={sel !== null} nomeEncaixe={(k) => t('rrEncaixe', { n: k + 1 })} aoTocar={tocar} />
       </div>
-      <p class="centro rr-mini">{sel === null ? t('rrTocaModulo') : t('rrTocaEncaixe')}</p>
-      <div class="opcoes">
+      {/* hint: trocar (encaixe laranja) custa isto */}
+      <span class="rr-troca" style={{ visibility: troca ? 'visible' : 'hidden' }}>
+        🔁 {moeda(troca)}
+      </span>
+      <div class="rr-pecas">
         {inv.map((m, k) => (
-          <button key={k} class={'opcao' + (sel === k ? ' on' : '')} aria-pressed={sel === k} onClick={() => setSel(k)}>
-            {etiquetaModulo(m)}
+          <button key={k} class={'rr-escolha' + (sel === k ? ' on' : sel === null ? ' pisca' : '')} aria-pressed={sel === k} aria-label={etiquetaModulo(m) + '. ' + infoModulo(m)} title={infoModulo(m)} onClick={() => setSel(k)}>
+            <ModuloMini m={m} tam={64} />
           </button>
         ))}
       </div>
-      <p class="rr-mini centro">{t('rrTrocar')}</p>
       <button class="rr-btn-grande" onClick={() => jogo(enviar, { tipo: 'rr_pronto', id: '' })}>
-        {v.prontos.includes(eu) ? '✅ ' + t('rrPronto') : t('rrPronto')}
+        {v.prontos.includes(eu) ? '✅ ' : ''}
+        {t('rrPronto')}
       </button>
     </div>
   );
@@ -339,7 +314,6 @@ function Luta({ v, sala, eu, agora, enviar }: PropsTelRagerob) {
         {topo}
         {arena}
         <Comando enviar={enviar} />
-        <p class="centro rr-mini">{t('rrSozinhos')}</p>
       </>
     );
   const fila = roboId ? c.fila[roboId] ?? [] : [];
@@ -350,10 +324,22 @@ function Luta({ v, sala, eu, agora, enviar }: PropsTelRagerob) {
       {arena}
       {v.def.modo === 'normal' && noCombate ? (
         <div class="rr-coluna">
-          <button class="rr-btn-grande" disabled={naFila >= 0 || (v.carteira[eu] ?? 0) < PRECO_CONTROLO} onClick={() => jogo(enviar, { tipo: 'rr_controlar', id: '' })}>
-            {naFila >= 0 ? t('rrNaFila', { n: naFila + 1 }) : t('rrControlar', { n: PRECO_CONTROLO })}
+          <button class="rr-btn-grande rr-controlar" aria-label={naFila >= 0 ? t('rrNaFila', { n: naFila + 1 }) : t('rrControlar', { n: PRECO_CONTROLO })} disabled={naFila >= 0 || (v.carteira[eu] ?? 0) < PRECO_CONTROLO} onClick={() => jogo(enviar, { tipo: 'rr_controlar', id: '' })}>
+            {naFila >= 0 ? (
+              <span>⏳ {naFila + 1}º</span>
+            ) : (
+              <>
+                <span>🎮</span>
+                <span>⏱️ {T_CONTROLO} s</span>
+                <span>{moeda(PRECO_CONTROLO)}</span>
+              </>
+            )}
           </button>
-          {cond && cond.ate > agora() && <p class="centro">{t('rrOutroConduz')}</p>}
+          {cond && cond.ate > agora() && (
+            <p class="centro rr-apostadores" aria-label={t('rrOutroConduz')}>
+              <Rosto v={v} sala={sala} id={cond.id} tam={44} /> 🎮 {Math.max(0, Math.ceil((cond.ate - agora()) / 1000))} s
+            </p>
+          )}
         </div>
       ) : null}
       {!sala.semTv && <p class="centro">{t('rrOlhaTv')}</p>}
@@ -384,20 +370,22 @@ export function TelemovelRagerob(p: PropsTelRagerob) {
   const participa = v.participantes.includes(eu);
   const semTv = !!p.sala.semTv;
   let corpo;
+  const titulo = v.fase === 'montar' ? t('rrMontarTv') : v.fase === 'loja' ? t(v.def.loja === 'leilao' ? 'rrLeilaoTv' : 'rrLojaPrivadaTv') : v.fase === 'aposta' ? t('rrApostaTv') : v.fase === 'instalar' ? t('rrInstalarTv') : '';
   // sem TV, a audiência também vê a arena
   if (!participa && !(semTv && v.fase === 'combate' && v.combate)) corpo = <p class="centro">{t('rrAudiencia')}</p>;
   else if (v.fase === 'montar') corpo = <Montar {...p} />;
-  else if (v.fase === 'loja') corpo = !ativo ? <p class="centro">{t('rrSemDinheiro')}</p> : v.def.loja === 'leilao' ? <Leilao key={v.ronda} {...p} /> : <LojaPrivada {...p} />;
-  else if (v.fase === 'aposta') corpo = !ativo ? <p class="centro">{t('rrSemDinheiro')}</p> : <Apostar key={v.combateIdx} {...p} />;
+  else if (v.fase === 'loja') corpo = v.def.loja === 'leilao' ? <Leilao {...p} /> : !ativo ? <p class="centro">{t('rrSemDinheiro')}</p> : <LojaPrivada {...p} />;
+  else if (v.fase === 'aposta') corpo = <Apostar {...p} />;
   else if (v.fase === 'instalar') corpo = <Instalar {...p} />;
   else if (v.fase === 'combate' && v.combate) return <div class="pag jogo-ragerob tel"><Luta {...p} /></div>;
   else if (v.fase === 'resultado' && v.resultado) {
     const g = v.resultado.ganhos[eu] ?? 0;
     const meu = roboDe(v, eu);
     const ganhei = v.def.modo === 'normal' ? !!meu && v.resultado.vencedor === meu : (v.resultado.ordem[0] ?? []).includes(meu ?? '');
+    const lugar = meu ? (posicoes(v.resultado.ordem)[meu] ?? 0) : 0;
     corpo = (
       <div class="rr-coluna centro">
-        <p class="rr-grande">{meu ? (ganhei ? '🏆 ' + t('rrGanhaste') : t('rrPerdeste')) : t('rrSemApostaRes')}</p>
+        <p class="rr-grande">{meu ? (ganhei ? '🏆 ' + t('rrGanhaste') : t('rrLugar', { n: lugar + 1 })) : t('rrSemApostaRes')}</p>
         <p class="rr-grande">
           <b class={g >= 0 ? 'rr-mais' : 'rr-menos'}>{g >= 0 ? '+' + g : g}</b>
         </p>
@@ -447,11 +435,16 @@ export function TelemovelRagerob(p: PropsTelRagerob) {
       </div>
       {v.restante !== null && <div class="aviso">{t('pausa')}</div>}
       {(v.inventario[eu]?.length ?? 0) > 0 && v.fase !== 'instalar' && (
-        <p class="rr-mini centro">
-          {t('rrInventario')}: {v.inventario[eu].map(etiquetaModulo).join(', ')}
-        </p>
+        <div class="rr-inv" role="img" aria-label={t('rrInventario') + ': ' + v.inventario[eu].map(etiquetaModulo).join(', ')}>
+          🎒
+          {v.inventario[eu].map((m, k) => (
+            <ModuloMini key={k} m={m} tam={34} />
+          ))}
+        </div>
       )}
+      {participa && titulo && <h2 class="rr-titulo-tel">{titulo}</h2>}
       {corpo}
+      {participa && semTv && v.fase === 'loja' && v.def.loja === 'privada' && <QuemEnviou sala={p.sala} ids={ativos(v)} feitos={v.enviaram} />}
     </div>
   );
 }

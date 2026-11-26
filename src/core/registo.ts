@@ -69,7 +69,34 @@ import {
   reduzRagerob,
   vistaRagerob,
 } from '../jogos/ragerob/regras';
-import { BOT_5050, BOT_IDEIAS, BOT_MAQUINAS, BOT_MONA, BOT_PENSA, BOT_PIRATA, BOT_RAGEROB, BOT_REI, BOT_SEVIRA, BOT_WIFI, type BotJogo } from './ia';
+import {
+  DEF_PADRAO_SEMJUIZO,
+  MAX_JOGADORES as MAX_SEMJUIZO,
+  MIN_JOGADORES as MIN_SEMJUIZO,
+  TIPOS_SEMJUIZO,
+  importanteSemJuizo,
+  novoSemJuizo,
+  privadoSemJuizo,
+  reduzSemJuizo,
+  sairSemJuizo,
+  vistaSemJuizo,
+} from '../jogos/semjuizo/regras';
+import { conteudoSemJuizo } from '../jogos/semjuizo/conteudo';
+import {
+  DEF_PADRAO_DUELO,
+  MAX_JOGADORES as MAX_DUELO,
+  MIN_JOGADORES as MIN_DUELO,
+  TIPOS_DUELO,
+  foraDuelo,
+  importanteDuelo,
+  novoDuelo,
+  privadoDuelo,
+  reduzDuelo,
+  resultadoDuelo,
+  sairDuelo,
+  vistaDuelo,
+} from '../jogos/duelo-rabiscos/regras';
+import { BOT_5050, BOT_DUELO, BOT_IDEIAS, BOT_MAQUINAS, BOT_MONA, BOT_PENSA, BOT_PIRATA, BOT_RAGEROB, BOT_REI, BOT_SEMJUIZO, BOT_SEVIRA, BOT_WIFI, type BotJogo } from './ia';
 
 /** o que todos os estados de jogo têm (a sala e as saídas a meio contam com isto) */
 export interface JogoComum {
@@ -109,7 +136,8 @@ export interface DefJogo<I extends string, C extends string, CD extends string, 
   max?: number;
   /** só com TV (info/arquitetura.md → Modo sem TV) */
   soTv?: boolean;
-  novo(ids: string[], def: D, agora: number, usadas: string[], idioma: Idioma): G;
+  /** `fotos`: as da galeria que cada um juntou na sala de espera (só o Sem Juízo as usa) */
+  novo(ids: string[], def: D, agora: number, usadas: string[], idioma: Idioma, fotos: Record<string, string[]>): G;
   reduz(g: G, a: A, agora: number): G;
   aceita(a: { tipo: string }): boolean;
   soLider?: readonly string[];
@@ -268,6 +296,22 @@ export const JOGOS = [
     bot: BOT_REI,
   }),
   jogo({
+    id: 'semjuizo',
+    chave: 'semjuizo',
+    chaveDef: 'defSemJuizo',
+    definir: 'definir_semjuizo',
+    padrao: DEF_PADRAO_SEMJUIZO,
+    min: MIN_SEMJUIZO,
+    max: MAX_SEMJUIZO,
+    novo: (ids, def, agora, usadas, _idioma, fotos) => novoSemJuizo(ids, def, agora, conteudoSemJuizo(), fotos, usadas),
+    reduz: reduzSemJuizo,
+    aceita: de(TIPOS_SEMJUIZO),
+    vista: (g) => vistaSemJuizo(g),
+    privado: privadoSemJuizo,
+    ganchos: { importante: importanteSemJuizo, seguirSem: sairSemJuizo },
+    bot: BOT_SEMJUIZO,
+  }),
+  jogo({
     id: 'ragerob',
     chave: 'ragerob',
     chaveDef: 'defRagerob',
@@ -284,6 +328,25 @@ export const JOGOS = [
     bot: BOT_RAGEROB,
     // os pontos são dos robôs: vale a classificação dos jogadores (dinheiro, ou a ordem do robô de cada um no modo Pilotos)
     resultado: (g) => Object.fromEntries(classificacaoRagerob(g).map((c, i, l) => [c.id, g.def.modo === 'normal' ? c.valor : l.length - i])),
+  }),
+  // escondido até ao fim da fase 6: sem linha no CATALOGO (src/core/jogos.ts), não aparece no menu, na roleta nem no torneio
+  jogo({
+    id: 'duelo',
+    chave: 'duelo',
+    chaveDef: 'defDuelo',
+    definir: 'definir_duelo',
+    padrao: DEF_PADRAO_DUELO,
+    min: MIN_DUELO,
+    max: MAX_DUELO,
+    novo: (ids, def, agora, usadas) => novoDuelo(ids, def, agora, usadas),
+    reduz: (g, a, agora) => reduzDuelo(g, a, agora),
+    aceita: de(TIPOS_DUELO),
+    vista: (g) => vistaDuelo(g),
+    // os desenhos, uma só vez; os bots não precisam deles
+    privado: (g, _id, ctx) => (ctx.bot ? null : privadoDuelo(g)),
+    ganchos: { importante: importanteDuelo, fora: foraDuelo, seguirSem: (g, id, agora) => sairDuelo(g, id, agora) },
+    bot: BOT_DUELO,
+    resultado: resultadoDuelo,
   }),
 ] as const;
 

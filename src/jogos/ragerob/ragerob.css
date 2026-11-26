@@ -10,6 +10,7 @@
 .rr-luta { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 12px 16px; height: calc(100cqh - 215px); }
 .rr-arena-caixa { position: relative; min-height: 0; }
 .rr-arena { width: 100%; height: 100%; display: block; border: 4px solid var(--rr-preto); border-radius: 8px; background: var(--rr-terra); }
+.rr-arena-canvas { position: absolute; inset: 0; object-fit: contain; box-sizing: border-box; }
 .rr-nome-arena { font: 700 20px 'Baloo 2', sans-serif; fill: var(--rr-preto); paint-order: stroke; stroke: var(--rr-creme); stroke-width: 4px; }
 .rr-conduz { font: 700 18px 'Baloo 2', sans-serif; fill: #f2c230; }
 .rr-coluna-arena { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
@@ -33,12 +34,7 @@
 .rr-tabela li.on { font-weight: 700; }
 .rr-robos { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; padding: 10px; }
 .rr-cartao-robo { background: var(--rr-creme); border: 4px solid var(--rr-preto); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; align-items: center; font-size: 22px; min-width: 150px; }
-.rr-loja { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
-.rr-cartao-mod { background: var(--rr-creme); border: 3px solid var(--rr-preto); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 22px; }
-.rr-cartao-mod.linha { flex-direction: row; text-align: left; font-size: 16px; }
-.rr-cartao-mod.caro { opacity: 0.55; }
-.rr-cartao-mod input { width: 84px; }
-.rr-info { display: block; color: #4a3220; font-size: 13px; }
+.rr-chip.rr-carteira { display: inline-flex; align-items: center; gap: 6px; }
 .rr-quem { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px; }
 .rr-chip { background: var(--rr-creme); border: 2px solid var(--rr-preto); border-radius: 20px; padding: 4px 12px; font-size: 20px; }
 .tel .rr-chip { font-size: 14px; }
@@ -75,7 +71,53 @@
 .rr-escolha.on { background: #f2c230; }
 .jogo-ragerob .opcao.on { background: #f2c230; color: var(--rr-preto); }
 .rr-palpebra { transform: scaleY(0); transform-box: fill-box; transform-origin: center; }
+.pisca > .rr-palpebra { transform: scaleY(1); }
+/* rostos, leilão ao vivo e hints */
+.rr-rosto { display: inline-flex; align-items: center; justify-content: center; }
+.rr-apostadores { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; }
+.rr-titulo-tel { text-align: center; margin: 4px 0 8px; font-size: 24px; }
+.rr-palco { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; background: var(--rr-creme); color: var(--rr-preto); border: 4px solid var(--rr-preto); border-radius: 12px; padding: 10px; }
+.rr-palco-mod, .rr-lance, .rr-lance-novo { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.rr-lance { min-height: 168px; }
+.rr-lance b { font-size: 30px; }
+.rr-martelo { font-size: 20px; font-weight: 800; color: #b0261a; }
+.rr-fila-mods { grid-column: 1 / -1; display: flex; justify-content: center; gap: 6px; }
+.rr-fila-mod { position: relative; border: 3px solid transparent; border-radius: 8px; padding: 2px; }
+.rr-fila-mod.on { border-color: #b0261a; }
+.rr-fila-mod.passou > svg { opacity: 0.35; }
+.rr-fila-mod .rr-rosto { position: absolute; right: -4px; bottom: -4px; }
+.rr-palco.grande { width: min(1180px, 90%); margin: 0 auto; padding: 16px 24px; }
+.rr-palco.grande .rr-palco-mod > b { font-size: 36px; }
+.rr-palco.grande .rr-lance { min-height: 310px; }
+.rr-palco.grande .rr-lance b { font-size: 64px; line-height: 1.1; }
+.rr-palco.grande .rr-martelo { font-size: 40px; }
+.rr-palco.grande .rr-fila-mods { gap: 16px; }
+.rr-lances { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; }
+.rr-btn-lance { background: #f2c230; color: var(--rr-preto); border: 4px solid var(--rr-preto); border-radius: 10px; font: 800 24px 'Baloo 2', sans-serif; min-height: 96px; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.rr-btn-lance.entrada { font-size: 19px; }
+.rr-btn-lance small { font-size: 17px; }
+.rr-btn-lance:disabled { background: #9aa3ab; opacity: 0.55; }
+.rr-btn-lance:focus-visible, .rr-escolha:focus-visible { outline: 3px solid #f08a1c; outline-offset: 2px; }
+.rr-lances.meu .rr-btn-lance { border-color: #5fbf3a; }
+.rr-montra { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rr-montra .rr-escolha:disabled { opacity: 0.55; }
+.rr-montra .rr-escolha b { font-size: 20px; }
+.rr-pecas { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 4px; }
+.rr-pecas .rr-escolha { padding: 2px; width: 70px; flex: none; }
+.rr-premios { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; margin: 6px 0; font-size: 20px; }
+.jogo-ragerob.tv > .rr-premios { font-size: 36px; gap: 40px; }
+.rr-troca { align-self: center; font-weight: 700; color: #f08a1c; }
+.rr-inv { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; min-height: 40px; }
+.rr-inv svg { background: var(--rr-creme); border-radius: 6px; }
+.rr-controlar { display: flex; justify-content: space-around; align-items: center; font-size: 26px; min-height: 84px; }
+.rr-encaixe-pisca { stroke: #5fbf3a; stroke-width: 4px; stroke-dasharray: 5 3; cursor: pointer; }
+.rr-encaixe-pisca.ocupado { stroke: #f08a1c; }
 @media (prefers-reduced-motion: no-preference) {
-  .rr-palpebra { animation: rr-piscar 7s infinite; }
+  .rr-encaixe-pisca { animation: rr-encaixe 1s steps(1) infinite; }
+  .rr-escolha.pisca, .rr-btn-lance.pisca { animation: rr-hint 1s steps(1) infinite; }
+  .rr-lance-novo { animation: rr-salta 0.3s ease-out; }
+  .rr-palco.martelo .rr-martelo { animation: rr-salta 0.3s ease-out; }
 }
-@keyframes rr-piscar { 0%, 94%, 100% { transform: scaleY(0); } 96% { transform: scaleY(1); } }
+@keyframes rr-hint { 50% { box-shadow: 0 0 0 5px #f2c230; } }
+@keyframes rr-encaixe { 50% { opacity: 0.3; } }
+@keyframes rr-salta { 0% { transform: scale(0.6); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }

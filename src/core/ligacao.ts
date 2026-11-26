@@ -5,7 +5,7 @@ import { codigoSala, definirSal, novoSal, obterSal, paramsHash } from './ids';
 import { BATIMENTO, CHAVE_ESTADO, CHAVE_SEQ, COPIA_MAX, ESPERA_HERDEIRO, INTERVALO_COPIA, escolherHerdeiro, gravarEstado, guardarAssumir, horaRetoma, lerEstado, rotaCom, tirarAssumir } from './passagem';
 import { privadosPorAparelho } from './privado';
 import { PASSA_JA, ProtocoloCliente, ProtocoloHost, publicas, type ChavesPublicasHost, type CopiaHost, type MsgPedir, type Passagem } from './protocolo';
-import { ID_TV, assumirSemTv, comandoValido, novaSala, privadoSala, reduzSala, virarTv, vistaSala, type AcaoSala, type EstadoSala, type Idioma, type Tecla, type VistaSala } from './sala';
+import { ID_TV, assumirSemTv, comandoValido, novaSala, privadoSala, reduzSala, semFotos, virarTv, vistaSala, type AcaoSala, type EstadoSala, type Idioma, type Tecla, type VistaSala } from './sala';
 
 /** quanto o anfitrião tenta passar a party à TV escolhida antes de desistir (ms) */
 const ESPERA_TV = 12_000;
@@ -199,7 +199,7 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     const t = Date.now();
     const c = copiada.current;
     if (h && (mudou || (c.estado !== ref.current && t - c.em >= INTERVALO_COPIA) || t - c.em >= COPIA_MAX)) {
-      const m = p.copia(h.ap, { seq: seq.current, agora: agora(), estado: ref.current, sal: obterSal(), fixadas: fixadasCopia(), chaves: h.chaves, cadeia: [...p.cadeia, p.passar(publicas(h.chaves))] });
+      const m = p.copia(h.ap, { seq: seq.current, agora: agora(), estado: semFotos(ref.current), sal: obterSal(), fixadas: fixadasCopia(), chaves: h.chaves, cadeia: [...p.cadeia, p.passar(publicas(h.chaves))] });
       if (m) {
         canal.current?.enviar('copia', m);
         copiada.current = { em: t, estado: ref.current };
@@ -271,7 +271,7 @@ export function useHost(idioma: Idioma, aoComando?: (t: Tecla) => void, semTv?: 
     }
     const p = proto.current!;
     publicar(true);
-    const m = p.copia(x.ap, { seq: seq.current, agora: agora(), estado: virarTv(ref.current, alvo, agora()), sal: obterSal(), fixadas: fixadasCopia(), chaves: x.chaves, cadeia: [...p.cadeia, p.passar(publicas(x.chaves))], tv: true });
+    const m = p.copia(x.ap, { seq: seq.current, agora: agora(), estado: semFotos(virarTv(ref.current, alvo, agora())), sal: obterSal(), fixadas: fixadasCopia(), chaves: x.chaves, cadeia: [...p.cadeia, p.passar(publicas(x.chaves))], tv: true });
     if (m) canal.current?.enviar('copia', m);
   };
 

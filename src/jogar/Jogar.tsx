@@ -11,6 +11,7 @@ import { CadeadoParty, EscolherLider, GerirJogadores, PopupBot, PopupCodigo, Pop
 import { linkJogar } from '../ui/qr';
 import { EcraAbertura } from '../ui/abertura';
 import { PlacarTorneio, Roleta, textosDoModo } from '../ui/modos';
+import { GaleriaSemJuizo } from '../jogos/semjuizo/galeria';
 import { nomeBoneco } from '../ui/bonecos';
 
 /** tags dos bots que este aparelho criou (o líder precisa delas para "és tu o autor") */
@@ -289,6 +290,7 @@ function Lobby({ vista, eu, entrada, mudar, enviar, impressao }: { vista: VistaS
       ) : (
         <p class="centro mini">{t('esperaVip', { nome: lider?.nome ?? '…' })}</p>
       )}
+      <GaleriaSemJuizo vista={vista} eu={eu} enviar={enviar} />
       <Preparar vista={vista} eu={eu} enviar={enviar} />
 
       {popup && (

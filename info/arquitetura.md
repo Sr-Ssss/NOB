@@ -138,6 +138,7 @@ android/       projeto Capacitor (Fase 3)
   - boa prática: detalhes finos (pestanas, olheiras, brilhos) com traço grosso, para se lerem a 32 px; cada cara reconhece-se também a preto e branco;
   - boa prática: piscar dessincronizado entre bonecos e desligado com "reduzir movimento" (`prefers-reduced-motion`);
   - animação: só **piscar os olhos**, devagar, de vez em quando;
+  - desempenho (25/11): nada de animações CSS infinitas nos bonecos; o piscar vem de um só relógio (`src/ui/piscar.ts`) e cada boneco é uma imagem feita uma vez (`bonecos.tsx`), porque o filtro de rabisco é caro de repintar;
   - inspiração no estilo geral de party games desenhados à mão, **sem copiar personagens de outro jogo**.
 - **Logo e ícone (ponto 4, aprovado 18/11)**:
   - **ícone**: fundo azul-noite (#26215C), cantos redondos; ao centro um **O grosso coral-vivo (#FF6B4A)** com buraco no meio, traço preto rabiscado como os bonecos; a **cara fica só na parte de baixo do O** (2 olhos pequenos + sorriso). Os olhos piscam só na app, nunca no ícone;

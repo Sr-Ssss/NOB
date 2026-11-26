@@ -6,7 +6,9 @@ import { quadroValido, type Quadro } from './quadro';
  * Ragerob: regras em info/jogos/rinha-de-robos.md. A física corre só no host (a TV ou, sem TV, o telemóvel que tem a sala),
  * que manda o fim do combate (`rr_fim`), as vidas (`rr_vidas`) e, sem TV, os quadros da arena (`rr_quadro`). Este reducer só trata dinheiro, loja, apostas,
  * torneio/liga e quem conduz.
- * Decisões do utilizador (17/11): leilão 30 s, apostas 20 s, instalar 20 s, combate 90 s; depois a arena encolhe
+ * Leilão ao vivo (25/11): um módulo de cada vez em palco, lances públicos, o dinheiro só sai ao bater o martelo.
+ * Apostas por pódio (25/11, modo normal): escolhe-se um robô, sem pôr dinheiro; paga-se dinheiro novo pelo lugar dele.
+ * Decisões do utilizador (17/11): loja privada 30 s, apostas 20 s, instalar 20 s, combate 90 s; depois a arena encolhe
  * a arder até sobrar um (ou nenhum); colocação = ordem de KO (KO ao mesmo tempo = empate); Pilotos: cada um escolhe
  * carroçaria + locomoção + cabeça (sem escolha = sorteio); bots e quem não conduz = IA; 9–10 pilotos = 12 robôs.
  */
@@ -22,18 +24,23 @@ export interface DefRagerob {
   /** modo Pilotos (liga) */
   rondasPilotos: number;
   loja: Loja;
-  entrada: number;
-  minimo: number;
 }
 
-export const DEF_PADRAO_RAGEROB: DefRagerob = { modo: 'normal', rondas: 3, rondasPilotos: 4, loja: 'leilao', entrada: 50, minimo: 50 };
-export const OPCOES_RAGEROB = { rondas: [2, 3, 4], rondasPilotos: [2, 3, 4, 5, 6], entrada: [0, 50, 100], minimo: [50, 100] };
+export const DEF_PADRAO_RAGEROB: DefRagerob = { modo: 'normal', rondas: 3, rondasPilotos: 4, loja: 'leilao' };
+export const OPCOES_RAGEROB = { rondas: [2, 3, 4], rondasPilotos: [2, 3, 4, 5, 6] };
 export const MIN_JOGADORES = 2;
 export const MAX_JOGADORES = 10;
-export const CAPITAL = 1500;
+export const CAPITAL = 500;
+export const CAPITAL_PILOTOS = 1500;
 export const PRECO_CONTROLO = 100;
-export const T_CONTROLO = 5;
+export const T_CONTROLO = 15;
+/** loja privada */
 export const T_LOJA = 30;
+/** leilão: tempo de cada módulo, mínimo garantido depois de um lance, martelo */
+export const T_LANCE = 10;
+export const T_LANCE_EXTRA = 6;
+export const T_MARTELO = 2;
+export const PASSOS_LANCE = [50, 100];
 export const T_APOSTA = 20;
 export const T_INSTALAR = 20;
 export const T_MONTAR = 20;
@@ -49,10 +56,11 @@ export const P_KO = 100;
 export const TETO_DANO = 300;
 export const P_COLOCACAO = [300, 200, 100, 0];
 export const PONTOS = [3, 2, 1, 0];
-/** modo normal: devolução a quem apostou num robô que perdeu, em fração de metade do bolo, a contar do fim (último, penúltimo, antepenúltimo) */
-export const CONSOLACAO = [0.1, 0.2, 0.3];
+/** modo normal: prémio de quem escolheu o robô, pelo lugar dele (1.º, 2.º…); empatados recebem o do melhor lugar do grupo */
+export const PREMIOS = [250, 150, 100, 50];
+export const PREMIOS_FINAL = [400, 150];
 export const P_RECUPERACAO = 100;
-export const TIPOS_RAGEROB = ['rr_montar', 'rr_ofertas', 'rr_comprar', 'rr_apostar', 'rr_instalar', 'rr_pronto', 'rr_controlar', 'rr_conduzir', 'rr_vidas', 'rr_quadro', 'rr_fim'];
+export const TIPOS_RAGEROB = ['rr_montar', 'rr_lance', 'rr_comprar', 'rr_apostar', 'rr_instalar', 'rr_pronto', 'rr_controlar', 'rr_conduzir', 'rr_vidas', 'rr_quadro', 'rr_fim'];
 /** só o host (a TV ou, sem TV, o telemóvel que tem a sala) as manda */
 export const SO_TV_RAGEROB = ['rr_vidas', 'rr_quadro', 'rr_fim'];
 
@@ -66,11 +74,11 @@ export interface Comando {
 
 export type AcaoRagerob =
   | { tipo: 'rr_montar'; id: string; corpo: Corpo; loco: Loco; cabeca: Cabeca }
-  /** índice do item → valor (todas as ofertas de uma vez) */
-  | { tipo: 'rr_ofertas'; id: string; ofertas: Record<string, number> }
+  /** leilão: `valor` absoluto (dois toques ao mesmo tempo nunca fazem pagar mais do que se viu) */
+  | { tipo: 'rr_lance'; id: string; item: number; valor: number }
   | { tipo: 'rr_comprar'; id: string; item: number }
-  /** robo null = não apostar (só a entrada) */
-  | { tipo: 'rr_apostar'; id: string; robo: string | null; valor: number }
+  /** escolher o robô (pode mudar até o tempo acabar) */
+  | { tipo: 'rr_apostar'; id: string; robo: string }
   | { tipo: 'rr_instalar'; id: string; inv: number; encaixe: number }
   | { tipo: 'rr_pronto'; id: string }
   | { tipo: 'rr_controlar'; id: string }
@@ -83,9 +91,12 @@ export type AcaoRagerob =
   | { tipo: 'ligados'; ids: string[] }
   | { tipo: 'tick' };
 
-export interface Aposta {
-  robo: string | null;
-  valor: number;
+/** o módulo em palco (id = jogador ou, nos Pilotos, o robô da IA) */
+export interface Leilao {
+  item: number;
+  lance: { id: string; valor: number } | null;
+  /** o martelo bateu: mostra-se quem levou */
+  martelo: boolean;
 }
 
 export interface Combate {
@@ -136,19 +147,16 @@ export interface EstadoRagerob {
   combate: Combate | null;
   /** dinheiro por jogador (Pilotos: também os robôs da IA, pelo id do robô) */
   carteira: Record<string, number>;
-  bolo: number;
-  /** normal: dinheiro que entrou no início (para provar que se conserva) */
   inventario: Record<string, Modulo[]>;
   /** leilão: os 5 da ronda; loja privada: 5 por jogador */
   loja: Modulo[];
   lojaPrivada: Record<string, (Modulo | null)[]>;
-  ofertas: Record<string, Record<string, number>>;
+  leilao: Leilao | null;
   enviaram: string[];
-  /** quem ganhou cada item do leilão (null = ninguém) */
-  vendidos: ({ id: string; valor: number } | null)[] | null;
-  apostas: Record<string, Aposta>;
-  /** quanto cada um já pôs no bolo neste combate */
-  pago: Record<string, number>;
+  /** quem levou cada módulo já leiloado (null = ninguém) */
+  vendidos: ({ id: string; valor: number } | null)[];
+  /** normal: jogador → robô que escolheu neste combate */
+  apostas: Record<string, string>;
   prontos: string[];
   montados: string[];
   resultado: Resultado | null;
@@ -177,15 +185,15 @@ export function novoRagerob(jogadores: string[], def: DefRagerob, agora: number,
   const cores = baralhar(CORES.map((_, i) => i), seed + 5);
   const robos: Robo[] = Array.from({ length: n }, (_, i) => novoRobo('r' + (i + 1), cores[i], seed + 100 * i, pilotos ? jogadores[i] : undefined));
   const carteira: Record<string, number> = {};
-  for (const j of jogadores) carteira[j] = CAPITAL;
-  if (pilotos) for (const r of robos) if (!r.dono) carteira[r.id] = CAPITAL;
+  for (const j of jogadores) carteira[j] = pilotos ? CAPITAL_PILOTOS : CAPITAL;
+  if (pilotos) for (const r of robos) if (!r.dono) carteira[r.id] = CAPITAL_PILOTOS;
   const base: EstadoRagerob = {
     def, fase: pilotos ? 'montar' : 'loja', terminaEm: agora + (pilotos ? T_MONTAR : T_LOJA) * 1000, pausaRestante: null,
     participantes: [...jogadores], audiencia: [], ligados: [...jogadores], usadas, seed,
     ronda: 1, rondas: pilotos ? def.rondasPilotos : Math.max(2, Math.min(4, def.rondas)),
     robos, vivos: robos.map((r) => r.id), grupos: [], combateIdx: 0, combate: null,
-    carteira, bolo: 0, inventario: Object.fromEntries(jogadores.map((j) => [j, []])), loja: [], lojaPrivada: {}, ofertas: {}, enviaram: [], vendidos: null,
-    apostas: {}, pago: {}, prontos: [], montados: [], resultado: null,
+    carteira, inventario: Object.fromEntries(jogadores.map((j) => [j, []])), loja: [], lojaPrivada: {}, leilao: null, enviaram: [], vendidos: [],
+    apostas: {}, prontos: [], montados: [], resultado: null,
     pontos: Object.fromEntries(robos.map((r) => [r.id, 0])), danoTotal: Object.fromEntries(robos.map((r) => [r.id, 0])), campeao: null,
   };
   const g = { ...base, grupos: gruposDaRonda(base) };
@@ -201,7 +209,7 @@ function gruposDaRonda(s: EstadoRagerob): string[][] {
   return g;
 }
 
-/** quem pode gastar/apostar: participante com dinheiro (com 0 fica a assistir) */
+/** quem pode gastar: participante com dinheiro (para escolher robô não é preciso) */
 export function ativos(s: Pick<EstadoRagerob, 'participantes' | 'carteira'>): string[] {
   return s.participantes.filter((j) => (s.carteira[j] ?? 0) > 0);
 }
@@ -209,35 +217,79 @@ export function ativos(s: Pick<EstadoRagerob, 'participantes' | 'carteira'>): st
 /** robô do jogador no combate atual (normal: aquele em que apostou; Pilotos: o seu) */
 export function roboDe(s: Pick<EstadoRagerob, 'def' | 'robos' | 'apostas'>, id: string): string | null {
   if (s.def.modo === 'pilotos') return s.robos.find((r) => r.dono === id)?.id ?? null;
-  return s.apostas[id]?.robo ?? null;
+  return s.apostas[id] ?? null;
 }
 
 function abrirLoja(s: EstadoRagerob, agora: number): EstadoRagerob {
   const sorteio = (k: number) => baralhar(MODULOS, s.seed + 1000 * s.ronda + k).slice(0, ITENS_LOJA);
   const privada = s.def.loja === 'privada';
-  return {
-    ...s, fase: 'loja', terminaEm: agora + T_LOJA * 1000, ofertas: {}, enviaram: [], vendidos: null, prontos: [],
+  const r: EstadoRagerob = {
+    ...s, fase: 'loja', terminaEm: agora + T_LOJA * 1000, leilao: null, enviaram: [], vendidos: [], prontos: [],
     loja: privada ? [] : sorteio(0),
     lojaPrivada: privada ? Object.fromEntries(s.participantes.map((j, i) => [j, sorteio(i + 1)])) : {},
   };
+  return privada ? r : abrirItem(r, 0, agora);
 }
 
-/** a IA (robôs sem dono no modo Pilotos) licita como os jogadores: um módulo ao calhas, se couber e tiver encaixe livre */
-function ofertasIa(s: EstadoRagerob): Record<string, Record<string, number>> {
-  const r: Record<string, Record<string, number>> = {};
-  if (s.def.modo !== 'pilotos' || s.def.loja !== 'leilao') return r;
-  s.robos.forEach((robo, i) => {
-    if (robo.dono || !robo.modulos.includes(null)) return;
-    const item = Math.floor(rnd(s.seed + 7 * s.ronda + i) * s.loja.length);
-    const valor = PRECO[s.loja[item]] + 10 * Math.floor(rnd(s.seed + 13 * s.ronda + i) * 6);
-    if (valor <= (s.carteira[robo.id] ?? 0)) r[robo.id] = { [item]: valor };
-  });
-  return r;
+/** até quanto a IA (robôs sem dono no modo Pilotos) licita neste módulo: um módulo ao calhas por ronda, se couber e tiver encaixe livre */
+function limiteIa(s: EstadoRagerob, i: number, item: number): number {
+  const robo = s.robos[i];
+  if (s.def.modo !== 'pilotos' || robo.dono || !robo.modulos.includes(null)) return 0;
+  if (Math.floor(rnd(s.seed + 7 * s.ronda + i) * s.loja.length) !== item) return 0;
+  return Math.min(s.carteira[robo.id] ?? 0, PRECO[s.loja[item]] + 50 * Math.floor(rnd(s.seed + 13 * s.ronda + i) * 5));
 }
 
-/** onde vai o dinheiro gasto: normal = bolo (nunca aparece nem some dinheiro); Pilotos = some (o dinheiro é novo) */
+/** põe em palco o módulo `k` (salta os que ninguém pode pagar); depois do último, fecha a loja */
+function abrirItem(s: EstadoRagerob, k: number, agora: number): EstadoRagerob {
+  const vendidos = [...s.vendidos];
+  const alguem = (n: number) => s.participantes.some((j) => (s.carteira[j] ?? 0) >= PRECO[s.loja[n]]) || s.robos.some((_, i) => limiteIa(s, i, n) >= PRECO[s.loja[n]]);
+  while (k < s.loja.length && !alguem(k)) {
+    vendidos.push(null);
+    k++;
+  }
+  const r = { ...s, vendidos };
+  return k >= s.loja.length ? fecharLoja(r, agora) : { ...r, leilao: { item: k, lance: null, martelo: false }, terminaEm: agora + T_LANCE * 1000 };
+}
+
+/** o menor lance que se aceita agora */
+export function lanceMinimo(s: Pick<EstadoRagerob, 'leilao' | 'loja'>): number {
+  const l = s.leilao!;
+  return l.lance ? l.lance.valor + 1 : PRECO[s.loja[l.item]];
+}
+
+function darLance(s: EstadoRagerob, id: string, valor: number, agora: number): EstadoRagerob {
+  const l = s.leilao;
+  if (!l || l.martelo || l.lance?.id === id || !Number.isInteger(valor) || valor < lanceMinimo(s) || valor > (s.carteira[id] ?? 0)) return s;
+  return { ...s, leilao: { ...l, lance: { id, valor } }, terminaEm: Math.max(s.terminaEm, agora + T_LANCE_EXTRA * 1000) };
+}
+
+/** a IA dá lances ao vivo: espera um bocado (pelo tempo que falta, para a pausa não a baralhar) e cobre até ao limite */
+function lanceIa(s: EstadoRagerob, agora: number): EstadoRagerob {
+  const l = s.leilao!;
+  const valor = l.lance ? l.lance.valor + PASSOS_LANCE[0] : PRECO[s.loja[l.item]];
+  const quando = (l.lance ? 1500 : 5000) + 3000 * rnd(s.seed + 19 * s.ronda + 5 * l.item + valor);
+  if (s.terminaEm - agora > quando) return s;
+  const querem = s.robos.filter((x, i) => x.id !== l.lance?.id && limiteIa(s, i, l.item) >= valor).map((x) => x.id);
+  return querem.length ? darLance(s, escolhe(querem, s.seed + 23 * s.ronda + l.item + valor), valor, agora) : s;
+}
+
+/** bate o martelo: só agora sai o dinheiro */
+function baterMartelo(s: EstadoRagerob, agora: number): EstadoRagerob {
+  const l = s.leilao!;
+  const m = s.loja[l.item];
+  let r: EstadoRagerob = { ...s, leilao: { ...l, martelo: true }, vendidos: [...s.vendidos, l.lance], terminaEm: agora + T_MARTELO * 1000 };
+  if (!l.lance) return r;
+  const { id, valor } = l.lance;
+  r = gastar(r, id, valor);
+  const robo = r.robos.find((x) => x.id === id && !x.dono);
+  // a IA instala logo no 1.º encaixe livre
+  if (robo && !r.participantes.includes(id)) return instalarNoRobo(r, id, m, robo.modulos.indexOf(null));
+  return { ...r, inventario: { ...r.inventario, [id]: [...(r.inventario[id] ?? []), m] } };
+}
+
+/** o dinheiro gasto some (o que entra é novo) */
 function gastar(s: EstadoRagerob, id: string, valor: number): EstadoRagerob {
-  return { ...s, carteira: { ...s.carteira, [id]: (s.carteira[id] ?? 0) - valor }, bolo: s.def.modo === 'normal' ? s.bolo + valor : s.bolo };
+  return { ...s, carteira: { ...s.carteira, [id]: (s.carteira[id] ?? 0) - valor } };
 }
 
 function instalarNoRobo(s: EstadoRagerob, roboId: string, m: Modulo, encaixe: number): EstadoRagerob {
@@ -245,56 +297,12 @@ function instalarNoRobo(s: EstadoRagerob, roboId: string, m: Modulo, encaixe: nu
 }
 
 function fecharLoja(s: EstadoRagerob, agora: number): EstadoRagerob {
-  let r = s;
-  if (s.def.loja === 'leilao') {
-    const ofertas = { ...ofertasIa(s), ...s.ofertas };
-    const vendidos: EstadoRagerob['vendidos'] = [];
-    const inv = { ...r.inventario };
-    for (let k = 0; k < s.loja.length; k++) {
-      const lances = Object.entries(ofertas)
-        .map(([id, o]) => ({ id, valor: Math.floor(o[k] ?? 0) }))
-        .filter((l) => l.valor >= PRECO[s.loja[k]] && l.valor <= (r.carteira[l.id] ?? 0));
-      if (!lances.length) {
-        vendidos.push(null);
-        continue;
-      }
-      const max = Math.max(...lances.map((l) => l.valor));
-      const empatados = lances.filter((l) => l.valor === max).map((l) => l.id).sort();
-      const quem = empatados.length > 1 ? escolhe(empatados, s.seed + 17 * s.ronda + k) : empatados[0];
-      r = gastar(r, quem, max);
-      vendidos.push({ id: quem, valor: max });
-      const robo = r.robos.find((x) => x.id === quem && !x.dono);
-      if (robo) {
-        // a IA instala logo no 1.º encaixe livre
-        const livre = robo.modulos.indexOf(null);
-        if (livre >= 0) r = instalarNoRobo(r, robo.id, s.loja[k], livre);
-      } else inv[quem] = [...(inv[quem] ?? []), s.loja[k]];
-    }
-    r = { ...r, inventario: { ...r.inventario, ...Object.fromEntries(Object.entries(inv).filter(([id]) => r.participantes.includes(id))) }, vendidos };
-  }
-  r = { ...r, ofertas: {} };
+  const r = { ...s, leilao: null };
   return s.def.modo === 'pilotos' ? abrirInstalar(r, agora) : abrirAposta(r, agora);
 }
 
 function abrirAposta(s: EstadoRagerob, agora: number): EstadoRagerob {
-  return { ...s, fase: 'aposta', terminaEm: agora + T_APOSTA * 1000, apostas: {}, pago: {}, enviaram: [], resultado: null };
-}
-
-/** mínimo de uma aposta num robô (quem tem menos aposta tudo) */
-export function minimoAposta(s: Pick<EstadoRagerob, 'def' | 'carteira'>, id: string): number {
-  return Math.min(s.def.entrada + s.def.minimo, s.carteira[id] ?? 0);
-}
-
-function fecharAposta(s: EstadoRagerob, agora: number): EstadoRagerob {
-  let r = s;
-  const pago: Record<string, number> = {};
-  for (const j of ativos(s)) {
-    const a = s.apostas[j];
-    const valor = a?.robo ? a.valor : Math.min(s.def.entrada, s.carteira[j]);
-    if (valor > 0) r = gastar(r, j, valor);
-    pago[j] = valor;
-  }
-  return abrirInstalar({ ...r, pago }, agora);
+  return { ...s, fase: 'aposta', terminaEm: agora + T_APOSTA * 1000, apostas: {}, enviaram: [], resultado: null };
 }
 
 /** quem tem algo para instalar agora */
@@ -324,8 +332,11 @@ function abrirCombate(s: EstadoRagerob, agora: number): EstadoRagerob {
   return { ...s, fase: 'combate', terminaEm: agora + T_COMBATE * 1000, combate, resultado: null };
 }
 
+/** prémios por lugar deste combate (2 robôs = final) */
+export const premiosDe = (n: number) => (n <= 2 ? PREMIOS_FINAL : PREMIOS);
+
 /** posição (0 = 1.º) de cada robô, com empates */
-function posicoes(ordem: string[][]): Record<string, number> {
+export function posicoes(ordem: string[][]): Record<string, number> {
   const p: Record<string, number> = {};
   let k = 0;
   for (const g of ordem) {
@@ -333,22 +344,6 @@ function posicoes(ordem: string[][]): Record<string, number> {
     k += g.length;
   }
   return p;
-}
-
-/** reparte `total` em proporção de `pesos` (para baixo); o resto vai para quem pôs mais */
-export function repartir(total: number, pesos: Record<string, number>): Record<string, number> {
-  const ids = Object.keys(pesos).filter((id) => pesos[id] > 0);
-  const soma = ids.reduce((a, id) => a + pesos[id], 0);
-  const r: Record<string, number> = {};
-  if (!soma || !total) return r;
-  let dado = 0;
-  for (const id of ids) {
-    r[id] = Math.floor((total * pesos[id]) / soma);
-    dado += r[id];
-  }
-  const maior = [...ids].sort((a, b) => pesos[b] - pesos[a] || ids.indexOf(a) - ids.indexOf(b))[0];
-  r[maior] += total - dado;
-  return r;
 }
 
 function somar(c: Record<string, number>, g: Record<string, number>): Record<string, number> {
@@ -377,24 +372,11 @@ function fecharCombate(s: EstadoRagerob, ordemTv: string[][], dano: Record<strin
   const ganhos: Record<string, number> = {};
   let passam: string[] = [];
   if (s.def.modo === 'normal') {
-    for (const [j, v] of Object.entries(s.pago)) ganhos[j] = -v;
-    const noVencedor = vencedor ? Object.fromEntries(Object.entries(s.apostas).filter(([, a]) => a.robo === vencedor).map(([j, a]) => [j, a.valor])) : {};
-    // consolação (dinheiro novo, não sai do bolo): sobre metade do bolo, contando do fim — último 10%, penúltimo 20%, antepenúltimo 30%
-    const metade = r.bolo / 2;
-    for (const robo of c.robos) {
-      const doFim = c.robos.length - 1 - pos[robo];
-      const pct = CONSOLACAO[doFim];
-      if (!pct || robo === vencedor) continue;
-      const nele = Object.fromEntries(Object.entries(s.apostas).filter(([, a]) => a.robo === robo).map(([j, a]) => [j, a.valor]));
-      const parte = repartir(Math.floor(metade * pct), nele);
-      r = { ...r, carteira: somar(r.carteira, parte) };
-      for (const [j, v] of Object.entries(parte)) ganhos[j] = (ganhos[j] ?? 0) + v;
+    for (const [j, robo] of Object.entries(s.apostas)) {
+      const premio = premiosDe(c.robos.length)[pos[robo]] ?? 0;
+      if (premio) ganhos[j] = premio;
     }
-    if (Object.keys(noVencedor).length) {
-      const premio = repartir(r.bolo, noVencedor);
-      r = { ...r, carteira: somar(r.carteira, premio), bolo: 0 };
-      for (const [j, v] of Object.entries(premio)) ganhos[j] = (ganhos[j] ?? 0) + v;
-    }
+    r = { ...r, carteira: somar(r.carteira, ganhos) };
     passam = achatar(ordem, d).slice(0, c.robos.length <= 2 ? 1 : 2);
   } else {
     const pts: Record<string, number> = {};
@@ -447,16 +429,7 @@ function depoisResultado(s: EstadoRagerob, agora: number): EstadoRagerob {
 function acabar(s: EstadoRagerob, agora: number): EstadoRagerob {
   let r = s;
   if (s.def.modo === 'normal') {
-    const campeao = s.vivos[0] ?? s.resultado?.passam[0] ?? null;
-    r = { ...r, campeao };
-    if (r.bolo > 0) {
-      // sobra do bolo: quem apostou no campeão; se ninguém, quem apostou na final; se ninguém, todos por igual
-      const noCampeao = Object.fromEntries(Object.entries(s.apostas).filter(([, a]) => a.robo === campeao).map(([j, a]) => [j, a.valor]));
-      const naFinal = Object.fromEntries(Object.entries(s.apostas).filter(([, a]) => a.robo).map(([j, a]) => [j, a.valor]));
-      const iguais = Object.fromEntries(s.participantes.map((j) => [j, 1]));
-      const pesos = Object.keys(noCampeao).length ? noCampeao : Object.keys(naFinal).length ? naFinal : iguais;
-      r = { ...r, carteira: somar(r.carteira, repartir(r.bolo, pesos)), bolo: 0 };
-    }
+    r = { ...r, campeao: s.vivos[0] ?? s.resultado?.passam[0] ?? null };
   } else r = { ...r, campeao: tabela(r)[0] };
   return { ...r, fase: 'fim', terminaEm: agora };
 }
@@ -480,9 +453,10 @@ function avancar(s: EstadoRagerob, agora: number): EstadoRagerob {
     case 'montar':
       return fecharMontar(s, agora);
     case 'loja':
+      if (s.leilao) return s.leilao.martelo ? abrirItem(s, s.leilao.item + 1, agora) : baterMartelo(s, agora);
       return fecharLoja(s, agora);
     case 'aposta':
-      return fecharAposta(s, agora);
+      return abrirInstalar(s, agora);
     case 'instalar':
       return abrirCombate(s, agora);
     case 'combate': {
@@ -504,7 +478,9 @@ function avancar(s: EstadoRagerob, agora: number): EstadoRagerob {
 function faltam(s: EstadoRagerob): string[] {
   const lig = new Set(s.ligados);
   if (s.fase === 'montar') return s.participantes.filter((j) => lig.has(j) && !s.montados.includes(j));
-  if (s.fase === 'loja' || s.fase === 'aposta') return ativos(s).filter((j) => lig.has(j) && !s.enviaram.includes(j));
+  // o leilão anda só pelo tempo; nas apostas pode-se mudar até o tempo acabar
+  if ((s.fase === 'loja' && s.leilao) || s.fase === 'aposta') return ['∞'];
+  if (s.fase === 'loja') return ativos(s).filter((j) => lig.has(j) && !s.enviaram.includes(j));
   if (s.fase === 'instalar') return instaladores(s).filter((j) => lig.has(j) && !s.prontos.includes(j));
   return ['∞'];
 }
@@ -540,7 +516,8 @@ export function reduzRagerob(s: EstadoRagerob, a: AcaoRagerob, agora: number): E
         if (agora >= c.inicio + T_COMBATE_MAX * 1000) return avancar(r, agora);
         return r;
       }
-      return agora >= r.terminaEm ? avancar(r, agora) : r;
+      if (agora >= r.terminaEm) return avancar(r, agora);
+      return r.fase === 'loja' && r.leilao && !r.leilao.martelo && r.def.modo === 'pilotos' ? lanceIa(r, agora) : r;
     }
     case 'ligados': {
       const lig = a.ids.filter((id) => s.participantes.includes(id));
@@ -559,22 +536,9 @@ export function reduzRagerob(s: EstadoRagerob, a: AcaoRagerob, agora: number): E
       const r = { ...s, robos: s.robos.map((x) => (x.id === robo.id ? novo : x)), montados: [...new Set([...s.montados, a.id])] };
       return talvezAvancar(r, agora);
     }
-    case 'rr_ofertas': {
-      if (s.fase !== 'loja' || s.def.loja !== 'leilao' || !ativos(s).includes(a.id)) return s;
-      const limpas: Record<string, number> = {};
-      let soma = 0;
-      for (const [k, v] of Object.entries(a.ofertas)) {
-        const i = Number(k);
-        const valor = Math.floor(Number(v));
-        if (!Number.isInteger(i) || i < 0 || i >= s.loja.length || !valor) continue;
-        if (valor < PRECO[s.loja[i]]) return s;
-        limpas[i] = valor;
-        soma += valor;
-      }
-      // só se licita no que se consegue pagar (tudo junto)
-      if (soma > s.carteira[a.id]) return s;
-      return talvezAvancar({ ...s, ofertas: { ...s.ofertas, [a.id]: limpas }, enviaram: [...new Set([...s.enviaram, a.id])] }, agora);
-    }
+    case 'rr_lance':
+      if (s.fase !== 'loja' || s.pausaRestante !== null || s.leilao?.item !== a.item || !ativos(s).includes(a.id)) return s;
+      return darLance(s, a.id, a.valor, agora);
     case 'rr_comprar': {
       if (s.fase !== 'loja' || s.def.loja !== 'privada') return s;
       const m = s.lojaPrivada[a.id]?.[a.item];
@@ -591,13 +555,9 @@ export function reduzRagerob(s: EstadoRagerob, a: AcaoRagerob, agora: number): E
       if (s.fase !== 'instalar') return s;
       return talvezAvancar({ ...s, prontos: [...new Set([...s.prontos, a.id])] }, agora);
     }
-    case 'rr_apostar': {
-      if (s.fase !== 'aposta' || !ativos(s).includes(a.id)) return s;
-      if (a.robo === null) return talvezAvancar({ ...s, apostas: { ...s.apostas, [a.id]: { robo: null, valor: 0 } }, enviaram: [...new Set([...s.enviaram, a.id])] }, agora);
-      const valor = Math.floor(a.valor);
-      if (!grupoAtual(s).includes(a.robo) || valor < minimoAposta(s, a.id) || valor > s.carteira[a.id]) return s;
-      return talvezAvancar({ ...s, apostas: { ...s.apostas, [a.id]: { robo: a.robo, valor } }, enviaram: [...new Set([...s.enviaram, a.id])] }, agora);
-    }
+    case 'rr_apostar':
+      if (s.fase !== 'aposta' || s.def.modo !== 'normal' || s.pausaRestante !== null || !s.participantes.includes(a.id) || s.apostas[a.id] === a.robo || !grupoAtual(s).includes(a.robo)) return s;
+      return { ...s, apostas: { ...s.apostas, [a.id]: a.robo } };
     case 'rr_instalar': {
       if (s.fase !== 'instalar') return s;
       const roboId = roboDe(s, a.id);
@@ -614,7 +574,7 @@ export function reduzRagerob(s: EstadoRagerob, a: AcaoRagerob, agora: number): E
     case 'rr_controlar': {
       const c = s.combate;
       if (s.fase !== 'combate' || !c || s.def.modo !== 'normal') return s;
-      const robo = s.apostas[a.id]?.robo;
+      const robo = s.apostas[a.id];
       if (!robo || !c.robos.includes(robo) || (c.vidas[robo] ?? 0) <= 0 || (s.carteira[a.id] ?? 0) < PRECO_CONTROLO) return s;
       if (c.condutor[robo]?.id === a.id || c.fila[robo]?.includes(a.id)) return s;
       const r = gastar(s, a.id, PRECO_CONTROLO);
@@ -646,16 +606,15 @@ export function reduzRagerob(s: EstadoRagerob, a: AcaoRagerob, agora: number): E
   }
 }
 
-export interface VistaRagerob extends Omit<EstadoRagerob, 'seed' | 'ofertas' | 'usadas'> {
+export interface VistaRagerob extends Omit<EstadoRagerob, 'seed' | 'usadas'> {
   /** tempo restante quando está em pausa */
   restante: number | null;
 }
 
-/** o que vai para os telemóveis: sem as ofertas do leilão (secretas) nem a seed */
+/** o que vai para os telemóveis: sem a seed */
 export function vistaRagerob(s: EstadoRagerob): VistaRagerob {
   const resto: Partial<EstadoRagerob> = { ...s };
   delete resto.seed;
-  delete resto.ofertas;
   delete resto.usadas;
-  return { ...(resto as Omit<EstadoRagerob, 'seed' | 'ofertas' | 'usadas'>), restante: s.pausaRestante };
+  return { ...(resto as Omit<EstadoRagerob, 'seed' | 'usadas'>), restante: s.pausaRestante };
 }

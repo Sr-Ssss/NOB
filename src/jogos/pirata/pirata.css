@@ -7,7 +7,7 @@
 /* A: noite */
 .pr-noite { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pr-barco { width: min(92cqw, 1100px); max-height: 62cqh; }
-.pr-balanco { animation: pr-balanco 6s ease-in-out infinite; transform-origin: 405px 330px; }
+.pr-balanco { animation: pr-balanco 6s ease-in-out infinite; transform-origin: 405px 330px; will-change: transform; }
 @keyframes pr-balanco { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
 
 /* B: diário de bordo (pergaminho) */

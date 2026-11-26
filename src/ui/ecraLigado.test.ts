@@ -91,3 +91,8 @@ describe('palco da TV', () => {
     expect(novoEncolhe(0.9, 900, 1080)).toBe(1);
   });
 });
+
+it('palco: encolhe mesmo que só passe uns px (1085 em 1080); a folga só vale para crescer', () => {
+  expect(1085 * novoEncolhe(1, 1085, 1080)).toBeLessThanOrEqual(1080);
+  expect(novoEncolhe(0.995, 1076, 1080)).toBe(0.995);
+});

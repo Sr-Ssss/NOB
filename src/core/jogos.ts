@@ -25,6 +25,7 @@ export const CATALOGO: InfoJogo[] = [
   { id: 'maquinas', pt: 'Revolução das Máquinas', en: 'Machine Uprising', descPt: 'Robôs leais contra robôs rebeldes.', descEn: 'Loyal robots versus rebel robots.', min: 5, max: 10, minutos: 25, precisaTv: false, feito: true },
   { id: 'wifi', pt: 'Senha do Wi-Fi', en: 'Wi-Fi Password', descPt: 'Dê pistas em código sem a outra equipe perceber.', descEn: 'Give coded clues without the other team cracking them.', min: 4, max: 16, minutos: 25, precisaTv: false, feito: true },
   { id: 'ragerob', pt: 'Ragerob', en: 'Ragerob', descPt: 'Aposte, compre peças e pilote robôs de luta.', descEn: 'Bet, buy parts and pilot battle robots.', min: 2, max: 10, minutos: 20, precisaTv: false, feito: true },
+  { id: 'semjuizo', pt: 'Sem Juízo', en: 'Out of Order', descPt: 'Um julgamento absurdo com provas sem pé nem cabeça.', descEn: 'An absurd trial with nonsense exhibits.', min: 3, max: 10, minutos: 20, precisaTv: false, feito: true },
 ];
 
 export function nome(j: InfoJogo, i: Idioma): string {

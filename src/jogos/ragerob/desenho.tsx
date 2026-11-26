@@ -124,7 +124,7 @@ export function CabecaSvg({ cabeca, anim = 0, giro = 0, fase = 0 }: { cabeca: Ca
   );
 }
 
-function Loco({ robo }: { robo: Robo }) {
+export function Loco({ robo }: { robo: Robo }) {
   const n = { triangulo: 3, bola: 4, quadrado: 4, retangulo: 6, pentagono: 4 }[robo.corpo];
   const comp = robo.corpo === 'retangulo' ? 1.1 : 0.85;
   if (robo.loco === 'lagartas')
@@ -292,81 +292,117 @@ export function RoboSvg({ robo, e = {}, seta = false, destaque }: { robo: Robo; 
   );
 }
 
+/** uma peça sozinha (montar): carroçaria com os parafusos, locomoção ou cabeça */
+export function PecaSvg({ robo, peca, tam = 64 }: { robo: Robo; peca: 'corpo' | 'loco' | 'cabeca'; tam?: number }) {
+  const cor = CORES[robo.cor % CORES.length].hex;
+  return (
+    <svg viewBox={peca === 'cabeca' ? `-32 ${-R - 42} 64 58` : '-52 -52 104 104'} width={tam} height={tam} aria-hidden="true">
+      {peca === 'loco' && <Loco robo={robo} />}
+      {peca === 'cabeca' && <CabecaSvg cabeca={robo.cabeca} fase={Math.PI} />}
+      {peca === 'corpo' && (
+        <>
+          {robo.corpo === 'bola' ? <circle r={R * 0.95} fill={cor} stroke={P} stroke-width={SW + 1} /> : <polygon points={torto(contorno(robo.corpo), robo.cor)} fill={cor} stroke={P} stroke-width={SW + 1} stroke-linejoin="round" />}
+          {POS_ENCAIXES[robo.corpo].map(([x, y], k) => (
+            <g key={k} transform={`translate(${x * R} ${y * R})`}>
+              <Parafuso />
+            </g>
+          ))}
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** um módulo sozinho */
+export function ModuloMini({ m, tam = 56 }: { m: Modulo; tam?: number }) {
+  return (
+    <svg viewBox="-30 -44 60 54" width={tam} height={tam * 0.9} aria-hidden="true">
+      <ModuloSvg m={m} seta />
+    </svg>
+  );
+}
+
 /** o robô sozinho num quadrado (cartões, telemóvel) */
-export function RoboCartao({ robo, tam = 110, seta, destaque, aoTocar }: { robo: Robo; tam?: number; seta?: boolean; destaque?: number; aoTocar?: (encaixe: number) => void }) {
+/** `pisca` = hint: os encaixes onde dá para tocar pulsam (os ocupados a laranja); `nomeEncaixe` = aria-label */
+export function RoboCartao({ robo, tam = 110, seta, destaque, pisca, nomeEncaixe, aoTocar }: { robo: Robo; tam?: number; seta?: boolean; destaque?: number; pisca?: boolean; nomeEncaixe?: (k: number) => string; aoTocar?: (encaixe: number) => void }) {
   return (
     <svg viewBox="-75 -90 150 160" width={tam} height={(tam * 160) / 150} class="rr-robo" aria-hidden={aoTocar ? undefined : 'true'}>
       <RoboSvg robo={robo} seta={seta} destaque={destaque} />
       {aoTocar &&
         POS_ENCAIXES[robo.corpo].map(([x, y], k) => (
-          <circle key={k} cx={x * R} cy={y * R} r={15} fill="transparent" role="button" aria-label={`Encaixe ${k + 1}`} onClick={() => aoTocar(k)} />
+          <circle
+            key={k}
+            cx={x * R}
+            cy={y * R}
+            r={15}
+            fill="transparent"
+            class={pisca ? 'rr-encaixe-pisca' + (robo.modulos[k] ? ' ocupado' : '') : undefined}
+            role="button"
+            tabIndex={0}
+            aria-label={nomeEncaixe?.(k)}
+            onClick={() => aoTocar(k)}
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), aoTocar(k))}
+          />
         ))}
     </svg>
   );
 }
 
-/** a arena inteira, desenhada a partir do estado da física */
-/** a arena: `c` é o Combate da física (no host) ou um quadro recebido (src/jogos/ragerob/quadro.ts) */
-export function ArenaSvg({ c, nomes, condutores }: { c: Arena; nomes: Record<string, string>; condutores: Record<string, string> }) {
+/** uma camada da arena (sem os robôs): fundo parado, o que está no chão, e o que fica por cima dos robôs; `terra` = chão com pedras (canvas) */
+export function ArenaDentro({ parte, c, terra }: { parte: 'fundo' | 'chao' | 'cima'; c: Arena; terra?: boolean }) {
   const t = c.t;
-  return (
-    <svg viewBox={`0 0 ${LARG} ${ALT}`} class="rr-arena" role="img" aria-label="Arena">
-      <defs>
-        <pattern id="rr-terra" width="60" height="60" patternUnits="userSpaceOnUse">
-          <rect width="60" height="60" fill="#d8c29a" />
-          <circle cx="12" cy="18" r="2.4" fill="#a8916c" />
-          <circle cx="44" cy="40" r="1.8" fill="#9c8462" />
-          <circle cx="30" cy="8" r="1.2" fill="#b39d78" />
-        </pattern>
-      </defs>
-      <rect width={LARG} height={ALT} fill="url(#rr-terra)" />
-      <rect x={40} y={34} width={LARG - 80} height={ALT - 68} rx={10} fill="none" stroke="#7a5230" stroke-width={5} stroke-dasharray="22 14" />
-      {/* decoração parada: pneus nos cantos, chapas e latas */}
-      {[[30, 30], [LARG - 30, ALT - 30], [LARG - 30, 30], [30, ALT - 30]].map(([x, y], i) => (
-        <g key={i}>
-          <circle cx={x} cy={y} r={26} fill="#2b2b2e" stroke={P} stroke-width={3} />
-          <circle cx={x} cy={y} r={11} fill="#cdb489" stroke={P} stroke-width={2} />
-          <circle cx={x + (i % 2 ? -18 : 18)} cy={y + 4} r={20} fill="#2b2b2e" stroke={P} stroke-width={3} />
-        </g>
-      ))}
-      <rect x={LARG - 170} y={ALT - 66} width={70} height={22} fill="#8f99a3" stroke={P} stroke-width={2} transform={`rotate(-9 ${LARG - 135} ${ALT - 55})`} />
-      <rect x={130} y={44} width={16} height={22} rx={3} fill="#c43b2b" stroke={P} stroke-width={2} transform="rotate(70 138 55)" />
-      {/* rastos (somem em 2 s) */}
-      {c.rastos.map((x, i) => {
-        const op = Math.max(0, 1 - (t - x.t) / 2) * 0.5;
-        const rot = (x.a * 180) / Math.PI;
-        return (
-          <g key={i} transform={`translate(${x.x} ${x.y}) rotate(${rot})`} opacity={op}>
-            {x.loco === 'rodas' && <path d="M-30 -6 v12 M30 -6 v12" stroke="#7a5230" stroke-width={2} stroke-dasharray="3 3" />}
-            {x.loco === 'lagartas' && <path d="M-32 -6 v12 M32 -6 v12" stroke="#7a5230" stroke-width={12} stroke-dasharray="3 3" />}
-            {x.loco === 'pernas' && <path d="M-46 0 h0.1 M46 0 h0.1" stroke="#7a5230" stroke-width={7} stroke-linecap="round" />}
+  if (parte === 'fundo')
+    return (
+      <g>
+        {terra && <Terra />}
+        <rect x={40} y={34} width={LARG - 80} height={ALT - 68} rx={10} fill="none" stroke="#7a5230" stroke-width={5} stroke-dasharray="22 14" />
+        {/* decoração parada: pneus nos cantos, chapas e latas */}
+        {[[30, 30], [LARG - 30, ALT - 30], [LARG - 30, 30], [30, ALT - 30]].map(([x, y], i) => (
+          <g key={i}>
+            <circle cx={x} cy={y} r={26} fill="#2b2b2e" stroke={P} stroke-width={3} />
+            <circle cx={x} cy={y} r={11} fill="#cdb489" stroke={P} stroke-width={2} />
+            <circle cx={x + (i % 2 ? -18 : 18)} cy={y + 4} r={20} fill="#2b2b2e" stroke={P} stroke-width={3} />
           </g>
-        );
-      })}
-      {c.perigos.map((h, i) => (
-        <PerigoSvg key={i} h={h} t={t} />
-      ))}
-      {c.pocas.map((q, i) => (
-        <PocaSvg key={i} tipo={q.tipo} x={q.x} y={q.y} r={q.r} t={t} />
-      ))}
-      {c.parafusos.map((b, i) => (
-        <circle key={i} cx={b.x} cy={b.y} r={14 + (b.cai - t) * 16} fill="#000" opacity={0.25} />
-      ))}
-      {c.evento?.tipo === 'ima' && (
-        <g transform={`translate(${c.evento.x} ${c.evento.y})`}>
-          <path d="M-18 -40 v18 a18 18 0 0 0 36 0 v-18" fill="none" stroke="#e0412b" stroke-width={12} />
-          <path d="M-18 -40 h-6 M18 -40 h6" stroke="#c9ced3" stroke-width={12} />
-          <line x1={0} y1={-200} x2={0} y2={-50} stroke="#5f666d" stroke-width={3} />
-        </g>
-      )}
-      {c.robos.filter((r) => r.ko).map((r) => (
-        <g key={r.id} transform={`translate(${r.corpo.position.x} ${r.corpo.position.y}) rotate(${(r.corpo.angle * 180) / Math.PI})`} opacity={0.45}>
-          <RoboSvg robo={r.robo} />
-        </g>
-      ))}
-      {c.robos.filter((r) => !r.ko).map((r) => (
-        <RoboNaArena key={r.id} r={r} t={t} nome={nomes[r.id] ?? r.id} condutor={condutores[r.id]} />
-      ))}
+        ))}
+        <rect x={LARG - 170} y={ALT - 66} width={70} height={22} fill="#8f99a3" stroke={P} stroke-width={2} transform={`rotate(-9 ${LARG - 135} ${ALT - 55})`} />
+        <rect x={130} y={44} width={16} height={22} rx={3} fill="#c43b2b" stroke={P} stroke-width={2} transform="rotate(70 138 55)" />
+      </g>
+    );
+  if (parte === 'chao')
+    return (
+      <g>
+        {/* rastos (somem em 2 s) */}
+        {c.rastos.map((x, i) => {
+          const op = Math.max(0, 1 - (t - x.t) / 2) * 0.5;
+          const rot = (x.a * 180) / Math.PI;
+          return (
+            <g key={i} transform={`translate(${x.x} ${x.y}) rotate(${rot})`} opacity={op}>
+              {x.loco === 'rodas' && <path d="M-30 -6 v12 M30 -6 v12" stroke="#7a5230" stroke-width={2} stroke-dasharray="3 3" />}
+              {x.loco === 'lagartas' && <path d="M-32 -6 v12 M32 -6 v12" stroke="#7a5230" stroke-width={12} stroke-dasharray="3 3" />}
+              {x.loco === 'pernas' && <path d="M-46 0 h0.1 M46 0 h0.1" stroke="#7a5230" stroke-width={7} stroke-linecap="round" />}
+            </g>
+          );
+        })}
+        {c.perigos.map((h, i) => (
+          <PerigoSvg key={i} h={h} t={t} />
+        ))}
+        {c.pocas.map((q, i) => (
+          <PocaSvg key={i} tipo={q.tipo} x={q.x} y={q.y} r={q.r} t={t} />
+        ))}
+        {c.parafusos.map((b, i) => (
+          <circle key={i} cx={b.x} cy={b.y} r={14 + (b.cai - t) * 16} fill="#000" opacity={0.25} />
+        ))}
+        {c.evento?.tipo === 'ima' && (
+          <g transform={`translate(${c.evento.x} ${c.evento.y})`}>
+            <path d="M-18 -40 v18 a18 18 0 0 0 36 0 v-18" fill="none" stroke="#e0412b" stroke-width={12} />
+            <path d="M-18 -40 h-6 M18 -40 h6" stroke="#c9ced3" stroke-width={12} />
+            <line x1={0} y1={-200} x2={0} y2={-50} stroke="#5f666d" stroke-width={3} />
+          </g>
+        )}
+      </g>
+    );
+  return (
+    <g>
       {c.efeitos.map((e, i) => (
         <EfeitoSvg key={i} e={e} t={t} />
       ))}
@@ -381,6 +417,55 @@ export function ArenaSvg({ c, nomes, condutores }: { c: Arena; nomes: Record<str
           stroke-dasharray="18 10"
         />
       )}
+    </g>
+  );
+}
+
+/** o chão da arena sem `pattern` (o canvas pinta-o uma vez) */
+function Terra() {
+  const pedras = [];
+  for (let x = 0; x < LARG; x += 60)
+    for (let y = 0; y < ALT; y += 60)
+      pedras.push(
+        <g key={`${x}:${y}`} transform={`translate(${x} ${y})`}>
+          <circle cx={12} cy={18} r={2.4} fill="#a8916c" />
+          <circle cx={44} cy={40} r={1.8} fill="#9c8462" />
+          <circle cx={30} cy={8} r={1.2} fill="#b39d78" />
+        </g>,
+      );
+  return (
+    <g>
+      <rect width={LARG} height={ALT} fill="#d8c29a" />
+      {pedras}
+    </g>
+  );
+}
+
+/** a arena em SVG (telemóveis, sem TV): `c` é um quadro recebido (src/jogos/ragerob/quadro.ts). A TV usa `ArenaCanvas` */
+export function ArenaSvg({ c, nomes, condutores }: { c: Arena; nomes: Record<string, string>; condutores: Record<string, string> }) {
+  const t = c.t;
+  return (
+    <svg viewBox={`0 0 ${LARG} ${ALT}`} class="rr-arena" role="img" aria-label="Arena">
+      <defs>
+        <pattern id="rr-terra" width="60" height="60" patternUnits="userSpaceOnUse">
+          <rect width="60" height="60" fill="#d8c29a" />
+          <circle cx="12" cy="18" r="2.4" fill="#a8916c" />
+          <circle cx="44" cy="40" r="1.8" fill="#9c8462" />
+          <circle cx="30" cy="8" r="1.2" fill="#b39d78" />
+        </pattern>
+      </defs>
+      <rect width={LARG} height={ALT} fill="url(#rr-terra)" />
+      <ArenaDentro parte="fundo" c={c} />
+      <ArenaDentro parte="chao" c={c} />
+      {c.robos.filter((r) => r.ko).map((r) => (
+        <g key={r.id} transform={`translate(${r.corpo.position.x} ${r.corpo.position.y}) rotate(${(r.corpo.angle * 180) / Math.PI})`} opacity={0.45}>
+          <RoboSvg robo={r.robo} />
+        </g>
+      ))}
+      {c.robos.filter((r) => !r.ko).map((r) => (
+        <RoboNaArena key={r.id} r={r} t={t} nome={nomes[r.id] ?? r.id} condutor={condutores[r.id]} />
+      ))}
+      <ArenaDentro parte="cima" c={c} />
     </svg>
   );
 }

@@ -16,6 +16,7 @@ import type { Idioma } from './core/sala';
 import { CODIGO_VALIDO, paramsHash } from './core/ids';
 import { PalcoTv } from './ui/palco';
 import { manterEcraLigado } from './ui/ecraLigado';
+import { comecarAPiscar } from './ui/piscar';
 import type { JSX } from 'preact';
 import { Tv } from './tv/Tv';
 import { Jogar } from './jogar/Jogar';
@@ -28,7 +29,9 @@ import { DemoIdeias } from './jogos/ideias-mirabolantes/demo';
 import { DemoPirata } from './jogos/pirata/demo';
 import { DemoMaquinas } from './jogos/revolucao-maquinas/demo';
 import { DemoRei } from './jogos/rei-dragao/demo';
+import { DemoSemJuizo } from './jogos/semjuizo/demo';
 import { DemoRagerob } from './jogos/ragerob/demo';
+import { DemoDuelo } from './jogos/duelo-rabiscos/demo';
 import { Definicoes } from './ui/Definicoes';
 import { NpnTeste } from './npn/Npn';
 import { Avatar } from './ui/comuns';
@@ -136,12 +139,15 @@ const DEMOS: Record<string, () => JSX.Element> = {
   '/demo-pirata': DemoPirata,
   '/demo-maquinas': DemoMaquinas,
   '/demo-rei': DemoRei,
+  '/demo-semjuizo': DemoSemJuizo,
   '/demo-ragerob': DemoRagerob,
+  '/demo-duelo': DemoDuelo,
 };
 
 function App() {
   const [r, setR] = useState(rota());
   useEffect(() => manterEcraLigado(), []);
+  useEffect(() => comecarAPiscar(), []);
   const [idioma, setIdioma] = useState<Idioma>(idiomaDispositivo());
   useEffect(() => {
     const f = () => setR(rota());

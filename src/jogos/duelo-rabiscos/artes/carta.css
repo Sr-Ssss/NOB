@@ -1,0 +1,14 @@
+.dr-carta { box-sizing: border-box; width: 220px; min-height: 330px; padding: 10px; display: flex; flex-direction: column; gap: 6px; text-align: center; color: #2b2a33; background: #fffdf2; border: 3px solid #2b2a33; border-radius: 14px 18px 13px 17px; }
+.dr-carta-topo { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-height: 44px; }
+.dr-carta-nome { flex: 1; font-size: 18px; line-height: 1.1; }
+.dr-carta-desenho { display: flex; justify-content: center; padding: 4px; background: #fff; border: 2px dashed #85849a; border-radius: 8px; }
+.dr-carta-desenho > * { max-width: 100%; height: auto; }
+.dr-carta-classe { font-size: 14px; }
+.dr-carta-status { display: flex; justify-content: space-around; padding: 4px 0; border-block: 2px solid #2b2a33; }
+.dr-valor { display: inline-flex; align-items: center; gap: 4px; font-size: 20px; }
+.dr-carta-especial { margin: auto 0; font-size: 15px; line-height: 1.25; }
+.dr-carta-especial .dr-valor { vertical-align: middle; font-size: 15px; }
+.dr-carta-especial svg { width: 18px; height: 18px; }
+.dr-carta-poder { display: flex; align-items: center; gap: 8px; padding-top: 6px; border-top: 2px solid #2b2a33; text-align: left; font-size: 15px; line-height: 1.25; }
+.dr-carta-poder p { margin: 0; }
+.dr-carta-poder .dr-valor { flex: none; }

@@ -80,6 +80,10 @@ test('bot: "IA jogável" ligada por defeito; desligada, o líder joga por ele (s
   // só o Bot 1 (IA desligada) aparece na troca; o Bot 2 joga sozinho
   await expect(a.locator('.troca-j > span')).toHaveText(['Eu', 'Bot 1']);
   await expect(a.locator('text=Jogando como')).toHaveCount(0);
+  // bots parados: o líder recarrega-os
+  await a.click('.gerir-jogadores summary');
+  await a.click('.recarregar-bots');
+  await expect(a.locator('.recarregar-bots')).toContainText('Bots recarregados');
 });
 
 test('início: "Como jogar" no canto superior esquerdo', async ({ page }) => {

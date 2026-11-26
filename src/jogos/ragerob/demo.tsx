@@ -2,7 +2,7 @@ import { paramsHash } from '../../core/ids';
 import { usarIdioma } from '../../core/i18n';
 import type { VistaSala } from '../../core/sala';
 import { PRECO } from './pecas';
-import { DEF_PADRAO_RAGEROB, T_COMBATE, grupoAtual, novoRagerob, reduzRagerob, vistaRagerob, type AcaoRagerob, type EstadoRagerob } from './regras';
+import { DEF_PADRAO_RAGEROB, type Loja, T_COMBATE, grupoAtual, novoRagerob, reduzRagerob, vistaRagerob, type AcaoRagerob, type EstadoRagerob } from './regras';
 import { Combate } from './fisica';
 import { quadroDe } from './quadro';
 import { TelemovelRagerob } from './telemovel';
@@ -10,15 +10,15 @@ import { TvRagerob } from './tv';
 
 /**
  * só em dev (para as capturas):
- * `#/demo-ragerob?fase=montar|loja|aposta|instalar|combate|resultado|fim&modo=normal|pilotos&ecra=tv|tel[&eu=j1][&semtv=1][&zoom=1.2136]`
+ * `#/demo-ragerob?fase=montar|loja|aposta|instalar|combate|resultado|fim&modo=normal|pilotos&ecra=tv|tel[&eu=j1][&loja=privada][&lance=0|martelo][&semtv=1][&zoom=1.2136]`
  * (sem TV, no combate, um quadro da arena já calculado: src/jogos/ragerob/quadro.ts)
  */
 const NOMES = ['Rita', 'Beto', 'Caio', 'Duda', 'Edu'];
 
-function estado(fase: string, modo: 'normal' | 'pilotos'): EstadoRagerob {
+function estado(fase: string, modo: 'normal' | 'pilotos', loja: Loja, lance: string | null): EstadoRagerob {
   const ids = NOMES.map((_, i) => `j${i + 1}`);
   const T = Date.now();
-  let e = novoRagerob(ids, { ...DEF_PADRAO_RAGEROB, modo }, T, [], 4242);
+  let e = novoRagerob(ids, { ...DEF_PADRAO_RAGEROB, modo, loja }, T, [], 4242);
   const ap = (a: AcaoRagerob) => (e = reduzRagerob(e, a, T));
   const tempo = () => (e = reduzRagerob(e, { tipo: 'tick' }, e.terminaEm));
   if (modo === 'pilotos') {
@@ -26,17 +26,28 @@ function estado(fase: string, modo: 'normal' | 'pilotos'): EstadoRagerob {
     ap({ tipo: 'rr_montar', id: 'j1', corpo: 'quadrado', loco: 'rodas', cabeca: 'rino' });
     tempo();
   }
-  if (fase === 'loja') return ap({ tipo: 'rr_ofertas', id: 'j3', ofertas: {} });
+  const licita = (id: string, mais: number) => ap({ tipo: 'rr_lance', id, item: e.leilao!.item, valor: PRECO[e.loja[e.leilao!.item]] + mais });
+  if (fase === 'loja') {
+    if (loja === 'privada') return ap({ tipo: 'rr_comprar', id: 'j1', item: 1 });
+    licita('j1', 0);
+    tempo();
+    tempo(); // o 2.º módulo em palco
+    if (lance === '0') return e;
+    licita('j3', 0);
+    licita('j2', 100);
+    return lance === 'martelo' ? tempo() : e;
+  }
   // leilão: a Rita compra 2 módulos, o Beto 1
-  ap({ tipo: 'rr_ofertas', id: 'j1', ofertas: { 0: PRECO[e.loja[0]] + 40, 1: PRECO[e.loja[1]] } });
-  ap({ tipo: 'rr_ofertas', id: 'j2', ofertas: { 2: PRECO[e.loja[2]] + 10 } });
-  tempo();
+  while (e.fase === 'loja') {
+    if (e.leilao && !e.leilao.martelo && e.leilao.item < 3) licita(e.leilao.item < 2 ? 'j1' : 'j2', 0);
+    tempo();
+  }
   if (modo === 'normal') {
     const g = grupoAtual(e);
-    if (fase === 'aposta') return ap({ tipo: 'rr_apostar', id: 'j2', robo: g[1], valor: 200 });
-    ap({ tipo: 'rr_apostar', id: 'j1', robo: g[0], valor: 300 });
-    ap({ tipo: 'rr_apostar', id: 'j2', robo: g[1], valor: 200 });
-    ap({ tipo: 'rr_apostar', id: 'j3', robo: g[0], valor: 100 });
+    if (fase === 'aposta') return ap({ tipo: 'rr_apostar', id: 'j2', robo: g[1] });
+    ap({ tipo: 'rr_apostar', id: 'j1', robo: g[0] });
+    ap({ tipo: 'rr_apostar', id: 'j2', robo: g[1] });
+    ap({ tipo: 'rr_apostar', id: 'j3', robo: g[0] });
     tempo();
   }
   if (fase === 'instalar') return ap({ tipo: 'rr_instalar', id: 'j1', inv: 0, encaixe: 0 });
@@ -57,7 +68,7 @@ function estado(fase: string, modo: 'normal' | 'pilotos'): EstadoRagerob {
       const r = e.combate!.robos;
       ap({ tipo: 'rr_fim', id: 'tv', ordem: r.map((x) => [x]), dano: Object.fromEntries(r.map((x, i) => [x, 100 - i * 25])), kos: {} });
     } else if (e.fase === 'aposta') {
-      ap({ tipo: 'rr_apostar', id: 'j1', robo: grupoAtual(e)[0], valor: 100 });
+      ap({ tipo: 'rr_apostar', id: 'j1', robo: grupoAtual(e)[0] });
       tempo();
     } else tempo();
   }
@@ -68,8 +79,8 @@ export function DemoRagerob() {
   const p = paramsHash();
   usarIdioma('pt-BR');
   const modo = p.get('modo') === 'pilotos' ? 'pilotos' : 'normal';
-  const e = estado(p.get('fase') ?? 'loja', modo);
-  const g0 = { ...e, terminaEm: Date.now() + 17_000 };
+  const e = estado(p.get('fase') ?? 'loja', modo, p.get('loja') === 'privada' ? 'privada' : 'leilao', p.get('lance'));
+  const g0 = { ...e, terminaEm: Date.now() + (e.leilao ? 6_000 : 17_000) };
   const g = p.get('semtv') === '1' && g0.combate ? { ...g0, combate: { ...g0.combate, quadro: quadroDemo(g0) } } : g0;
   const sala = {
     codigo: 'KQTZ',

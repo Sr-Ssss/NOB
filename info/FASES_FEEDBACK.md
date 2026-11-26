@@ -61,7 +61,7 @@ Ordem (máx. 2 sessões ao mesmo tempo): Ronda A = Fase 6 ∥ Fase 9 · Ronda B 
 
 ## Fase 8 — Bots com "IA jogável" ✅ (20/11; detalhes em `info/PROXIMA_SESSAO.md`)
 - Lobby: tocar num bot → menu com Expulsar + interruptor "IA jogável" (ligado por defeito; por bot; bolinha verde = ligada, cinzenta = desligada).
-- IA ligada: o bot joga sozinho em todos os jogos — escolhe ao acaso entre as opções; em textos manda o texto que já existe, uma palavra ao acaso ou um placeholder; não desenha. Simples, não precisa de jogar bem. Objetivo: testar sem o líder jogar por cada bot.
+- IA ligada: o bot joga sozinho em todos os jogos — escolhe ao acaso entre as opções; em textos manda o texto que já existe, uma palavra ao acaso ou um placeholder; não desenha (manda só um ponto, 25/11). Simples, não precisa de jogar bem. Objetivo: testar sem o líder jogar por cada bot.
 - IA ligada: o líder já não pode "jogar como" esse bot.
 - Sai a aba "Jogando como bot X / voltar a eu".
 - Ver como os bots funcionam hoje (`src/core/sala.ts`, `regras.ts` de cada jogo).

@@ -11,6 +11,7 @@ const DEMOS: Record<string, string[]> = {
   pirata: ['carta', 'noite', 'amanhecer', 'artilheiro', 'disparo', 'discussao', 'votar', 'resultado', 'fim'],
   maquinas: ['carta', 'nomear', 'votar', 'votos', 'comandante', 'piloto', 'poder', 'ver', 'discussao', 'fim'],
   rei: ['ir', 'carta', 'lider', 'ronda', 'refens', 'batata', 'votar', 'troca', 'aposta', 'fim'],
+  semjuizo: ['caso', 'provas', 'escolher', 'explicar', 'contra_fala', 'contra_juri', 'contra_juiz', 'contra_res', 'testemunha', 'juri', 'juiz', 'estrela', 'revelar', 'fim'].map((f) => f + '&n=10'),
   ragerob: ['montar', 'loja', 'aposta', 'instalar', 'combate', 'resultado', 'fim'],
 };
 const EXTRA: Record<string, string[]> = {

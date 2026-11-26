@@ -39,9 +39,18 @@ import { TvRei } from './rei-dragao/tv';
 import { TelemovelRei } from './rei-dragao/telemovel';
 import { DefinicoesRei } from './rei-dragao/definicoes';
 import type { PrivadoRei } from './rei-dragao/regras';
-import { MotorRagerob, TvRagerob } from './ragerob/tv';
+import { TvSemJuizo } from './semjuizo/tv';
+import { TelemovelSemJuizo } from './semjuizo/telemovel';
+import { DefinicoesSemJuizo } from './semjuizo/definicoes';
+import { fotosMesa, type PrivadoSemJuizo } from './semjuizo/regras';
+import { MotorRagerob,TvRagerob } from './ragerob/tv';
 import { TelemovelRagerob } from './ragerob/telemovel';
 import { DefinicoesRagerob } from './ragerob/definicoes';
+import { TvDuelo } from './duelo-rabiscos/tv';
+import { TelemovelDuelo } from './duelo-rabiscos/telemovel';
+import { DefinicoesDuelo } from './duelo-rabiscos/definicoes';
+import { PREPARACAO, desenhosDuelo, type Desenhos } from './duelo-rabiscos/regras';
+import { TXT as TXT_DUELO } from './duelo-rabiscos/textos';
 
 /** `g`: o estado do jogo (só a TV, que é o host, o tem) */
 export type PropsTv<G, V> = {
@@ -135,12 +144,27 @@ export const ECRAS: { [J in Registado as J['id']]: Ecras<EstadoDe<J>, VistaDe<J>
     vibrar: (v) => `rd:${v.fase}:${v.ronda}`,
     versaoPrivado: (v) => `${v.fase}:${v.seq}`,
   },
+  semjuizo: {
+    tv: (p) => <TvSemJuizo sala={p.sala} v={p.v} fotos={fotosMesa(p.g)} agora={p.agora} selFim={p.selFim} onOutraVez={p.onOutraVez} onMenu={p.onMenu} />,
+    telemovel: (p) => <TelemovelSemJuizo key={p.eu} sala={p.sala} v={p.v} agora={p.agora} eu={p.eu} privado={(p.privado as PrivadoSemJuizo | null) ?? null} enviar={p.enviar} />,
+    opcoes: { nome: () => t('sjNome'), render: (p) => <DefinicoesSemJuizo def={p.def} mudar={p.mudar} /> },
+    vibrar: (v) => `sj:${v.fase}:${v.julgamento}:${v.mesa.length}`,
+    versaoPrivado: (v) => `${v.fase}:${v.julgamento}:${v.mesa.length}`,
+  },
   ragerob: {
     tv: (p) => <TvRagerob g={p.g} v={p.v} sala={p.sala} agora={p.agora} selFim={p.selFim} onOutraVez={p.onOutraVez} onMenu={p.onMenu} acao={p.acao} />,
     telemovel: (p) => <TelemovelRagerob key={p.eu} sala={p.sala} v={p.v} agora={p.agora} eu={p.eu} enviar={p.enviar} />,
     motor: (p) => <MotorRagerob g={p.g} v={p.v} sala={p.sala} agora={p.agora} acao={p.acao} />,
     opcoes: { nome: () => 'Ragerob', render: (p) => <DefinicoesRagerob def={p.def} mudar={p.mudar} /> },
     vibrar: (v) => `rr:${v.fase}:${v.ronda}:${v.combateIdx}`,
+  },
+  duelo: {
+    tv: (p) => <TvDuelo sala={p.sala} v={p.v} agora={p.agora} desenhos={desenhosDuelo(p.g)} selFim={p.selFim} onOutraVez={p.onOutraVez} onMenu={p.onMenu} />,
+    telemovel: (p) => <TelemovelDuelo key={p.eu} sala={p.sala} v={p.v} agora={p.agora} eu={p.eu} privado={(p.privado as Desenhos | null) ?? null} enviar={p.enviar} />,
+    opcoes: { nome: () => TXT_DUELO.nome, render: (p) => <DefinicoesDuelo def={p.def} mudar={p.mudar} /> },
+    // só a vez de quem joga, não cada dado
+    vibrar: (v) => `dr:${v.fase}:${v.volta}:${v.fase === 'vez' ? v.vez : ''}`,
+    versaoPrivado: (v) => String(PREPARACAO.includes(v.fase)),
   },
 };
 

@@ -10,7 +10,7 @@ export const ANEL = 'M14 48 A36 36 0 1 0 86 48 A36 36 0 1 0 14 48 Z M38 48 A12 1
 /** o "O" coral com cara (viewBox 0–100); `fundo` desenha o quadrado azul-noite do ícone */
 export function LetraO({ tam = 64, fundo = false }: { tam?: number; fundo?: boolean }) {
   return (
-    <svg width={tam} height={tam} viewBox="0 0 100 100" role="img" aria-label="O">
+    <svg class="logo-o" width={tam} height={tam} viewBox="0 0 100 100" role="img" aria-label="O">
       {fundo && <rect width="100" height="100" rx="22" fill={NOITE} />}
       <path d={ANEL} fill={CORAL} fill-rule="evenodd" stroke={T} stroke-width={5} stroke-linejoin="round" />
       <g class="olhos">

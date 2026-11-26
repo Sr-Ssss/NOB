@@ -34,3 +34,4 @@ Base: o MVP do 50/50 (`src/jogos/5050/`, `src/core/`, `src/ui/`). Cada jogo segu
 | ✅ Revolução das Máquinas (16/11; reaproveita o canal privado do Pirata) | 7 |
 | ✅ O Rei e o Dragão (17/11; visual mudou para "duas torres e uma ponte"; equipas Corte / Rebeldes) | 8 |
 | ✅ Ragerob (18/11; visual "sucata no quintal"; física Matter.js só na TV; modos Apostas e Pilotos) | 9 |
+| ✅ Sem Juízo (25/11; tribunal antigo; galeria na sala de espera; regras em `jogos/sem-juizo.md`) | 10 |

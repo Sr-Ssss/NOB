@@ -19,7 +19,7 @@ body {
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
 }
-/* decoração de fundo: estrelas paradas a piscar devagar */
+/* decoração de fundo: estrelas paradas (a piscar, a TV recompunha o ecrã inteiro em todos os frames) */
 body::before {
   content: '';
   position: fixed;
@@ -30,9 +30,8 @@ body::before {
     radial-gradient(3px 3px at 65% 70%, #fff5 50%, transparent 51%),
     radial-gradient(2px 2px at 25% 85%, #fff6 50%, transparent 51%),
     radial-gradient(2px 2px at 92% 55%, #fff5 50%, transparent 51%);
-  animation: brilho 8s ease-in-out infinite alternate;
+  opacity: 0.75;
 }
-@keyframes brilho { from { opacity: 0.4; } to { opacity: 1; } }
 #app { position: relative; min-height: 100cqh; }
 
 .pag { max-width: 560px; margin: 0 auto; padding: 16px 16px 32px; display: flex; flex-direction: column; gap: 16px; }
@@ -170,9 +169,11 @@ label { font-weight: 700; display: block; margin-bottom: 4px; }
 .tv .rodape-codigo, .rodape-codigo.tv { font-size: clamp(28px, 4cqw, 56px); bottom: 16px; }
 .pag { padding-bottom: 72px; }
 .escolha-boneco:disabled { cursor: default; }
-/* bonecos piscam os olhos, devagar */
-.olhos { transform-box: fill-box; transform-origin: center; animation: piscar 7s infinite; }
-@keyframes piscar { 0%, 96%, 100% { transform: scaleY(1); } 98% { transform: scaleY(0.1); } }
+/* bonecos piscam os olhos, devagar (src/ui/piscar.ts põe e tira `pisca`) */
+.olhos { transform-box: fill-box; transform-origin: center; }
+.pisca > .olhos { transform: scaleY(0.1); }
+.bn-fechado, .pisca > .bn-aberto { visibility: hidden; }
+.pisca > .bn-fechado { visibility: visible; }
 
 /* ===== v2: decisões de design (info/arquitetura.md → Ecrãs, Bonecos; meio-a-meio.md → Visual) ===== */
 :root { --sim: #E5484D; --nao: #3E63DD; --traco: #1d1b26; }
@@ -345,7 +346,7 @@ html.texto-grande { zoom: 1.2; }
 .abertura.tv { min-height: calc(100cqh - 90px); padding-bottom: 0; }
 .abertura-nome { margin: 0; font-size: clamp(36px, 9cqw, 96px); color: var(--coral); line-height: 1.05; }
 .barra-abertura { width: min(560px, 86cqw); height: 22px; background: var(--noite-2); border-radius: 999px; overflow: hidden; border: 3px solid #ffffff33; }
-.barra-abertura > div { height: 100%; background: var(--coral); border-radius: 999px; transition: width 0.1s linear; }
+.barra-abertura > div { height: 100%; background: var(--coral); border-radius: 999px; transform-origin: left; transition: transform 0.1s linear; }
 .abertura.tv .barra-abertura { width: min(900px, 70cqw); height: 34px; }
 .olhar-tv { font-size: 30px; font-weight: 800; }
 

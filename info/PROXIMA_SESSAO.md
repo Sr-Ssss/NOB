@@ -1,5 +1,9 @@
 # Próxima sessão
 
+## 25/11/2026 — Sem Juízo (jogo 10) programado, por commitar
+- Estado, escolhas por confirmar e o que falta ver: `info/jogos/sem-juizo.md` → Estado. Testes: `src/jogos/semjuizo/regras.test.ts`, `e2e/semjuizo.spec.ts`. 460 vitest, tsc e lint a 0.
+- Partilhados mexidos: `sala.ts` (`sj_foto`, `fotos`, `nFotos`, `semFotos`), `ligacao.ts` (cópias sem fotos), `registo.ts` (`novo` recebe `fotos`), `ia.ts`, `jogos.ts`, `i18n`, `ecras.tsx`, `main.tsx`, `Jogar.tsx` (botão da galeria no lobby).
+
 ## 20/11/2026 — Modos: Aleatório e Torneio (fase 5 de `info/FASES_FEEDBACK.md`)
 - Decisões na Fase 5. Lógica pura em `src/core/modos.ts` (`Roleta`, `Torneio`, `pontosPorLugar`, `registarJogo`); sala: ações `aleatorio`, `torneio` (n = 3/5), `torneio_prox`; estado/vista `roleta` e `torneio`. A roleta (3 s) acaba no "Preparar" normal; só sorteia jogos que dão (`daAgora`: TV + mín./máx.); se o sorteado deixar de dar, sorteia outro.
 - Torneio: no fim de cada jogo, `outra_vez` regista os pontos por lugar e passa ao placar; `menu`/`acabar` acabam o torneio. `jogar` fica bloqueado durante o torneio/roleta. Registo: `resultado` opcional (só o Ragerob: classificação dos jogadores); os outros usam `g.pontos`.
@@ -27,9 +31,12 @@
 
 ## 20/11/2026 — Bots com "IA jogável" (fase 8 de `info/FASES_FEEDBACK.md`)
 - **Sala** (`src/core/sala.ts`): `Jogador.ia` (bots novos com `ia: true`, vai na vista); ação `bot_ia` (só o líder); `como` recusado se o bot tem IA. No `tick`, `jogarBots`: cada bot com IA, com probabilidade `P_BOT` (0,12 por tick de 250 ms ≈ 2 s a "pensar"), experimenta as jogadas candidatas do jogo por ordem aleatória e fica com a 1.ª que o reducer aceita (muda o estado). No máx. 1 jogada por "chave" (`iaBots` no estado do host; por defeito fase + `terminaEm`).
-- **Jogadas** (`src/core/ia.ts`, ligadas no registo como `bot`): uma por jogo, ao acaso, sem validar (o reducer valida). Textos = palavra ao acaso ou o texto que já existe (problema sorteado nas Ideias); não desenha (Mona: não manda desenho; Ideias: um ponto, porque o desenho vazio não é aceite). Chaves com progresso nos jogos de várias jogadas (Se Vira! slide a slide, Ideias etapa a etapa, Wi-Fi resposta, Pensa um duelo de cada vez, Rei, Ragerob). O Ragerob não instala módulos nem conduz; o Wi-Fi só faz o que é dos jogadores (equipas = líder).
+- **Jogadas** (`src/core/ia.ts`, ligadas no registo como `bot`): uma por jogo, ao acaso, sem validar (o reducer valida). Textos = palavra ao acaso ou o texto que já existe (problema sorteado nas Ideias); não desenha (Mona e Ideias: manda só um ponto; na Mona desde 25/11, para ninguém ficar à espera). Chaves com progresso nos jogos de várias jogadas (Se Vira! slide a slide, Ideias etapa a etapa, Wi-Fi resposta, Pensa um duelo de cada vez, Rei, Ragerob). O Ragerob não instala módulos nem conduz; o Wi-Fi só faz o que é dos jogadores (equipas = líder).
 - **UI**: tocar num bot no lobby → `PopupBot` (`src/ui/membros.tsx`): interruptor "IA jogável" (bolinha verde/cinzenta, `role=switch`) + Expulsar. Em jogo, a barra de troca do líder só mostra os bots com IA desligada; saiu o aviso "Jogando como X / ← Eu" (texto `botComo` apagado). Textos novos `botIa*`.
-- Testes: `src/core/ia.test.ts` (interruptor, `como` bloqueado, 50/50 com/sem IA, e cada um dos 10 jogos com o líder parado: os bots jogam e as fases avançam). Testes de sala antigos desligam a IA (o líder joga por eles). Playwright: teste do interruptor e da troca em `e2e/lobby.spec.ts`. 350 vitest, 148 Playwright, tsc e lint a 0.
+- Testes: `src/core/ia.test.ts` (interruptor, `como` bloqueado, 50/50 com/sem IA, e cada um dos 10 jogos com o líder parado: partida inteira, ver 25/11). Testes de sala antigos desligam a IA (o líder joga por eles). Playwright: teste do interruptor e da troca em `e2e/lobby.spec.ts`. 350 vitest, 148 Playwright, tsc e lint a 0.
+- **Verificado a 25/11**: o `ia.test.ts` joga agora a partida inteira dos 10 jogos e conta as jogadas dos bots por fase. Apanhou 2 bugs, corrigidos em `src/core/ia.ts`: Pensa (o bot reescrevia o duelo 0 e deixava o outro por responder) e Ideias (repetia a última etapa e não acabava o pitch). Fora do teste: jogadas que dependem de sorte/opções (ex.: aposta e 🥔 do Rei, loja privada do Ragerob).
+- **Recarregar bots** (25/11): em jogo, líder → 👥 Jogadores → "🔄 Recarregar bots" (ação `bots_recarregar`: esquece o que cada bot já jogou e todos os bots com IA tentam jogar logo). Bots na audiência também passam a jogar (antes nunca votavam).
+- **Palco da TV** (`novoEncolhe`, `src/ui/palco.tsx`): ignorava excessos < 0,5 % e ficavam até 5 px de scroll; era a falha intermitente do Rei fim (5 em 20; depois da correção, 40 em 40 verdes).
 - Limites: a IA corre no host (quem tem a sala); bots contam sempre como "viram a identidade" nas Máquinas, com ou sem IA.
 
 ## 20/11/2026 — Página inicial + "Acabar partida" (fase 9 de `info/FASES_FEEDBACK.md`)
@@ -43,7 +50,7 @@
 - **Barra de segurar** (todos os botões "segurar para ver"): `BarraSegurar` em `src/ui/comuns.tsx` + `.barra-segurar`/`.rotulo-segurar` em `src/ui/estilo.css` (amarelo→laranja, enche no tempo do botão). Usada nas Máquinas e no Pirata; o Rei já tinha barra (`rd-progresso`), só mudou a cor. O botão só fica coral quando mostra.
 - **Medidores**: fora de nomear/votar/votos/entrou/discussão/fim passam a uma barra fina (🔧 · 🔋 · 💥, `PainelFino` em `comuns.tsx`).
 - **Cartas** 🔧/💥: fundo apagado, borda clara grossa com filete escuro (design de cada carta fica para depois).
-- Playwright: `e2e/maquinas.spec.ts` (barra fina vs manómetros; segurar → barra → identidade). Testes: 337 vitest verdes, tsc e lint a 0, Playwright verde (uma falha passageira no Rei fim veio de outra sessão a editar `rei-dragao/comuns.tsx`; repetido passa).
+- Playwright: `e2e/maquinas.spec.ts` (barra fina vs manómetros; segurar → barra → identidade). Testes: 337 vitest verdes, tsc e lint a 0, Playwright verde (o Rei fim falhou 1 vez nas duas resoluções ; era o palco da TV, corrigido a 25/11).
 - Visto de passagem para a Fase 7: no telemóvel do Comandante aparece "Descarte 1 cartão" e por baixo "Esperando o Comandante e o Piloto" (mensagem a mais).
 
 ## 20/11/2026 — TV e ecrã ligado (fase 3 de `info/FASES_FEEDBACK.md`)
@@ -351,3 +358,7 @@ Falta:
 - O utilizador tem de: clicar no cartão do jogo 2; testar `NOB_v0.1.0.apk` num telemóvel real; rever o conteúdo gerado (`conteudo/`, `src/jogos/*/conteudo.json`).
 - Por fazer, para a filha `App · Menus e ecrãs` (não pode correr ao mesmo tempo que um jogo que mexa em `src/core/`): fechar o núcleo v3 (QR, D-pad, menu com pesquisa/filtros, `seq` + `snapshot`, e2e Playwright, GitHub Actions + keep-alive do Supabase, separador "Painel" do modo sem TV), modos rápido/votação/torneio, histórico, definições.
 - APK a pedido: `NOB_vX.Y.Z.apk` na Área de Trabalho.
+
+## 25/11 — passagem de sessão
+- Ragerob: equilíbrio das cabeças e controlo 15 s feitos (sem commit). Leilão ao vivo, botões visuais e apostas por pódio em curso na sessão "Ragerob: leilão ao vivo e botões visuais"; não tocar em `src/jogos/ragerob/` enquanto trabalha.
+- Novo jogo por decidir: `info/NOVO_JOGO.md`. Duelo de Rabiscos (magos): `info/jogos/guerra-de-desenhos.md`; regras aprovadas (25/11); plano aprovado (25/11), sem (P); artes na sessão "Duelo de Rabiscos: artes simples"; fase 1 (regras) e artes/cartas feitas, sem commit; decisões no fim do `.md`; fase 2 em sessão própria (25/11).

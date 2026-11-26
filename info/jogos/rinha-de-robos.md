@@ -25,7 +25,7 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
 ### Cabeças (personalidade da IA)
 | Cabeça | Arma | IA |
 |---|---|---|
-| 🐓 Galo | crista-serra, dano contínuo | ataca de frente |
+| 🐓 Galo | serra: golpe de 4,5 a cada 0,25 s; só empurra ao 5.º golpe (se ficar fraco: 10) | ataca de frente |
 | 🐊 Crocodilo | morde e agarra | persegue e agarra |
 | 🦏 Rinoceronte | pico; muito dano em investida | investe de longe |
 | 🐐 Bode | estica a cabeça e recolhe-a, empurrando forte | atira os outros contra perigos |
@@ -68,32 +68,25 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
 - Com mais rondas começam mais robôs (12/16).
 - Arena com perigos (serras no chão, paredes com picos, martelos que caem, espinhos do chão, pistão de parede, tapete rolante, prato giratório; cada arena sorteia 3–4) e eventos aleatórios (íman da grua, chuva de parafusos, arena a encolher). Nada mata de uma vez (16/11: saíram os buracos e a gravidade baixa).
 
-## Dinheiro (todo dos jogadores, sem banca)
-- **Apostas** antes de cada combate: 1 robô por jogador, valor livre, mínimo 50.
+## Dinheiro
+- **Apostas por pódio** (feito 25/11): ver a secção "Apostas por pódio". O texto antigo (entrada, bolo, consolação) saiu.
 - **Loja** por ronda, com 5 módulos:
-  - partilhada: ofertas secretas e ao mesmo tempo; no fim do tempo ganha a oferta mais alta; empate = sorteio;
+  - partilhada = **leilão ao vivo** (25/11; antes eram ofertas secretas): um módulo de cada vez em palco; "Dar entrada" (preço base), depois `+50`/`+100`; o lance mais alto substitui o anterior e todos veem rosto + valor (TV e telemóveis);
+    - 10 s por módulo (`T_LANCE`); cada lance garante pelo menos mais 6 s (`T_LANCE_EXTRA`); martelo 2 s (`T_MARTELO`), só aí sai o dinheiro; módulo que ninguém pode pagar é saltado;
+    - `rr_lance {item, valor}`, `valor` absoluto; quem lidera não cobre o próprio lance; em pausa não se licita;
+    - Pilotos: os robôs da IA licitam ao vivo (1 módulo por ronda, até preço + 0–200) e aparece o robô deles; bots (`ia.ts`): querem cerca de metade dos módulos, até preço + 0–200 e metade da carteira;
   - opção nas definições: loja privada (5 módulos por jogador, sem leilão).
   - Trocar um módulo que já existe custa +50%.
-- **Controlar**: paga-se para conduzir durante 5 s **o robô em que se apostou**; 1 pessoa de cada vez por robô (fila).
+- **Controlar**: paga-se para conduzir durante 15 s **o robô em que se apostou**; 1 pessoa de cada vez por robô (fila).
 - **Módulos**: ficam no inventário de quem os compra. Só se instalam no robô em que esse jogador apostou no combate atual (ordem: comprar → apostar → instalar).
-- **O dinheiro conserva-se** (exceção desde 20/11: a consolação, ver abaixo): nunca aparece dinheiro novo. Só sai do bolso de alguém em compras ou numa aposta perdida, e só entra no bolso de alguém vindo do bolo de apostas.
-- **Proposta: Entrada obrigatória** (para quem aposta ganhar mais do que quem não aposta):
-  - Em cada combate, todos põem automaticamente uma **entrada** (padrão 50) no bolo.
-  - Quem escolhe um robô: a entrada conta como aposta, mas tem de juntar **pelo menos +50** (aposta mínima num robô = 100). Pode juntar mais.
-  - Quem tem menos de 50 paga o que tem. Com 0 fica a assistir (sem apostas nem compras).
-  - Quem não escolhe: perde a entrada para o bolo.
-  - O bolo é dividido por quem apostou no **vencedor** do combate, proporcionalmente.
-  - Se ninguém acertou, o bolo passa para o combate seguinte (acumula).
-  - ✅ **Consolação** (decidido 20/11/2026): em cada combate, quem apostou num robô que perdeu recebe de volta uma parte calculada sobre **metade do bolo**, contando do fim: último 10%, penúltimo 20%, antepenúltimo 30% (num combate de 4: 4.º 10%, 3.º 20%, 2.º 30%; na final, o perdedor 10%). É **dinheiro novo** (não sai do bolo, que vai inteiro para quem acertou). Vários apostadores no mesmo robô dividem pelo valor apostado (para baixo; o resto para quem apostou mais). Paga-se mesmo quando ninguém acertou (o bolo acumula na mesma). KO ao mesmo tempo = os robôs empatados ficam no lugar mais alto do grupo.
-  - No fim do torneio, se ainda sobrar bolo, vai para quem apostou no campeão; se ninguém, divide-se pelos que apostaram na final.
+- O gasto (leilão, controlo, troca) some; entra dinheiro novo pelos prémios.
 - **Preços propostos** (usados na partida simulada):
-  - capital inicial **1500** (decidido);
+  - capital inicial **500** (Pilotos 1500);
   - Óleo/Escudo/Água 100; Picos/Propulsor/Pistão 150; Lança-chamas/Martelo/Fogo de artifício/Bobina 200;
   - trocar um módulo: +50% do preço do novo;
-  - controlar o robô durante 5 s: 100.
-  - Leilão: só se pode licitar em módulos que se consigam pagar. Arredondamento do bolo: para baixo; o resto vai para quem apostou mais.
+  - controlar o robô durante 15 s: 100.
+  - Leilão: só se pode licitar em módulos que se consigam pagar.
 - O robô parte só com carroçaria + locomoção + cabeça; os módulos vêm todos da loja.
-- ✅ Confirmado pelo utilizador. Entrada e mínimo configuráveis (padrão 50 + 50).
 
 ## Modo Pilotos
 - Cada jogador monta e controla o seu robô; a IA completa até 8.
@@ -114,13 +107,14 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
   - perigos e poças rabiscados (ver "Peças" → "Perigos, poças e eventos");
   - **robôs**: traço preto grosso e irregular (como os bonecos), cores base vivas, olhos que **só piscam**; locomoção reaproveitada de `../Rob/assets/sprites/robot/loco_*.svg`; cabeça à frente; módulos desenhados nos encaixes (percebe-se o robô sem ler);
   - por cima de cada robô: barra de vida; quando alguém conduz, aparece "⚡ Rita a conduzir · 3 s";
-  - painel à direita (chapa de metal): bolo, quem apostou em cada robô, combos ativos; no modo Pilotos, tabela de pontos;
+  - painel à direita (chapa de metal): prémios por lugar, quem apostou em cada robô, combos ativos; no modo Pilotos, tabela de pontos;
   - faixa inferior castanho-escuro com o código (código sempre em baixo).
 - **Telemóvel** (mesmo tema: fundo creme-areia, botões em **metal cinzento** com contorno escuro; parados):
   1. **Comando**: topo com o nome do robô + vida + tempo restante; à esquerda ▲/▼ grandes, à direita ◀/▶; nota "cabeça e módulos atuam sozinhos";
-  2. **Apostas**: lista dos robôs do combate (desenho + nome) + valor (mínimo indicado) + Apostar;
-  3. **Leilão / loja**: topo "Leilão · tempo" + o meu dinheiro; 5 cartões de módulo, cada um com o campo da oferta (esbatido se não dá para pagar); botão **Enviar ofertas** + caixinha ✅/❌ de quem já enviou;
-  4. **Instalar**: o meu robô com os encaixes vazios; tocar num módulo do inventário → encaixe;
+  2. **Apostas** ("Façam suas apostas!"): robôs do combate com o rosto de quem já apostou em cada um (também na TV); um toque escolhe (muda-se até o tempo acabar); por baixo, os prémios por lugar;
+  3. **Leilão** ("Hora do leilão!"): palco (`Palco` em `comuns.tsx`) + 3 botões; loja privada: montra de desenhos com preço;
+     - 25/11: não se escreve nada (só botões); hints visuais (peças, encaixes a piscar; laranja = troca, com o custo) em vez de frases;
+  4. **Instalar**: o meu robô com os encaixes vazios; tocar num módulo desenhado do inventário → encaixe a piscar (com um só módulo já vai escolhido);
   5. **Fim do combate**: ganhaste/perdeste + dinheiro + "Olha para a TV".
 - Sem TV (feito 20/11, Fase 10): a física corre no host (o telemóvel que tem a sala, `MotorRagerob` montado no `src/jogar/Criar.tsx`), que manda ~8 quadros/s (`rr_quadro`, só o host; `src/jogos/ragerob/quadro.ts`); cada telemóvel desenha a arena pequena por cima dos controlos, interpolando entre os 2 últimos quadros. No resultado e no fim, o telemóvel mostra a ordem/classificação; no fim o líder tem "Jogar outra vez" / "Menu".
 - Boa prática: cada robô tem **nome com cor** (ex.: "Galo Pimenta", "Rino Couve"), para se distinguir também sem ver cores.
@@ -146,7 +140,7 @@ Robôs modulares lutam sozinhos (IA) num torneio visto de cima (2D) na TV. Os jo
   - **Bode** ✅: **rampa** larga creme (lança os outros, como um *flipper*) num pistão; chifres castanhos enrolados nos cantos; olhos amarelos com pupila retangular deitada.
   - **Crocodilo** ✅: **visto de cima**, com 2 estados: à espera, a mandíbula de cima fica levantada e vê-se só a de baixo (boca rosa, dentes brancos nas bordas); ao bater, **fecha** e vê-se o focinho verde com narinas e escamas + linhas de impacto. Olhos amarelos com pupila em fenda, em saliências.
   - **Ouriço** ✅ (20/11): **ouriço enrolado** deitado à frente, como um **tambor** castanho de espinhos (focinho creme pequeno + olhos pretos), num suporte de metal; os espinhos correm conforme gira; um arco laranja mostra quando está carregado. Projeta quem toca.
-- **Crocodilo** (20/11): depois de morder, procura o perigo mais perto (serra, parede com picos, espinhos, fogo, água eletrificada) e arrasta a presa até lá (até 3 s); aí atira-a para dentro.
+- **Crocodilo** (20/11): depois de morder, procura o perigo mais perto (serra, parede com picos, espinhos, fogo, água eletrificada) e arrasta a presa até lá; mordida até 4 s e espera de 2 s depois de largar (25/11); aí atira-a para dentro.
 - **Perigos sólidos** (20/11): a serra e a parede com picos têm colisão; serra, parede, espinhos, pistão de parede e martelo que cai dão **knockback** (como ferro a tocar num disco).
 - **Módulos** ✅ (16/11) — cada um numa **base cinzenta aparafusada** que tapa o encaixe; peça em metal + **1 cor de destaque** (a mesma no cartão da loja):
   - **Direção fixa**: cada encaixe aponta do centro do robô para fora (nos cantos, na diagonal). O módulo dispara/atua sempre para esse lado, **sem mira automática**: quem mira é o robô, ao rodar. Todos os módulos têm algo a apontar para fora;
@@ -174,7 +168,7 @@ Para continuar numa sessão nova: ler isto, `info/arquitetura.md` (Ecrãs, Desig
 ### Onde está
 - Código em `src/jogos/ragerob/`:
   - `pecas.ts`: as peças, preços, cores com nome e direção dos encaixes;
-  - `regras.ts`: o reducer puro (dinheiro, leilão/loja privada, apostas com entrada e consolação, torneio, liga Pilotos, controlar 5 s);
+  - `regras.ts`: o reducer puro (dinheiro, leilão/loja privada, apostas por pódio, torneio, liga Pilotos, controlar 15 s);
   - `fisica.ts`: Matter.js, só na TV (cabeças, módulos, combos, perigos sólidos com knockback, eventos, arena a encolher, IA);
   - `desenho.tsx`: robôs, arena e efeitos em SVG;
   - `tv.tsx`, `telemovel.tsx`, `comuns.tsx`, `definicoes.tsx`, `ragerob.css`;
@@ -206,12 +200,11 @@ Para continuar numa sessão nova: ler isto, `info/arquitetura.md` (Ecrãs, Desig
 
 ### Decisões tomadas sem o utilizador (por confirmar)
 - Modo normal com 2, 3 ou 4 rondas (4/8/16 robôs).
-- O dinheiro gasto vai para o bolo; no modo Pilotos desaparece.
-- A sobra do bolo no fim vai para quem apostou no campeão; se ninguém, para quem apostou na final; se ninguém, para todos por igual.
 - Ao trocar um módulo, o antigo perde-se.
 - A fase "Instalar" salta-se quando ninguém tem módulos.
 - Passam os 2 primeiros na ordem de KO; os empates desfazem-se pelo dano causado.
-- No Pilotos, a IA licita 1 módulo por ronda.
+- No Pilotos, a IA licita 1 módulo por ronda (agora ao vivo).
+- Leilão (25/11): todos os módulos passam pelo palco mesmo sem interessados (10 s); os lances seguem até o tempo acabar, mesmo que já ninguém possa cobrir. Os bots compram mas não instalam.
 - A pausa (fora do combate) acontece com menos de 2 jogadores ligados.
 - Rede de segurança: se a TV não mandar o fim do combate em 200 s, a ordem fica pela vida.
 - A serra trava também os robôs de pernas (mas não lhes tira vida).
@@ -225,7 +218,7 @@ Para continuar numa sessão nova: ler isto, `info/arquitetura.md` (Ecrãs, Desig
 ### Próximo passo
 1. Ver no browser, a jogar, as mudanças de 20/11: o Crocodilo a arrastar até à serra, o knockback dos perigos e o tambor do Ouriço. Perguntar ao utilizador se a força e o equilíbrio estão bons.
 2. Voltar a fazer as capturas em `info/progresso/9-ragerob/` com a IA e o Ouriço novos.
-3. Jogar outra vez uma partida no modo Apostas no browser, para ver a consolação no ecrã de resultado.
+3. Jogar uma partida no modo Apostas com pessoas (leilão ao vivo + apostas por pódio).
 4. Por fazer:
    - som;
    - ⓘ de ajuda própria do jogo;
@@ -233,3 +226,18 @@ Para continuar numa sessão nova: ler isto, `info/arquitetura.md` (Ecrãs, Desig
    - ~~fundo~~ — feito: fundo do jogo (fora da arena) em `--noite`, texto claro; cartões mantêm texto escuro;
    - nos cartões da loja e da instalação não se vê o tambor do Ouriço carregado (só na arena).
 5. Confirmar com o utilizador as decisões acima.
+
+## Equilíbrio das cabeças (simulação 25/11, bots 1v1, sem módulos, 2400 combates por versão, metade com perigos)
+- Vitórias com perigos, antes → depois do ajuste: Galo 4→51%, Crocodilo 90→69%, Rino 47→33%, Bode 30→14%, Ouriço 77→79%. Sem perigos: 61 / 47 / 39 / 13 / 87%.
+- Galo bem com 5 golpes (não subir para 10).
+- Depois: Ouriço (carga 3 s, dano 2,3 + 7,5 × giro) e Bode (6,5 de dano, espera 1,4 s). Nova simulação (1400 combates), com perigos: Galo 48, Crocodilo 68, Rino 26, Bode 53, Ouriço 50%; sem perigos: 60 / 49 / 34 / 44 / 56%.
+- Depois: Rino (dano 6 + 3 × velocidade, máx. 24). Simulação final, com perigos: Galo 42, Crocodilo 65, Rino 44, Bode 49, Ouriço 45%; sem perigos: 58 / 43 / 51 / 41 / 51%. Falta confirmar com pessoas, módulos e 4 robôs.
+
+## Apostas por pódio (FEITO 25/11)
+- KO ao mesmo tempo: os empatados recebem todos o prémio do melhor lugar do grupo. A fase dura sempre os 20 s (pode-se mudar até ao fim). Vários no mesmo robô recebem todos por inteiro.
+- Ideia do utilizador: começar com 500; não se põe dinheiro no robô; escolhe-se um e ganha-se conforme o lugar dele.
+- Simulação (20 000 torneios por caso, modelo simplificado: sem entrada, controlo nem trocas): pagar 250/150/100/50 e final 400/150. Com 4 jogadores: 1.º ≈ 1087, último ≈ 579, ninguém sem dinheiro para o leilão (o sistema atual com 500 deixa 46% sem 100).
+- Risco: empates no topo ≈ 10–14% e todos a escolher o favorito. Proposta extra, não simulada: máximo de pessoas por robô.  As vagas por robô NÃO foram aprovadas.
+- Decisão completa: modo normal, 500 iniciais; 1 toque escolhe o robô (muda até ao fim do tempo, rosto visível ao vivo); sem valor, entrada, mínimo, bolo nem consolação; dinheiro novo pelo lugar (250/150/100/50; final 400/150); sem escolha = 0; o gasto no leilão/controlo/troca some; com 0 ainda se escolhe. Pilotos fica igual.
+
+- **Desempenho na TV (25/11):** a TV desenha a arena em canvas (`arenaCanvas.tsx`, pinta o mesmo JSX de `desenho.tsx`; fundo, robôs e textos em cache; máx. 1280 px) e o Preact só refaz o resto 4×/s. CPU 6× mais lento: 24 → 49 fps. `ArenaSvg` fica só para os telemóveis. Componentes usados na arena não podem ter hooks; atributos SVG novos têm de ser suportados em `pintar`. Falta testar numa TV a sério.

@@ -22,13 +22,6 @@ export function DefinicoesRagerob({ def, mudar }: { def: DefRagerob; mudar: (d: 
         ? grupo(t('rrRondasOp'), 'rondas', OPCOES_RAGEROB.rondas, (x) => t('rrRondasRobos', { r: x, n: 2 ** x }))
         : grupo(t('rrRondasOp'), 'rondasPilotos', OPCOES_RAGEROB.rondasPilotos, (x) => String(x))}
       {grupo(t('rrLojaOp'), 'loja', ['leilao', 'privada'], (x) => (x === 'leilao' ? t('rrLeilao') : t('rrPrivada')))}
-      {def.modo === 'normal' && (
-        <details>
-          <summary>{t('rrAvancadas')}</summary>
-          {grupo(t('rrEntradaOp'), 'entrada', OPCOES_RAGEROB.entrada, (x) => String(x))}
-          {grupo(t('rrMinimoOp'), 'minimo', OPCOES_RAGEROB.minimo, (x) => '+' + x)}
-        </details>
-      )}
     </div>
   );
 }

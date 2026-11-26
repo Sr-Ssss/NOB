@@ -1,0 +1,89 @@
+.dr-cartas { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; }
+.dr-escolha { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 5px; border-radius: 20px; background: none; color: inherit; font: inherit; }
+.dr-escolha.on { background: var(--coral); color: var(--tinta); }
+.dr-escolha:disabled, .dr-escolha.apagada .dr-carta { opacity: 0.45; }
+.dr-escolha:focus-visible, .dr-sugestao:focus-visible { outline: 4px solid #fff; outline-offset: 2px; }
+.dr-escolha .dr-carta { width: 100%; min-height: 0; flex: 1; }
+.dr-dono { font-weight: 800; text-align: center; }
+.dr-contador { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 22px; }
+.dr-contador .opcao { min-width: 48px; min-height: 48px; font-size: 24px; }
+.dr-contador .opcao:disabled { opacity: 0.4; }
+.dr-contador input { width: 90px; text-align: center; }
+.dr-motivo { min-height: 1.3em; text-align: center; }
+.dr-barra { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 14px; background: var(--creme); color: var(--tinta); }
+.dr-sugestao { padding: 12px; border-radius: 14px; background: var(--creme); color: var(--tinta); font: inherit; font-weight: 700; text-align: left; }
+.dr-tela { position: relative; }
+.dr-tela > .dr-molde { position: absolute; top: 0; left: 0; width: 100%; height: auto; aspect-ratio: 4 / 3; }
+.dr-palco { display: flex; flex-direction: column; gap: 24px; align-items: center; }
+.dr-magos { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; }
+.dr-mago-tv { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 18px; }
+.dr-mago-tv svg.dr-mago, .dr-sem-roupa { width: 96px; height: 158px; }
+.dr-sem-roupa { display: flex; align-items: center; justify-content: center; opacity: 0.6; }
+.tv .dr-mago-tv { font-size: clamp(22px, 2.6cqw, 40px); min-width: 20cqw; }
+.tv .dr-mago-tv svg.dr-mago, .tv .dr-sem-roupa { width: 15cqw; height: 24.75cqw; }
+.tv .dr-sem-roupa svg { width: 8cqw; height: 8cqw; }
+.dr-colmeia { display: block; width: 100%; max-height: 100%; }
+.dr-casa.toca { cursor: pointer; }
+.dr-casa.toca:focus-visible { outline: 4px solid #1b1b1b; outline-offset: -2px; }
+.dr-nome { display: inline-flex; align-items: center; gap: 6px; overflow-wrap: anywhere; }
+.dr-gemas { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+.dr-faixa { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; margin: 0; font-weight: 800; text-align: center; }
+.tv .dr-faixa { font-size: clamp(28px, 3.4cqw, 56px); }
+.dr-dados { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.dr-bt-dado { display: flex; flex-direction: column; align-items: center; min-width: 56px; min-height: 48px; padding: 6px; border-radius: 14px; background: #ddd8ca; color: var(--tinta); font: inherit; font-weight: 700; }
+.dr-bt-dado.on, .dr-ficha.on { background: var(--coral); box-shadow: 0 0 0 3px var(--tinta); }
+.dr-bt-dado:disabled { opacity: 0.6; }
+.dr-bt-dado:focus-visible, .dr-ficha:focus-visible, .dr-poder:focus-visible { outline: 4px solid var(--tinta); outline-offset: 2px; }
+.dr-bloco { display: flex; flex-direction: column; gap: 12px; }
+.dr-bloco h2, .dr-bloco p { margin: 0; }
+.dr-fichas { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 8px; }
+.dr-ficha { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; border-radius: 14px; background: #fffdf2; color: var(--tinta); font: inherit; font-size: 14px; font-weight: 700; text-align: center; }
+.dr-ficha:disabled { opacity: 0.4; }
+.dr-ficha-nome { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 4px; }
+.dr-poderes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dr-poderes > small { grid-column: 1 / -1; }
+.dr-poder { display: flex; flex-direction: column; gap: 4px; min-height: 64px; padding: 10px; border-radius: 14px; background: #ffd25a; color: var(--tinta); font: inherit; text-align: left; }
+.dr-poder:disabled { background: #cfccc4; color: #55525f; }
+.dr-luta { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.dr-lado { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.dr-vs { font-size: 1.6em; }
+.dr-resultado p { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 0; font-weight: 800; }
+.dr-placar li { display: flex; align-items: center; gap: 12px; }
+.tv.jogo-duelo .dr-mesa { display: grid; grid-template-columns: 22cqw 1fr 22cqw; gap: 16px; height: calc(100cqh - 150px); min-height: 0; }
+.dr-coluna { display: flex; flex-direction: column; justify-content: flex-start; min-height: 0; }
+.dr-coluna.fim { justify-content: flex-end; }
+.dr-centro { position: relative; min-height: 0; display: flex; justify-content: center; }
+.dr-centro > .dr-colmeia { height: 100%; }
+.dr-por-cima { position: absolute; inset: auto 0; top: 50%; transform: translateY(-50%); padding: 20px; border-radius: 24px; border: 4px solid #2b2a33; background: rgba(255, 253, 242, 0.96); color: var(--tinta); font-size: clamp(24px, 2.2cqw, 36px); }
+.dr-canto { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border-radius: 20px; font-size: clamp(24px, 2cqw, 34px); text-align: center; }
+.dr-canto.on { background: var(--noite-2); box-shadow: 0 0 0 4px #ffd25a; }
+.dr-canto.fora { opacity: 0.5; }
+.dr-canto svg.dr-mago { width: 10cqw; height: 16.5cqw; }
+.dr-canto-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px; }
+.dr-dados > .dr-bt-dado { flex: 1 1 0; min-width: 0; max-width: 96px; font-size: 14px; line-height: 1.1; }
+.dr-dados > .dr-bt-dado svg { max-width: 100%; }
+@media (max-width: 600px) { .jogo-duelo .dr-bloco { padding: 12px; gap: 8px; } }
+.tv.jogo-duelo .dr-placar { align-self: center; }
+.tv.jogo-duelo > .linha { justify-content: center; }
+.dr-zoom { position: relative; }
+.dr-zoom-caixa { overflow: hidden; border-radius: 14px; }
+.dr-zoom-bts { position: absolute; right: 4px; bottom: 4px; display: flex; gap: 4px; }
+.dr-zoom-bts .opcao { min-width: 44px; min-height: 44px; padding: 0; font-size: 22px; opacity: 0.9; }
+.dr-zoom-bts .opcao:disabled { opacity: 0.35; }
+.dr-mesa-tel.cima { order: -1; position: sticky; top: 0; z-index: 3; background: var(--creme, #fffdf2); border-radius: 14px; }
+.dr-mesa-tel.cima .dr-colmeia { max-height: 44vh; }
+@media (max-height: 560px) { .dr-mesa-tel.cima { position: static; } }
+.dr-cantos-tel { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.dr-cantos-tel .dr-canto { padding: 8px; font-size: 15px; background: var(--noite-2); }
+.dr-cantos-tel .dr-canto svg.dr-mago { width: 48px; height: 79px; }
+.dr-cantos-tel .dr-canto .dr-dados svg { width: 26px; height: 26px; }
+.dr-cantos-tel .dr-gemas svg { width: 22px; height: 22px; }
+.dr-peca { animation: dr-entra 0.35s ease-out; transform-box: fill-box; transform-origin: center; }
+@keyframes dr-entra { from { transform: scale(0.6); } }
+.dr-resultado .dr-marca { animation: dr-golpe 0.5s ease-out; }
+@keyframes dr-golpe { 0% { transform: scale(2) rotate(-12deg); opacity: 0; } 60% { transform: scale(0.9) rotate(4deg); opacity: 1; } }
+.dr-por-cima, .dr-luta { animation: dr-aparece 0.25s ease-out; }
+@keyframes dr-aparece { from { transform: translateY(-50%) scale(0.9); opacity: 0; } }
+.dr-luta { animation-name: dr-aparece-tel; }
+@keyframes dr-aparece-tel { from { transform: scale(0.95); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dr-peca, .dr-resultado .dr-marca, .dr-por-cima, .dr-luta { animation: none; } }

@@ -157,7 +157,9 @@ export function GerirJogadores({ vista, eu, enviar }: { vista: VistaSala; eu: st
   const expulsos = vista.expulsos ?? [];
   const outros = vista.jogadores.filter((j) => j.id !== eu && !j.bot && !expulsos.includes(j.id));
   const [alvo, setAlvo] = useState<J | null>(null);
-  if (vista.vipId !== eu || !outros.length) return null;
+  const [recarregou, setRecarregou] = useState(false);
+  const temIa = vista.jogadores.some((j) => j.bot && j.ia);
+  if (vista.vipId !== eu || !(outros.length || temIa)) return null;
   return (
     <details class="cartao gerir-jogadores">
       <summary style={{ fontWeight: 700 }}>{t('mbJogadores')}</summary>
@@ -169,6 +171,19 @@ export function GerirJogadores({ vista, eu, enviar }: { vista: VistaSala; eu: st
           </button>
         </div>
       ))}
+      {temIa && (
+        <button
+          class="botao sec recarregar-bots"
+          style={{ width: '100%', marginTop: 8 }}
+          onClick={() => {
+            enviar({ tipo: 'bots_recarregar', id: '' });
+            setRecarregou(true);
+            setTimeout(() => setRecarregou(false), 1500);
+          }}
+        >
+          {recarregou ? t('botsRecarregados') : t('botsRecarregar')}
+        </button>
+      )}
       {alvo && (
         <Confirmar texto={t('mbExpulsarConfirma', { nome: alvo.nome })} sim={t('mbExpulsar')} aoSim={() => enviar({ tipo: 'expulsar', id: '', alvo: alvo.id })} fechar={() => setAlvo(null)} />
       )}

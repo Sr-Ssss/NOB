@@ -53,7 +53,7 @@ export function EcraAbertura({ ab, idioma, agora, saltar, soNaTv, tv }: Props) {
       <div class={'pag centro abertura' + (tv ? ' tv' : '')}>
         {titulo}
         <div class="barra-abertura" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(feito)} aria-label={t('abCarregar')}>
-          <div style={{ width: `${feito}%` }} />
+          <div style={{ transform: `scaleX(${feito / 100})` }} />
         </div>
         <p class="mini">{ab.ver ? t('abDepoisTutorial') : t('abCarregar')}</p>
         {saltar && ab.ver && (

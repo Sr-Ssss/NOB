@@ -3,7 +3,8 @@
  * formas abstratas com cara, ar de rabisco à mão (traço preto grosso e irregular), uma cor base cada.
  * Única animação: piscar os olhos.
  */
-import type { JSX } from 'preact';
+import { render, type JSX } from 'preact';
+import { useEffect, useState } from 'preact/hooks';
 import { t } from '../core/i18n';
 
 interface Def {
@@ -138,28 +139,23 @@ export const CARAS: ((cor: string) => { olhos: string; resto: string })[] = [
   /* 18 nuvem */ () => ({ olhos: meio(-9, -2, -9, 2.5) + meio(9, -2, 9, 2.5), resto: ln('M-15 7 Q-9 10 -3 7', 2.5, '#9a6a5a') + ln('M3 7 Q9 10 15 7', 2.5, '#9a6a5a') + `<ellipse cx="0" cy="13" rx="3.5" ry="5" fill="${T}"/>` }),
 ];
 
-/** cada boneco pisca no seu ritmo (dessincronizados); parado com "reduzir movimento" */
-const ESTILO = '.olhos{transform-box:fill-box;transform-origin:center}@media (prefers-reduced-motion: reduce){.olhos{animation:none!important}}';
-
-function Cara({ d, i }: { d: Def; i: number }) {
+function Cara({ d, i, fechados }: { d: Def; i: number; fechados?: boolean }) {
   const [x, y, s] = d.cara;
   const { olhos, resto } = CARAS[i](d.cor);
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <g class="olhos" style={{ animationDelay: `${((i * 1.7) % 9).toFixed(1)}s`, animationDuration: `${6 + (i % 4)}s` }} dangerouslySetInnerHTML={{ __html: olhos }} />
+      <g style={fechados ? 'transform-box:fill-box;transform-origin:center;transform:scaleY(0.1)' : undefined} dangerouslySetInnerHTML={{ __html: olhos }} />
       <g dangerouslySetInnerHTML={{ __html: resto }} />
     </g>
   );
 }
 
-/** boneco n (0–17) */
-export function Boneco18({ n, tam = 64 }: { n: number; tam?: number }) {
-  const i = ((n % N_BONECOS) + N_BONECOS) % N_BONECOS;
+/** o desenho com o traço de rabisco (o filtro é caro de pintar: só se faz uma vez por boneco) */
+function Desenho({ i, fechados }: { i: number; fechados?: boolean }) {
   const d = BONECOS[i];
   const f = `rabisco${i}`;
   return (
-    <svg width={tam} height={tam} viewBox="-4 -4 108 108" role="img" aria-label={nomeBoneco(i)}>
-      <style>{ESTILO}</style>
+    <>
       <defs>
         <filter id={f} x="-10%" y="-10%" width="120%" height="120%">
           <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed={i + 3} />
@@ -168,8 +164,77 @@ export function Boneco18({ n, tam = 64 }: { n: number; tam?: number }) {
       </defs>
       <g filter={`url(#${f})`}>
         {d.corpo(d.cor)}
-        <Cara d={d} i={i} />
+        <Cara d={d} i={i} fechados={fechados} />
       </g>
+    </>
+  );
+}
+
+/** lado da imagem guardada (px): chega para o maior boneco da TV */
+const LADO = 256;
+interface Imagens {
+  aberto: string;
+  fechado: string;
+}
+const prontas: (Imagens | undefined)[] = [];
+const aFazer: (Promise<Imagens> | undefined)[] = [];
+/** uma de cada vez, para não prender o ecrã */
+let fila: Promise<unknown> = Promise.resolve();
+
+async function fotografar(i: number, fechados: boolean): Promise<string> {
+  const div = document.createElement('div');
+  render(
+    <svg xmlns="http://www.w3.org/2000/svg" width={LADO} height={LADO} viewBox="-4 -4 108 108">
+      <Desenho i={i} fechados={fechados} />
+    </svg>,
+    div,
+  );
+  const txt = new XMLSerializer().serializeToString(div.firstElementChild!);
+  render(null, div);
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(txt);
+  await img.decode();
+  const c = document.createElement('canvas');
+  c.width = c.height = LADO;
+  c.getContext('2d')!.drawImage(img, 0, 0, LADO, LADO);
+  return c.toDataURL('image/png');
+}
+
+function imagens(i: number): Promise<Imagens> {
+  return (aFazer[i] ??= (() => {
+    const p = fila.then(async () => (prontas[i] = { aberto: await fotografar(i, false), fechado: await fotografar(i, true) }));
+    fila = p.catch(() => {});
+    return p;
+  })());
+}
+
+/** boneco n (0–17): mostra o SVG até a imagem guardada estar pronta; pisca em src/ui/piscar.ts */
+export function Boneco18({ n, tam = 64 }: { n: number; tam?: number }) {
+  const i = ((n % N_BONECOS) + N_BONECOS) % N_BONECOS;
+  const [, setPronto] = useState(0);
+  useEffect(() => {
+    if (prontas[i]) return;
+    let vivo = true;
+    // sem imagem (browser antigo): fica o SVG
+    imagens(i).then(
+      () => vivo && setPronto((x) => x + 1),
+      () => {},
+    );
+    return () => {
+      vivo = false;
+    };
+  }, [i]);
+  const im = prontas[i];
+  return (
+    <svg class="boneco18" width={tam} height={tam} viewBox="-4 -4 108 108" role="img" aria-label={nomeBoneco(i)}>
+      {im ? (
+        <>
+          <image class="bn-aberto" href={im.aberto} x={-4} y={-4} width={108} height={108} />
+          <image class="bn-fechado" href={im.fechado} x={-4} y={-4} width={108} height={108} />
+        </>
+      ) : (
+        <Desenho i={i} />
+      )}
     </svg>
   );
 }

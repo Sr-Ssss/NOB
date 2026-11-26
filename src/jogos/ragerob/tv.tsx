@@ -3,11 +3,12 @@ import { t } from '../../core/i18n';
 import type { AcaoSala, VistaSala } from '../../core/sala';
 import { Temporizador } from '../../ui/comuns';
 import { nomeDe } from '../5050/tv';
-import { ArenaSvg, ModuloSvg, RoboCartao } from './desenho';
+import { ArenaCanvas, type Desenhar } from './arenaCanvas';
+import { RoboCartao } from './desenho';
 import { Combate, type ComandoF } from './fisica';
 import { T_QUADRO, quadroDe } from './quadro';
-import { ICONE_EVENTO, PRECO } from './pecas';
-import { QuemEnviou, etiquetaModulo, moeda, nomeEvento, nomeFase, nomeRobo, roboPorId } from './comuns';
+import { ICONE_EVENTO } from './pecas';
+import { Apostadores, Palco, Premios, QuemEnviou, Rosto, moeda, nomeEvento, nomeFase, nomeRobo, roboPorId } from './comuns';
 import { T_COMBATE, ativos, classificacao, tabela, type EstadoRagerob, type VistaRagerob } from './regras';
 import './ragerob.css';
 
@@ -48,7 +49,7 @@ function humanos(g: EstadoRagerob, agora: number, sala: VistaSala): Record<strin
  * A física do combate corre no host: na TV (que a desenha) ou, sem TV, no telemóvel que tem a sala, que manda também
  * os quadros da arena (`quadros`) para os telemóveis a desenharem (src/jogos/ragerob/quadro.ts).
  */
-function useMotor({ g, v, sala, agora, acao }: Pick<PropsTvRagerob, 'g' | 'v' | 'sala' | 'agora' | 'acao'>, quadros: boolean): Combate {
+function useMotor({ g, v, sala, agora, acao }: Pick<PropsTvRagerob, 'g' | 'v' | 'sala' | 'agora' | 'acao'>, quadros: boolean, desenhar?: Desenhar): Combate {
   const c = v.combate!;
   const sim = useRef<{ chave: string; c: Combate; enviado: boolean } | null>(null);
   const gRef = useRef(g);
@@ -66,13 +67,18 @@ function useMotor({ g, v, sala, agora, acao }: Pick<PropsTvRagerob, 'g' | 'v' | 
     let ultimoEnvio = 0;
     let ultimoQuadro = 0;
     let ultimas = '';
+    let ultimoFrame = 0;
+    let ultimoEcra = 0;
     // a física anda pelo relógio real: se o browser abrandar (separador escondido), apanha o atraso (até 2 s de cada vez)
     const avancar = (agoraMs: number) => {
       const s = sim.current!;
-      acumulado = Math.min(acumulado + (agoraMs - antes) / 1000, 2);
+      let dt = Math.max(0, agoraMs - antes) / 1000;
+      // ecrã a ~60 Hz: um passo certo por frame (senão há frames com 0 e com 2 passos, e nota-se aos soluços)
+      if (Math.abs(dt - 1 / 60) < 0.002) dt = 1 / 60;
+      acumulado = Math.min(acumulado + dt, 2);
       antes = agoraMs;
       const h = humanos(gRef.current, agora(), sala);
-      while (acumulado >= 1 / 60 && !s.c.acabou) {
+      while (acumulado >= 1 / 60 - 1e-6 && !s.c.acabou) {
         s.c.passo(h);
         acumulado -= 1 / 60;
       }
@@ -101,12 +107,21 @@ function useMotor({ g, v, sala, agora, acao }: Pick<PropsTvRagerob, 'g' | 'v' | 
     };
     // sem TV não há nada a desenhar aqui (o telemóvel desenha os quadros): basta o relógio de reserva
     const loop = (agoraMs: number) => {
+      ultimoFrame = performance.now();
       avancar(agoraMs);
-      setQuadro((x) => x + 1);
+      desenhar?.current?.();
+      // o resto do ecrã (relógio, avisos, chapa) não precisa de 60×/s
+      if (agoraMs - ultimoEcra >= 250) {
+        ultimoEcra = agoraMs;
+        setQuadro((x) => x + 1);
+      }
       raf = requestAnimationFrame(loop);
     };
     if (!quadros) raf = requestAnimationFrame(loop);
-    const reserva = setInterval(() => avancar(performance.now()), quadros ? 40 : 100);
+    const reserva = setInterval(() => {
+      // com frames a correr, a reserva não se mete
+      if (performance.now() - ultimoFrame > 200) avancar(performance.now());
+    }, quadros ? 40 : 100);
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(reserva);
@@ -127,7 +142,8 @@ function Motor(p: Pick<PropsTvRagerob, 'g' | 'v' | 'sala' | 'agora' | 'acao'>) {
 /** o combate na TV: a física corre aqui (a TV é o host) */
 function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
   const c = v.combate!;
-  const s = useMotor({ g, v, sala, agora, acao }, false);
+  const desenhar: Desenhar = useRef<(() => void) | null>(null);
+  const s = useMotor({ g, v, sala, agora, acao }, false, desenhar);
   const nomes = Object.fromEntries(c.robos.map((id) => [id, nomeRobo(roboPorId(v, id), sala)]));
   const condutores: Record<string, string> = {};
   const h = humanos(g, agora(), sala);
@@ -144,7 +160,7 @@ function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
     <div class="rr-luta">
       <div class="rr-coluna-arena">
         <div class="rr-arena-caixa">
-          <ArenaSvg c={s} nomes={nomes} condutores={condutores} />
+          <ArenaCanvas c={s} nomes={nomes} condutores={condutores} desenhar={desenhar} />
           <div class="rr-relogio">{restante > 0 ? `${restante} s` : t('rrEncolhe')}</div>
         </div>
         {/* aviso de evento: por baixo da arena (não tapa a luta), pisca 3 vezes */}
@@ -163,16 +179,11 @@ function Luta({ g, v, sala, agora, acao }: PropsTvRagerob) {
       <aside class="rr-chapa">
         {v.def.modo === 'normal' ? (
           <>
-            <h3>{t('rrBolo', { n: v.bolo })}</h3>
+            <Premios v={v} />
             {c.robos.map((id) => (
               <div key={id} class={'rr-linha-robo' + ((c.vidas[id] ?? 0) <= 0 ? ' ko' : '')}>
                 <b>{nomes[id]}</b>
-                <small>
-                  {Object.entries(v.apostas)
-                    .filter(([, a]) => a.robo === id)
-                    .map(([j, a]) => `${nomeDe(sala, j)} ${a.valor}`)
-                    .join(' · ') || t('rrNinguem')}
-                </small>
+                <Apostadores v={v} sala={sala} robo={id} tam={44} />
               </div>
             ))}
           </>
@@ -207,12 +218,11 @@ function Robos({ v, sala, ids, tam = 170 }: { v: VistaRagerob; sala: VistaSala; 
     <div class="rr-robos">
       {ids.map((id) => {
         const r = roboPorId(v, id)!;
-        const apostas = Object.entries(v.apostas).filter(([, a]) => a.robo === id);
         return (
           <div key={id} class="rr-cartao-robo">
             <RoboCartao robo={r} tam={tam} />
             <b>{nomeRobo(r, sala)}</b>
-            {v.fase !== 'montar' && v.def.modo === 'normal' && <small>{apostas.length ? apostas.map(([j]) => nomeDe(sala, j)).join(', ') : ''}</small>}
+            {v.fase !== 'montar' && v.def.modo === 'normal' && <Apostadores v={v} sala={sala} robo={id} tam={60} />}
           </div>
         );
       })}
@@ -244,29 +254,16 @@ export function TvRagerob(p: PropsTvRagerob) {
       {v.fase === 'loja' && (
         <>
           <h1 class="rr-titulo">{v.def.loja === 'leilao' ? t('rrLeilaoTv') : t('rrLojaPrivadaTv')}</h1>
-          {v.def.loja === 'leilao' && (
-            <div class="rr-loja">
-              {v.loja.map((m, k) => (
-                <div key={k} class="rr-cartao-mod">
-                  <svg viewBox="-30 -36 60 50" width={110} aria-hidden="true">
-                    <ModuloSvg m={m} seta />
-                  </svg>
-                  <b>{etiquetaModulo(m)}</b>
-                  <small>{t('rrDesde', { n: PRECO[m] })}</small>
-                </div>
-              ))}
-            </div>
-          )}
-          <QuemEnviou sala={sala} ids={ativos(v)} feitos={v.enviaram} />
+          {v.def.loja === 'leilao' ? <Palco v={v} sala={sala} tv /> : <QuemEnviou sala={sala} ids={ativos(v)} feitos={v.enviaram} />}
           <Carteiras v={v} sala={sala} />
         </>
       )}
       {(v.fase === 'aposta' || v.fase === 'instalar') && (
         <>
-          <h1 class="rr-titulo">{v.fase === 'aposta' ? t('rrApostaTv', { e: v.def.entrada, m: v.def.entrada + v.def.minimo }) : t('rrInstalarTv')}</h1>
+          <h1 class="rr-titulo">{v.fase === 'aposta' ? t('rrApostaTv') : t('rrInstalarTv')}</h1>
           <Robos v={v} sala={sala} ids={v.def.modo === 'pilotos' ? v.robos.map((r) => r.id) : grupo} tam={v.def.modo === 'pilotos' ? 130 : 210} />
-          {v.fase === 'aposta' && <QuemEnviou sala={sala} ids={ativos(v)} feitos={v.enviaram} />}
-          {v.def.modo === 'normal' && <p class="centro rr-grande">{t('rrBolo', { n: v.bolo })}</p>}
+          {v.fase === 'aposta' && <QuemEnviou sala={sala} ids={v.participantes} feitos={Object.keys(v.apostas)} />}
+          {v.def.modo === 'normal' && <Premios v={v} />}
         </>
       )}
       {v.fase === 'resultado' && v.resultado && (
@@ -333,8 +330,8 @@ function Carteiras({ v, sala }: { v: VistaRagerob; sala: VistaSala }) {
   return (
     <div class="rr-quem">
       {v.participantes.map((j) => (
-        <span key={j} class="rr-chip">
-          {nomeDe(sala, j)} {moeda(v.carteira[j] ?? 0)}
+        <span key={j} class="rr-chip rr-carteira">
+          <Rosto v={v} sala={sala} id={j} tam={44} /> {moeda(v.carteira[j] ?? 0)}
         </span>
       ))}
     </div>
