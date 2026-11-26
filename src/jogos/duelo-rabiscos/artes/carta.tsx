@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { Dado, PEGADAS } from './dados';
 import { CRIATURAS, CUSTO, MAGOS_PODERES, type Criatura, type RoupaMago } from '../criaturas';
 import { NOME_CLASSE, NOME_MAGO, TEXTO_CRIATURA, TEXTO_PODER } from '../textos';
 import { IconeClasse } from './icones';
@@ -9,7 +10,7 @@ import { Molde } from './moldes';
 export const ICONES_STATUS = {
   tinta: [['M50 6Q84 48 84 64Q82 94 50 95Q18 94 16 64Q16 48 50 6Z', '#b9c4f5', 7]],
   defesa: [['M50 4Q69 15 92 15Q97 70 50 97Q3 70 8 15Q31 15 50 4Z', '#dcecff', 7], ['M36 49L47 60L65 38', undefined, 8]],
-  passos: [['M28 12L50 12L50 46Q62 52 78 54Q92 58 88 72L26 72Z', '#cfe8c5', 7], ['M26 72L26 86L88 86L88 72', undefined, 7]],
+  passos: PEGADAS,
   ferimento: [['M50 5Q80 6 92 34Q99 62 78 84Q52 102 22 84Q0 62 8 34Q20 6 50 5Z', '#eadcf0', 7], ['M60 16L42 40L58 52L40 84', undefined, 8]],
   ataque: [['M92 8L92 30L50 72L30 52L70 10Z', '#e9eef2', 7], ['M18 44L56 82M37 63L14 86', undefined, 10]],
   gema: [['M26 12L74 12L94 40L50 94L6 40Z', '#c9f0e4', 7], ['M6 40L94 40M34 40L50 92L66 40L50 12Z', undefined, 4]],
@@ -29,7 +30,7 @@ function Valor({ s, n }: { s: Status; n: number }) {
 export function Carta({ criatura, ferimentos = 0, children }: { criatura: Criatura; ferimentos?: number; children?: ComponentChildren }) {
   const f = CRIATURAS[criatura];
   const t = TEXTO_CRIATURA[criatura];
-  const resumo = `${t.nome}, ${NOME_CLASSE[f.classe]}. Tinta ${f.tinta}, ataque ${f.dados}, defesa ${f.defesa}, passos ${f.passos}${ferimentos ? `, ferimentos ${ferimentos}` : ''}. ${t.gema ? 'Custa 1 gema. ' : ''}${t.especial}`;
+  const resumo = `${t.nome}, ${NOME_CLASSE[f.classe]}. Tinta ${f.tinta}, ataque ${f.dados}, defesa ${f.defesa}, passos ${f.passos}${ferimentos ? `, ferimentos ${ferimentos}` : ''}. ${t.habilidade ? 'Usa o dado Habilidade. ' : ''}${t.especial}`;
   return (
     <div class={`dr-carta dr-carta-${f.classe}`} role="img" aria-label={resumo}>
       <div class="dr-carta-topo">
@@ -46,7 +47,7 @@ export function Carta({ criatura, ferimentos = 0, children }: { criatura: Criatu
         {ferimentos > 0 && <Valor s="ferimento" n={ferimentos} />}
       </div>
       <p class="dr-carta-especial">
-        {t.gema && <Valor s="gema" n={1} />} {t.especial}
+        {t.habilidade && <Dado face="habilidade" tam={26} />} {t.especial}
       </p>
     </div>
   );

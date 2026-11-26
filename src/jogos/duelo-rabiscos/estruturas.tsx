@@ -326,3 +326,41 @@ export function Estrutura({ tipo, p, ligacoes, semente, achata }: { tipo: TipoEs
       return <Soltos tipo="arvore" p={p} ligacoes={ligacoes} s={semente} meioTipo="arbusto" />;
   }
 }
+
+/**
+ * Barreira dos poderes (Muralha do mago, parede do Carvalho Vivo): muro de pedra mágica, de pé, que liga as casas.
+ * Numa casa só, um bocado de muro atravessado nela. Some no fim da volta seguinte (regras).
+ */
+export function Barreira({ p, ligacoes }: { p: Ponto[]; ligacoes: [number, number][] }) {
+  const segmentos: [Ponto, Ponto][] = ligacoes.length
+    ? ordenar(p, ligacoes).map(([a, b]) => [a, b])
+    : p.map((q) => [{ ...q, x: q.x - 30 * q.f }, { ...q, x: q.x + 30 * q.f }]);
+  const alto = 40;
+  return (
+    <>
+      {segmentos.map(([a, b], k) => {
+        // blocos de pedra: 2 fiadas, juntas desencontradas
+        const fiadas = [0.5].map((h) => `M${a.x} ${a.y - alto * a.f * h}L${b.x} ${b.y - alto * b.f * h}`).join('');
+        const juntas = [0.25, 0.5, 0.75]
+          .map((t, i) => {
+            const q = lerp(a, b, t);
+            const [h0, h1] = i % 2 ? [0.5, 1] : [0, 0.5];
+            return `M${q.x} ${q.y - alto * q.f * h0}L${q.x} ${q.y - alto * q.f * h1}`;
+          })
+          .join('');
+        const brilho = [0.3, 0.7].map((t) => {
+          const q = lerp(a, b, t);
+          return `M${q.x} ${q.y - alto * q.f - 8 * q.f}l${3 * q.f} ${6 * q.f}l${6 * q.f} 0l${-5 * q.f} ${4 * q.f}l${2 * q.f} ${7 * q.f}l${-6 * q.f} ${-4 * q.f}l${-6 * q.f} ${4 * q.f}l${2 * q.f} ${-7 * q.f}l${-5 * q.f} ${-4 * q.f}l${6 * q.f} 0Z`;
+        });
+        return (
+          <g key={k}>
+            <Folha d={muro(a, b, alto, (t) => 0.9 + 0.1 * Math.abs(Math.sin(t * Math.PI * 3)))} cor="#c9c3dc" f={a.f} linhas={fiadas + juntas} />
+            {brilho.map((d, i) => (
+              <path key={i} d={d} fill="#ffe27a" stroke={TINTA} stroke-width={1.5 * a.f} stroke-linejoin="round" />
+            ))}
+          </g>
+        );
+      })}
+    </>
+  );
+}

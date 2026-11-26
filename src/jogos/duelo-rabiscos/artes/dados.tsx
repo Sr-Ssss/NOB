@@ -1,18 +1,28 @@
+import { useEffect, useState } from 'preact/hooks';
 import { Arte, type Camada } from './lapis';
 
 /** forma do dado = tipo: ação quadrado, ataque estrela, defesa escudo; ícone = face */
 const ACAO: Camada = ['M14 9Q50 6 87 9Q92 10 92 16Q94 50 91 86Q91 91 85 92Q50 94 14 91Q8 91 8 85Q6 50 9 14Q9 9 14 9Z', '#fffdf2', 5];
-const ATAQUE: Camada = ['M50 3L63 17L83 13L83 34L97 48L84 63L85 84L65 83L51 97L37 84L16 86L17 64L3 51L16 36L14 15L35 17Z', '#ffe1d6', 5];
-const DEFESA: Camada = ['M50 4Q69 15 92 15Q97 70 50 97Q3 70 8 15Q31 15 50 4Z', '#dcecff', 5];
+const QUADRADO = 'M14 9Q50 6 87 9Q92 10 92 16Q94 50 91 86Q91 91 85 92Q50 94 14 91Q8 91 8 85Q6 50 9 14Q9 9 14 9Z';
+/** dados da batalha: também quadrados (parecem dados); a cor diz o lado */
+const ATAQUE: Camada = [QUADRADO, '#ffd3c7', 5];
+const DEFESA: Camada = [QUADRADO, '#cfe3ff', 5];
 /** ferimento: redondo e rachado */
-const FERIDO: Camada[] = [['M50 5Q80 6 92 34Q99 62 78 84Q52 102 22 84Q0 62 8 34Q20 6 50 5Z', '#eadcf0', 5], ['M50 5L44 15L53 21M22 84L31 77L29 69M92 40L83 43', undefined, 4]];
-const VAZIO: Camada = ['M40 50a10 10 0 1 0 20 0a10 10 0 1 0 -20 0', undefined, 4, '4 8'];
+const FERIDO: Camada[] = [[QUADRADO, '#e6d3f0', 5], ['M14 9L22 20L18 28M85 92L78 82L83 76', undefined, 4]];
+const VAZIO: Camada = ['M42 50a8 8 0 1 0 16 0a8 8 0 1 0 -16 0', '#fff', 3, '4 6'];
+
+/** duas pegadas: a face Andar e o número de passos da carta (o mesmo símbolo) */
+export const PEGADAS: Camada[] = [['M22 72Q20 56 31 54Q42 56 40 72Q39 84 31 84Q23 84 22 72Z', '#9fd38c', 4], ['M20.5 47a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0M27.5 45a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0M34.5 47a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0', '#9fd38c', 3], ['M50 40Q48 24 59 22Q70 24 68 40Q67 52 59 52Q51 52 50 40Z', '#9fd38c', 4], ['M48.5 15a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0M55.5 13a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0M62.5 15a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0', '#9fd38c', 3]];
 
 export const DADOS = {
-  andar: [ACAO, ['M33 18L49 18L49 46Q60 51 71 53Q81 56 79 67L31 67Z', '#cfe8c5', 5], ['M31 67L31 75L80 75L79 67M34 30L48 30M18 34L26 34M15 48L25 48', undefined, 5]],
-  fazerAlgo: [ACAO, ['M76 19L81 32L45 68L34 57L68 21Z', '#ffd9a8', 5], ['M27 50L52 75M39 63L23 79M22 22L38 38M22 35L22 22L35 22M62 62L78 78M70 81L80 80L81 70', undefined, 5]],
-  habilidade: [ACAO, ['M20 82L56 44', undefined, 9], ['M66 15L71 30L86 35L71 40L66 56L60 40L46 35L60 30Z', '#e2d1ff', 5], ['M28 22L28 38M20 30L36 30M76 66L76 80M69 73L83 73', undefined, 4]],
-  coringa: [ACAO, ['M50 14L61 37L86 40L67 57L72 83L50 70L28 83L33 57L14 40L39 37Z', '#fff0a0', 5], ['M41 44Q42 35 51 36Q60 38 57 46Q55 50 50 53L50 57M50 65L50 66', undefined, 5]],
+  // duas pegadas: andar
+  andar: [ACAO, ...PEGADAS],
+  // um raiozinho
+  fazerAlgo: [ACAO, ['M58 12L28 54L47 54L38 88L74 42L54 42L64 12Z', '#ffd25a', 5]],
+  // redemoinho roxo
+  habilidade: [ACAO, ['M50 16Q84 16 84 50Q84 84 50 84Q16 84 16 50Q16 16 50 16Z', '#c7a3f5', 4], ['M51 50Q51 44 57 45Q64 47 62 56Q58 64 48 63Q36 61 37 48Q39 33 56 32Q74 33 76 52Q76 72 54 76Q32 78 24 62', undefined, 6]],
+  // só a estrela
+  coringa: [ACAO, ['M50 12L62 37L88 40L68 58L74 85L50 71L26 85L32 58L12 40L38 37Z', '#ffd84d', 5]],
   ataqueVazio: [ATAQUE, VAZIO],
   ataque1: [ATAQUE, ['M70 24L72 38L48 64L36 53L59 26Z', '#e9eef2', 5], ['M30 48L53 70M41 59L28 73', undefined, 7]],
   ataque2: [ATAQUE, ['M28 24L26 36L56 66L65 57L40 26Z', '#e9eef2', 5], ['M69 50L50 71M60 61L72 74', undefined, 6], ['M72 24L74 36L44 66L35 57L60 26Z', '#e9eef2', 5], ['M31 50L50 71M40 61L28 74', undefined, 6]],
@@ -28,4 +38,44 @@ export type FaceDado = keyof typeof DADOS;
 
 export function Dado({ face, tam = 48 }: { face: FaceDado; tam?: number }) {
   return <Arte c={DADOS[face]} tam={tam} class={`dr-dado dr-dado-${face}`} />;
+}
+
+const GRUPOS: FaceDado[][] = [
+  ['andar', 'fazerAlgo', 'habilidade', 'coringa'],
+  ['ataqueVazio', 'ataque1', 'ataque2'],
+  ['defesaVazio', 'defesa1'],
+  ['feridaEspada', 'feridaEscudo', 'feridaCoracao', 'feridaGema', 'feridaVazio'],
+];
+const calmo = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Dado que "rola" quando aparece ou muda de face: abana e troca de face ao acaso ~0,5 s, depois pára no resultado.
+ * `rolar={false}`: aparece logo parado (p. ex., a repetir uma batalha já acabada).
+ */
+export function DadoRola({ face, tam = 48, rolar = true }: { face: FaceDado; tam?: number; rolar?: boolean }) {
+  const [mostra, setMostra] = useState(face);
+  const [roda, setRoda] = useState(false);
+  useEffect(() => {
+    if (!rolar || calmo()) {
+      setMostra(face);
+      return;
+    }
+    const g = GRUPOS.find((x) => x.includes(face)) ?? [face];
+    let k = 0;
+    setRoda(true);
+    const t = setInterval(() => {
+      k++;
+      if (k >= 8) {
+        clearInterval(t);
+        setMostra(face);
+        setRoda(false);
+      } else setMostra(g[Math.floor(Math.random() * g.length)]);
+    }, 65);
+    return () => clearInterval(t);
+  }, [face]);
+  return (
+    <span class={'dr-rola' + (roda ? ' a-rodar' : '')}>
+      <Dado face={mostra} tam={tam} />
+    </span>
+  );
 }

@@ -65,6 +65,8 @@ describe('passos da vez', () => {
     expect([...vistos].sort()).toEqual(['andar', 'atacar', 'especial']);
     expect(modos(e, b, 'andar')).not.toContain('especial');
     expect(modos(e, b, 'fazer')).not.toContain('andar');
+    expect(modos(e, b, 'fazer')).not.toContain('especial');
+    expect(modos(e, b, 'habilidade')).toEqual(['especial']);
   });
   it('faces e total da batalha, pela ordem do relançar', () => {
     expect(facesLado([0, 2], ['gema'], true)).toEqual(['ataqueVazio', 'ataque2', 'feridaGema']);

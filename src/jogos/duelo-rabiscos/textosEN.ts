@@ -16,12 +16,12 @@ export const TEXTO_CRIATURA: typeof T.TEXTO_CRIATURA_PT = {
   sapinho: { nome: 'Hopping Toad', especial: 'Whoever defeats it takes 1 wound.' },
   corvo: { nome: 'Crow', especial: 'Flies over creatures and obstacles.' },
   lobo: { nome: 'Wolf', especial: 'After attacking, moves 1.' },
-  velhoPescador: { nome: 'Old Fisherman', especial: 'Instead of attacking, pulls an enemy up to 3 away, deals 1 wound and fights in melee.', gema: true },
-  mumia: { nome: 'Mummy', especial: 'Instead of attacking, heals 1 wound from a friend up to 2 away.', gema: true },
+  velhoPescador: { nome: 'Old Fisherman', especial: 'With the Ability die, pulls an enemy up to 3 away, deals 1 wound and fights in melee.', habilidade: true },
+  mumia: { nome: 'Mummy', especial: 'With the Ability die, heals 1 wound from a friend up to 2 away.', habilidade: true },
   elfo: { nome: 'Elf', especial: 'Shoots up to 3 away, but not next to it.' },
   dragaozinho: { nome: 'Little Dragon', especial: 'Fights next to it or shoots at 2. A missed shot deals 1 wound.' },
   golem: { nome: 'Golem', especial: 'Friends next to it get +1 defence die.' },
-  carvalho: { nome: 'Living Oak', especial: 'Instead of attacking, builds a wall on a space next to it. Lasts 2 rounds.', gema: true },
+  carvalho: { nome: 'Living Oak', especial: 'With the Ability die, builds a wall on a space next to it. Lasts 2 rounds.', habilidade: true },
   cavaleiro: { nome: 'Knight', especial: 'Rerolls 1 blank die, attacking and defending.' },
   raposa: { nome: 'Fox Fencer', especial: 'Survives a melee tie.' },
   minotauro: { nome: 'Minotaur', especial: 'When defeated, deals 1 wound to enemies next to it.' },
@@ -132,7 +132,7 @@ export const TXT: typeof T.TXT_PT = {
   magos: 'Wizards',
 };
 
-export const NOME_FACE: typeof T.NOME_FACE_PT = { andar: 'Move', fazer: 'Act', coringa: 'Wild' };
+export const NOME_FACE: typeof T.NOME_FACE_PT = { andar: 'Move', fazer: 'Act', habilidade: 'Ability', coringa: 'Wild' };
 export const NOME_DADO: typeof T.NOME_DADO_PT = {
   andar: 'Move',
   fazerAlgo: 'Act',
@@ -149,5 +149,5 @@ export const NOME_DADO: typeof T.NOME_DADO_PT = {
   feridaGema: 'Wound: gem',
   feridaVazio: 'Wound: blank',
 };
-export const NOME_MODO: typeof T.NOME_MODO_PT = { andar: 'Move', atacar: 'Attack', especial: 'Special (1 gem)' };
+export const NOME_MODO: typeof T.NOME_MODO_PT = { andar: 'Move', atacar: 'Attack', especial: 'Special' };
 export const MOTIVO_PODER: typeof T.MOTIVO_PODER_PT = { usado: 'You already used a power this turn', gemas: 'Not enough gems', alvo: 'No target right now' };

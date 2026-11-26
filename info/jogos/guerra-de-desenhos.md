@@ -22,25 +22,25 @@ Magos desenham criaturas que ganham vida e lutam numa colmeia. Último mago com 
 | Lacaio 2 | encher | dentada | Duende 2/2/1: +1 dado se outro Lacaio teu estiver colado ao alvo | Sapinho Saltitão 2/3/1: quem o mata leva 1 ferimento |
 | Batedor 3 | chegar | garras | Corvo 3/4/2: passa por cima de criaturas | Lobo 3/4/2: depois de atacar, anda 1 |
 | Pescador 3 | posição | anzol / ligaduras | Velho Pescador 3/2/2: puxa um inimigo até 3 para o lado dele, faz-lhe 1 ferimento e luta corpo a corpo | Múmia 4/2/1: tira 1 ferimento a um amigo até 2 |
-| Arqueiro 4 | distância | seta / queimado | Elfo 2/3/3: atira a 3, não colado | Dragãozinho 3/1/2: luta colado ou atira a 2; tiro que falha faz 1 ferimento |
-| Guardião 4 | proteger | amolgadela | Golem 5/2/2: amigos colados +1 dado de defesa | Carvalho Vivo 6/1/2: cria parede numa casa colada, dura 2 voltas |
+| Arqueiro 4 | distância | seta / queimado | Elfo 2/2/2: atira a 3, não colado | Dragãozinho 2/1/2: luta colado ou atira a 2; tiro que falha faz 1 ferimento |
+| Guardião 4 | proteger | amolgadela | Golem 5/3/2: amigos colados +1 dado de defesa | Carvalho Vivo 6/2/2: cria parede numa casa colada, dura 2 voltas |
 | Duelista 5 | 1 contra 1 | corte | Cavaleiro 4/2/3: relança 1 dado vazio, a atacar e a defender | Raposa Espadachim 3/3/3: num empate corpo a corpo, ela sobrevive |
-| Bárbaro 6 | força | soco | Minotauro 4/2/4: ao morrer, 1 ferimento aos inimigos colados | Ogre 4/2/3: +1 dado de ataque por ferimento |
+| Bárbaro 6 | força | soco | Minotauro 5/3/4: ao morrer, 1 ferimento aos inimigos colados | Ogre 5/2/4: +1 dado de ataque por ferimento |
 
 - Os ferimentos do Minotauro, Sapinho, Dragãozinho e Velho Pescador deixam a marca da classe no desenho: automático, só visual.
 
 ## Dados
-- **Ação** (4 por mago): andar ×2, fazer algo ×3, coringa ×1.
+- **Ação** (4 por mago): andar ×2, fazer algo ×2, habilidade ×1, coringa ×1 (26/11, do utilizador: a Habilidade é para os especiais das criaturas).
 - **Ataque**: vazio ×3, 1 risco ×2, 2 riscos ×1. **Defesa** (dados da criatura + bónus): vazio ×3, bloqueia 1 ×3.
 - **Batalha corpo a corpo**: riscos > bloqueios = morre o defensor; bloqueios > riscos = morre quem atacou; empate (até 0–0) = morrem os dois. **À distância** (Elfo; Dragãozinho a 2): se não passar da defesa, ninguém morre.
 - **Ferimento** (só especiais e poderes: Tempestade, Minotauro, Sapinho, Dragãozinho, Velho Pescador): cada um troca 1 dado normal por 1 dado de ferimento, no ataque e na defesa. Ferido outra vez com tantos ferimentos como dados de defesa = morre.
 - **Dado de ferimento**: espada (1 risco, só a atacar), escudo (bloqueia 1, só a defender), coração (tira 1 ferimento depois do combate, se sobreviver), gema (+1 no fim do combate, mesmo que morra), vazio ×2. Também se relança com gemas.
-- Andar = até aos passos. Fazer algo = atirar ou lutar colado. Coringa = um dos dois. Velho Pescador, Múmia e Carvalho Vivo: em vez do ataque, gastam 1 gema e usam o especial. Os outros especiais são grátis e acontecem sozinhos.
+- Andar = até aos passos. Fazer algo = atirar ou lutar colado. Coringa = um dos dois. Velho Pescador, Múmia e Carvalho Vivo: usam o especial com o dado Habilidade (ou a coringa), sem gastar gemas (26/11); conta como a ação de atacar dessa volta. Os outros especiais são grátis e acontecem sozinhos.
 
 ## Volta
 1. Todos rodam os 4 dados de ação e ganham 1 gema (1 na 1.ª volta; máx. 7).
 2. Relançar: 1 vez por volta, grátis, tocar num dado de ação para o rodar de novo.
-   - **Gema = Essência**, a única moeda: tinta que sobra, +1 por volta, +1 por cada criatura tua eliminada. Gasta-se em poderes, nos especiais de Velho Pescador, Múmia e Carvalho Vivo e, só na batalha, para voltar a rodar 1 dado de ataque ou defesa teu.
+   - **Gema = Essência**, a única moeda: tinta que sobra, +1 por volta, +1 por cada criatura tua eliminada. Gasta-se em poderes e, só na batalha, para voltar a rodar 1 dado de ataque ou defesa teu.
 3. Começa: na 1.ª volta quem acabou os desenhos primeiro; depois quem tem menos criaturas (empate = o seguinte ao que começou). Segue a ordem da mesa.
 4. Cada vez: gastar 1 dado **com uma criatura**, até se esgotarem. Cada criatura faz cada tipo de ação 1 vez por volta (a coringa conta como o tipo escolhido). Dado sem uso possível perde-se.
 5. Antes do dado: 1 poder por vez, sem gastar dado.
@@ -106,7 +106,7 @@ Não há poder comum. Usar o 2.º poder também deixa relançar grátis 1 dado d
 - **Estado**: tudo feito e testado (411 testes, lint 0), **sem commit**. Próximo: fase 2.
 - **Sem vida.** Ataque, defesa e passos; todos já com +1 de defesa. Ferimentos: com defesa 0 ainda vive, o seguinte (−1) mata. Perder a batalha mata logo (o "−1" só vale para ferimentos).
 - Corpo a corpo = colado; à distância = não colado (o Dragãozinho muda conforme onde está). Duas Raposas empatadas sobrevivem ambas. Últimas criaturas de todos a cair juntas = empate em 1.º.
-- Lobo só anda se sobreviver. Elfo fica igual (ataque 3, defesa 2, tinta 4), mesmo sem arriscar ao atacar. Ogre respeita o travão +2.
+- Lobo só anda se sobreviver. Elfo: ver afinação de 26/11 (fase 6). Ogre respeita o travão +2.
 - Velho Pescador: alcance 2–3, linha livre, puxa para a casa colada, 1 ferimento e batalha já; se o ferimento matar, não há batalha. Múmia não se cura a si própria. Carvalho deixou de proteger o amigo.
 - Especiais de gema gastam 1 gema e a ação (dado "fazer algo" ou coringa). Ação `dr_especial`: `alvo` (Pescador, Múmia: `alvosEspecial`) ou `casa` (Carvalho: `casasEspecial`). `muralhas` = `{ casa, ate }[]`.
 - Batalha no estado: `ataque`/`defesa` (dados normais) e `feridaAtaque`/`feridaDefesa`; em `dr_relancar` os índices dos de ferimento vêm a seguir aos normais. `ultimo` = `morreu` + `morreuQuemAtacou`.
@@ -174,3 +174,16 @@ Não há poder comum. Usar o 2.º poder também deixa relançar grátis 1 dado d
 - Estilo de maquete de papel (ao jeito de Paper Mario): criaturas de pé como autocolantes (borda branca e espessura de cartão, pés no centro da casa); obstáculos com um recorte por casa (o grupo é do mesmo tipo: bosque, pedras, ruínas), com pé de cartão, tamanho e lado variados; casas com obstáculo cinzentas e casas com tropa na cor do dono, clarinha (sem sombra). `Recorte` em `artes/obstaculos.tsx`.
 - Obstáculos como estruturas inteiras que ligam as casas do grupo (`estruturas.tsx`): ruína (muros partidos com tijolos e colunas nas pontas), sebe com arbustos, tronco caído a atravessar 2 casas (+ cepo na 3.ª), lago que junta as casas, monte de pedras (pedras soltas no meio), bosque (arbusto entre as árvores). Demo: `obst=nenhum|poucos|muitos`.
 - (26/11, do utilizador) Obstáculos: poucos 9, muitos 18 casas; grupos de 1 a 4 casas (4 = bloco em losango), separados; com 2 e 4 magos vão aos pares e o ímpar fecha com uma casa no centro. Tipos por tamanho (`ESTRUTURAS_POR_TAMANHO`): + casa partida, montanha em pirâmide, cerca, carroça partida (torre recusada). Criaturas: fundo branco cheio (envolvente do desenho, sem buracos); sem forma geométrica, o símbolo da classe fica em baixo à esquerda com a borda na cor do dono. Galeria: `#/demo-duelo?galeria=1`.
+- (26/11) Especiais das criaturas pagos com a face nova **Habilidade** do dado de ação, não com gemas. No telemóvel: dado Habilidade → só as criaturas com especial ficam ativas → alvo. Barreiras dos poderes (Muralha, parede do Carvalho) de pé: muro de pedra mágica com brilhos (`Barreira` em `estruturas.tsx`).
+- (26/11) Telemóvel na batalha: magos inimigos só numa fila pequena em cima à direita (foto de perfil com a roupa, borda na cor do mago, dados por baixo); as tuas criaturas são cartas (com o teu desenho) num baralho (`baralho.tsx`): lado a lado, umas por cima das outras, todas dentro do ecrã; arrastar ou tocar muda a da frente, que fica maior e por cima. Faces do dado: Andar = pegadas, Fazer algo = raio, Habilidade = redemoinho roxo, Coringa = estrela.
+- (26/11) Dados: os da batalha também quadrados (ataque vermelho-claro, defesa azul-claro, ferimento lilás). Ao aparecer ou relançar, os dados "rolam" ~0,5 s (abanam e trocam de face ao acaso; `DadoRola`); na batalha já acabada não rolam. Andar = caminho tracejado com seta. As peças deslizam da casa antiga para a nova (transição CSS). Nada disto com "reduzir movimento".
+- (26/11) Carta da batalha (`artes/cartaJogo.tsx`, estilo escolhido: cor da classe, vibrante): moldura na cor da classe, imagem com riscas, números (ataque, defesa, passos, ferimentos) numa caixinha à esquerda dentro da imagem, e ranhuras em baixo (Andar, Atacar, e Especial se tiver): acendem com o dado escolhido; tocar numa escolhe criatura e ação; o dado fica na ranhura da ação já feita nesta volta. Os outros 2 estilos (pergaminho, noite) ficam na galeria.
+- (26/11) Carta afinada: imagem lisa (sem riscas); ataque/defesa/passos em caixinhas pequenas coladas à esquerda dentro da imagem; ferimentos numa etiqueta vermelha à direita (só se ferida). Passos = pegadas, o mesmo símbolo da face Andar. Texto do especial com símbolos em vez de palavras (`simbolos()` em `artes/cartaJogo.tsx`, teste em `cartaJogo.test.ts`): Habilidade, distância (régua ‹› + n), ferimento, +1 ataque/defesa, anda n. "Colado" fica escrito. Só 3 criaturas têm poder ativo (Pescador, Múmia, Carvalho); as outras 11 têm especiais passivos. Galeria: fila com as 14 cartas.
+
+## Fase 6 — por fazer (estado 26/11)
+- Feito antes: jogo no menu; obstáculos 9/18.
+- Falta: arte do Sono e dos outros efeitos (ainda emojis); afinar a sério com partidas de bots (duração, custos, variantes B); ver o zoom de dois dedos num telemóvel verdadeiro e ouvir os sons numa TV (só o utilizador).
+- Nada publicado desde `cb3c954` (regra Habilidade, dados novos, baralho, cartas). Testes 467 verdes, lint e tsc a 0.
+- (26/11, fase 6) Arte dos efeitos (`artes/efeitos.tsx`): Sono = lua com zzz, Escudo, Fúria = chama, +1 ataque = espada com +, Fantasma. Na colmeia em bolinhas por cima da peça; nas cartas do telemóvel numa coluna à direita; leitores de ecrã leem os nomes.
+- (26/11, fase 6) Simulador `balanco.test.ts` (só com `N`): 1500 partidas de 2 bots, exércitos e roupas ao acaso. Voltas: tinta 6 ≈ 3,9; 12 ≈ 5,7; 20 ≈ 8,4 (máx. 20). **Quem começa perde mais**: lugar 0 ganha 42%, lugar 1 58% (começa quem acaba os desenhos primeiro, depois quem tem menos criaturas). Criaturas (% de vitória do exército que a tem): Elfo 66, Dragãozinho 64, Cavaleiro 54 · Múmia/Pescador/Duende/Sapinho ~50 · Corvo 49, Raposa 48, Lobo 47, Golem 45, Minotauro 43, Carvalho 41, Ogre 36. Roupas: Pedreiro 56, Trovoada 54, Peles 52, Pijama 47, Lençol 46, Ilusionista 43. Cuidado: os bots jogam bem com arqueiros (fogem e atiram) e mal com corpo a corpo. Decisões por tomar com o utilizador.
+- (26/11, fase 6) **Afinação com o simulador** (escolha do utilizador: mexer nos números, não na tinta; quem começa fica igual). Defesa/passos/dados: Elfo 2/3/3 → 2/2/2; Dragãozinho 3/1/2 → 2/1/2; Golem 5/2/2 → 5/3/2; Carvalho 6/1/2 → 6/2/2; Minotauro 4/2/4 → 5/3/4; Ogre 4/2/3 → 5/2/4. Resultado (2400 partidas): todas as criaturas entre 45% e 57% (Carvalho 46, Minotauro 45, Pescador 57). Por ver: roupas Ilusionista 39% e Pedreiro 59%; lugar 1 continua a ganhar 59%.

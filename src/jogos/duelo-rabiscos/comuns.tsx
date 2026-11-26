@@ -4,7 +4,7 @@ import { Boneco18 } from '../../ui/bonecos';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { ENCAIXE, Mago } from './artes/magos';
 import { Sinal, Retrato, indice } from './colmeia';
-import { Dado, type FaceDado } from './artes/dados';
+import { DadoRola, type FaceDado } from './artes/dados';
 import { MarcaGolpe } from './artes/icones';
 import { ICONES_STATUS } from './artes/carta';
 import { Arte } from './artes/lapis';
@@ -72,18 +72,18 @@ export function faixa(sala: VistaSala, v: VistaDuelo): string {
 
 type Quem = Pick<Cria, 'dono' | 'tipo'>;
 /** os dois lados da batalha com os dados; `aoTocar` = posso rodar os meus outra vez */
-export function Luta({ sala, v, desenhos, b, de, alvo, tam, eu, aoTocar }: Omit<PropsDuelo, 'agora'> & { desenhos: Desenhos; b: Batalha; de: Quem; alvo: Quem; tam: number; eu?: string; aoTocar?: (i: number) => void }) {
+export function Luta({ sala, v, desenhos, b, de, alvo, tam, eu, aoTocar, rolar = true }: Omit<PropsDuelo, 'agora'> & { desenhos: Desenhos; b: Batalha; de: Quem; alvo: Quem; tam: number; eu?: string; aoTocar?: (i: number) => void; rolar?: boolean }) {
   const lado = (q: Quem, ataca: boolean) => {
     const [normais, feridas] = ataca ? [b.ataque, b.feridaAtaque] : [b.defesa, b.feridaDefesa];
     const meu = aoTocar && q.dono === eu;
     const dado = (f: FaceDado, i: number) =>
       meu ? (
         <button key={i} class="dr-bt-dado" aria-label={TXT.rodarDado(NOME_DADO[f])} onClick={() => aoTocar(i)}>
-          <Dado face={f} tam={tam} />
+          <DadoRola face={f} tam={tam} rolar={rolar} />
         </button>
       ) : (
         <span key={i} role="img" aria-label={NOME_DADO[f]}>
-          <Dado face={f} tam={tam} />
+          <DadoRola face={f} tam={tam} rolar={rolar} />
         </span>
       );
     return (
@@ -119,7 +119,7 @@ export function BatalhaOuUltima(p: Omit<PropsDuelo, 'agora'> & { desenhos: Desen
   if (!u) return null;
   return (
     <div class="dr-resultado" role="status">
-      <Luta sala={p.sala} v={v} desenhos={p.desenhos} tam={p.tam} b={u.dados} de={u.quemAtacou} alvo={u.quemDefendeu} />
+      <Luta sala={p.sala} v={v} desenhos={p.desenhos} tam={p.tam} b={u.dados} de={u.quemAtacou} alvo={u.quemDefendeu} rolar={false} />
       <p>
         <MarcaGolpe marca={u.marca} tam={p.tam} /> {TXT.resultado(u.morreu, u.morreuQuemAtacou, TEXTO_CRIATURA[u.quemAtacou.tipo].nome, TEXTO_CRIATURA[u.quemDefendeu.tipo].nome)}
       </p>
@@ -186,7 +186,7 @@ export function CantoMago({ sala, v, id }: Omit<PropsDuelo, 'agora'> & { id: str
       </span>
       <span class="dr-dados">
         {m.dados.map((f, i) => (
-          <Dado key={i} face={faceAcao(f)} tam={44} />
+          <DadoRola key={i} face={faceAcao(f)} tam={44} />
         ))}
       </span>
       {v.fase === 'rodar' && !fora && <span>{m.pronto ? '✅ ' + TXT.pronto : '…'}</span>}

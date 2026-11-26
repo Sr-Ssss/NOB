@@ -365,6 +365,6 @@ Falta:
 
 ## Ícones dos jogos (26/11/2026)
 - Um a um, pela ordem de PLANO_JOGOS.md: SVG em src/ui/icones/<id>.svg, aparece sozinho (src/ui/IconeJogo.tsx) no menu TV e telemóvel.
-- Feito: pensa (A, cérebro de giz), wifi (B, router), sevira (C, slide ?). Próximo: mona. Ficheiro = id do registo.
+- Feito: pensa (A, cérebro de giz), wifi (B, router), sevira (C, slide ?), mona (A, retrato), ideias (B, lâmpada c/ hélice), pirata (B, navio ao luar), maquinas (D, traidor no meio), rei (livro iluminado + dragão; estilo manuscrito medieval pedido pelo utilizador). ragerob (croc vs rino, robôs reais do jogo). semjuizo (A, martelo e pato). duelo (varinha de madeira + raposa a meio). 5050 (A, meio a meio). TODOS os ícones feitos. Ficheiro = id do registo.
 - Menu TV: 1 coluna com scroll, letra maior (estilo.css .tv-lobby/.lista-jogos).
 - Montra (só dev): `npm run dev` → `localhost:5173/#/montra?jogo=<id>&n=6&semtv=0`. Joga sozinho com bots (motor de ia.test.ts) e mostra TV + 3 telemóveis em cada fase. src/montra/Montra.tsx. Usar para rever designs sem gastar tokens.

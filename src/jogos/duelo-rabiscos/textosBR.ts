@@ -16,12 +16,12 @@ export const TEXTO_CRIATURA: typeof T.TEXTO_CRIATURA_PT = {
   sapinho: { nome: 'Sapinho Saltitão', especial: 'Quem o mata leva 1 ferimento.' },
   corvo: { nome: 'Corvo', especial: 'Passa por cima de criaturas e obstáculos.' },
   lobo: { nome: 'Lobo', especial: 'Depois de atacar, anda 1.' },
-  velhoPescador: { nome: 'Velho Pescador', especial: 'Em vez de atacar, puxa um inimigo a até 3, dá 1 ferimento e luta corpo a corpo.', gema: true },
-  mumia: { nome: 'Múmia', especial: 'Em vez de atacar, tira 1 ferimento de um amigo a até 2 de distância.', gema: true },
+  velhoPescador: { nome: 'Velho Pescador', especial: 'Com o dado Habilidade, puxa um inimigo a até 3, dá 1 ferimento e luta corpo a corpo.', habilidade: true },
+  mumia: { nome: 'Múmia', especial: 'Com o dado Habilidade, tira 1 ferimento de um amigo a até 2 de distância.', habilidade: true },
   elfo: { nome: 'Elfo', especial: 'Atira a até 3 de distância, mas não colado.' },
   dragaozinho: { nome: 'Dragãozinho', especial: 'Luta colado ou atira a 2. Se o tiro falhar, dá 1 ferimento.' },
   golem: { nome: 'Golem', especial: 'Amigos colados têm +1 dado de defesa.' },
-  carvalho: { nome: 'Carvalho Vivo', especial: 'Em vez de atacar, cria uma parede numa casa colada. Dura 2 rodadas.', gema: true },
+  carvalho: { nome: 'Carvalho Vivo', especial: 'Com o dado Habilidade, cria uma parede numa casa colada. Dura 2 rodadas.', habilidade: true },
   cavaleiro: { nome: 'Cavaleiro', especial: 'Rola de novo 1 dado vazio, atacando e defendendo.' },
   raposa: { nome: 'Raposa Espadachim', especial: 'Num empate corpo a corpo, ela sobrevive.' },
   minotauro: { nome: 'Minotauro', especial: 'Ao morrer, dá 1 ferimento nos inimigos colados.' },
@@ -132,7 +132,7 @@ export const TXT: typeof T.TXT_PT = {
   magos: 'Magos',
 };
 
-export const NOME_FACE: typeof T.NOME_FACE_PT = { andar: 'Andar', fazer: 'Fazer algo', coringa: 'Coringa' };
+export const NOME_FACE: typeof T.NOME_FACE_PT = { andar: 'Andar', fazer: 'Fazer algo', habilidade: 'Habilidade', coringa: 'Coringa' };
 export const NOME_DADO: typeof T.NOME_DADO_PT = {
   andar: 'Andar',
   fazerAlgo: 'Fazer algo',
@@ -149,5 +149,5 @@ export const NOME_DADO: typeof T.NOME_DADO_PT = {
   feridaGema: 'Ferimento: gema',
   feridaVazio: 'Ferimento: vazio',
 };
-export const NOME_MODO: typeof T.NOME_MODO_PT = { andar: 'Andar', atacar: 'Atacar', especial: 'Especial (1 gema)' };
+export const NOME_MODO: typeof T.NOME_MODO_PT = { andar: 'Andar', atacar: 'Atacar', especial: 'Especial' };
 export const MOTIVO_PODER: typeof T.MOTIVO_PODER_PT = { usado: 'Você já usou um poder nesta vez', gemas: 'Faltam gemas', alvo: 'Sem alvo agora' };

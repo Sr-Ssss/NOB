@@ -2,13 +2,19 @@ import { useState } from 'preact/hooks';
 import type { AcaoSala } from '../../core/sala';
 import { t } from '../../core/i18n';
 import { nomeDe } from '../5050/tv';
-import { Dado } from './artes/dados';
-import { IconeClasse } from './artes/icones';
+import { Dado, DadoRola } from './artes/dados';
 import type { EstadoHex } from './artes/tabuleiro';
-import { ColmeiaDuelo, Retrato, efeitos } from './colmeia';
-import { BatalhaOuUltima, CantoMago, Classificacao, Gemas, NomeMago, faixa, useBatalhaNova, type PropsDuelo } from './comuns';
+import { CORES_MAGO, ColmeiaDuelo, Retrato, indice } from './colmeia';
+import { BatalhaOuUltima, Classificacao, Gemas, NomeMago, faixa, useBatalhaNova, type PropsDuelo } from './comuns';
+import { Baralho } from './baralho';
+import { EfeitosHtml, efeitosTexto } from './artes/efeitos';
+import { CartaJogo, type EstadoRanhura, type Ranhura } from './artes/cartaJogo';
+import { ENCAIXE, Mago } from './artes/magos';
+import { Boneco18 } from '../../ui/bonecos';
+import { avatarDe } from '../5050/tv';
+
 import { Zoom } from './zoom';
-import { CRIATURAS, CUSTO, MAGOS_PODERES, type Poder } from './criaturas';
+import { CUSTO, MAGOS_PODERES, type Poder } from './criaturas';
 import { acaoModo, faceAcao, modos, motivoPoder, opcoesModo, passoPoder, poderCompleto, tocarPoder, type Modo, type Opcoes } from './jogadas';
 import { casasLobo, cria, foraDuelo, podeRelancar, type AlvoPoder, type Cria, type Desenhos } from './regras';
 import type { Casa } from './tabuleiro';
@@ -36,27 +42,58 @@ function Mesa({ v, sala, desenhos, acesas, marcadas, aoTocar }: Pick<PropsBatalh
   );
 }
 
-/** sem TV: os magos como nos cantos da TV, em pequeno */
-function Cantos({ v, sala }: Pick<PropsBatalha, 'v' | 'sala'>) {
+/** os magos inimigos, pequenos, num canto: foto de perfil (cabeça e roupa) e os dados que tiraram por baixo */
+function Rivais({ v, sala, eu }: Pick<PropsBatalha, 'v' | 'sala' | 'eu'>) {
   return (
-    <div class="dr-cantos-tel" role="group" aria-label={TXT.magos}>
-      {v.participantes.map((id) => (
-        <CantoMago key={id} sala={sala} v={v} id={id} />
-      ))}
+    <div class="dr-rivais" role="group" aria-label={TXT.magos}>
+      {v.participantes
+        .filter((id) => id !== eu)
+        .map((id) => {
+          const m = v.magos[id];
+          const fora = foraDuelo(v, id);
+          return (
+            <div key={id} class={'dr-rival' + (fora ? ' fora' : '') + (v.fase === 'vez' && v.vez === id ? ' on' : '')} title={nomeDe(sala, id)}>
+              <span class="dr-perfil" style={{ borderColor: CORES_MAGO[indice(v, id)] }} aria-label={nomeDe(sala, id)} role="img">
+                {m.roupa && (
+                  <Mago roupa={m.roupa} tam={60}>
+                    <Boneco18 n={avatarDe(sala, id)} tam={ENCAIXE.tam} />
+                  </Mago>
+                )}
+              </span>
+              <span class="dr-rival-dados">
+                {m.dados.map((f, i) => (
+                  <DadoRola key={i} face={faceAcao(f)} tam={18} />
+                ))}
+              </span>
+            </div>
+          );
+        })}
     </div>
   );
 }
 
-function FichaCria({ c, desenhos }: { c: Cria; desenhos: Desenhos }) {
-  return (
-    <>
-      <Retrato criatura={c.tipo} tracos={desenhos[c.dono]?.[c.tipo]} tam={72} />
-      <span class="dr-ficha-nome">
-        <IconeClasse classe={CRIATURAS[c.tipo].classe} tam={22} /> {TEXTO_CRIATURA[c.tipo].nome} {efeitos(c)}
-      </span>
-      {c.ferimentos > 0 && <small>{TXT.ferimentos(c.ferimentos)}</small>}
-    </>
-  );
+/** as ranhuras da carta: o dado fica na da ação já feita nesta volta; acende-se a que o dado escolhido pode usar */
+function ranhurasDe(c: Cria, podem: Modo[] = []): Partial<Record<Ranhura, EstadoRanhura>> {
+  const r: Partial<Record<Ranhura, EstadoRanhura>> = {};
+  if (c.andou) r.andar = 'usada';
+  // o especial conta como o ataque da volta
+  if (c.agiu) Object.assign(r, { atacar: 'usada', especial: 'fechada' });
+  for (const m of podem) if (!r[m]) r[m] = 'acesa';
+  return r;
+}
+
+/** as tuas criaturas como cartas (com o teu desenho), para o baralho */
+function cartaDe(c: Cria, desenhos: Desenhos, apagada = false, podem: Modo[] = [], aoTocar?: (r: Ranhura) => void) {
+  return {
+    id: c.id,
+    apagada,
+    rotulo: `${TEXTO_CRIATURA[c.tipo].nome}${c.ferimentos ? ', ' + TXT.ferimentos(c.ferimentos) : ''} ${efeitosTexto(c)}`,
+    carta: (
+      <CartaJogo criatura={c.tipo} estilo="classe" ferimentos={c.ferimentos} ranhuras={ranhurasDe(c, podem)} aoTocar={aoTocar} efeitos={<EfeitosHtml c={c} tam={16} class="cj-efeitos" />}>
+        <Retrato criatura={c.tipo} tracos={desenhos[c.dono]?.[c.tipo]} tam={150} />
+      </CartaJogo>
+    ),
+  };
 }
 
 function Rodar({ v, sala, eu, desenhos, enviar }: PropsBatalha) {
@@ -68,7 +105,7 @@ function Rodar({ v, sala, eu, desenhos, enviar }: PropsBatalha) {
       <div class="dr-dados">
         {m.dados.map((f, i) => (
           <button key={i} class="dr-bt-dado" disabled={m.relancou || m.pronto} aria-label={TXT.rodarDado(NOME_FACE[f])} onClick={() => jogo(enviar, { tipo: 'dr_rodar', i })}>
-            <Dado face={faceAcao(f)} tam={60} />
+            <DadoRola face={faceAcao(f)} tam={60} />
             <small>{NOME_FACE[f]}</small>
           </button>
         ))}
@@ -162,22 +199,21 @@ function Vez(p: PropsBatalha) {
           <>
             <b>{TXT.passoCriatura}</b>
             {!algumServe && <p>{TXT.semJogada}</p>}
-            <div class="dr-fichas">
-              {minhas.map((x) => (
-                <button
-                  key={x.id}
-                  class={'dr-ficha' + (x.id === qual ? ' on' : '')}
-                  aria-pressed={x.id === qual}
-                  disabled={!modos(v, x, face).length}
-                  onClick={() => {
-                    setQual(x.id);
-                    setCasa(null);
-                  }}
-                >
-                  <FichaCria c={x} desenhos={desenhos} />
-                </button>
-              ))}
-            </div>
+            <Baralho
+              cartas={minhas.map((x) =>
+                cartaDe(x, desenhos, !modos(v, x, face).length, modos(v, x, face), (r) => {
+                  // tocar numa ranhura acesa escolhe a criatura e a ação
+                  setQual(x.id);
+                  setModo(r);
+                  setCasa(null);
+                }),
+              )}
+              escolhida={qual}
+              escolher={(id) => {
+                setQual(id);
+                setCasa(null);
+              }}
+            />
           </>
         )}
         {c && modo && (
@@ -250,6 +286,12 @@ function Lobo({ v, sala, desenhos, enviar }: PropsBatalha) {
   );
 }
 
+/** só para ver: a da frente muda ao arrastar ou tocar */
+function BaralhoVer({ cartas }: { cartas: ReturnType<typeof cartaDe>[] }) {
+  const [frente, setFrente] = useState<number | null>(null);
+  return <Baralho cartas={cartas} escolhida={frente} escolher={setFrente} />;
+}
+
 /** fora da vez: os teus dados e exército, só ver */
 function SoVer({ v, sala, eu, desenhos }: PropsBatalha) {
   const m = v.magos[eu];
@@ -263,15 +305,7 @@ function SoVer({ v, sala, eu, desenhos }: PropsBatalha) {
         {m.dados.length ? m.dados.map((f, i) => <span key={i} role="img" aria-label={NOME_FACE[f]}><Dado face={faceAcao(f)} tam={44} /></span>) : <small>{TXT.semDados}</small>}
       </div>
       <b>{TXT.meuExercito}</b>
-      <div class="dr-fichas">
-        {v.criaturas
-          .filter((c) => c.dono === eu)
-          .map((c) => (
-            <div key={c.id} class="dr-ficha">
-              <FichaCria c={c} desenhos={desenhos} />
-            </div>
-          ))}
-      </div>
+      <BaralhoVer cartas={v.criaturas.filter((c) => c.dono === eu).map((c) => cartaDe(c, desenhos))} />
     </div>
   );
 }
@@ -310,6 +344,7 @@ export function BatalhaTel(p: PropsBatalha) {
       <p class="dr-faixa" role="status">
         {jogador && <NomeMago sala={sala} v={v} id={eu} />} <span>{faixa(sala, v)}</span>
       </p>
+      <Rivais v={v} sala={sala} eu={eu} />
       {luta && (
         <div class="cartao dr-bloco">
           <BatalhaOuUltima sala={sala} v={v} desenhos={desenhos} tam={40} eu={eu} aoTocar={relanco ? (i) => jogo(enviar, { tipo: 'dr_relancar', i }) : undefined} />
@@ -339,7 +374,6 @@ export function BatalhaTel(p: PropsBatalha) {
       ) : (
         <SoVer {...p} />
       )}
-      {sala.semTv && <Cantos v={v} sala={sala} />}
     </>
   );
 }

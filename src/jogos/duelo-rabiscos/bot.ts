@@ -5,7 +5,7 @@
  */
 import { CRIATURAS, CUSTO, MAGOS_PODERES, exercitosProntos, type Criatura, type Poder, type RoupaMago } from './criaturas';
 import { passoPoder, poderCompleto, tocarPoder } from './jogadas';
-import { alvosAtaque, alvosEspecial, casasAndar, casasEspecial, casasLobo, colados, cria, dadosAtaque, dadosDefesa, podeRelancar, type AcaoDuelo, type AlvoPoder, type Cria, type Face, type VistaDuelo } from './regras';
+import { alvosAtaque, alvosEspecial, casasAndar, casasEspecial, casasLobo, colados, cria, dadosAtaque, dadosDefesa, podeRelancar, serve, type AcaoDuelo, type AlvoPoder, type Cria, type Face, type VistaDuelo } from './regras';
 import { distancia, vizinhas, type Casa } from './tabuleiro';
 
 type Sorte = () => number;
@@ -112,7 +112,7 @@ function opcoesDado(v: VistaDuelo, id: string): Opcao[] {
     vistas.add(face);
     const custo = face === 'coringa' ? 0.15 : 0;
     for (const c of minhas(v, id)) {
-      if (face !== 'fazer')
+      if (serve(face, 'andar'))
         for (const casa of casasAndar(v, c)) {
           const ganho = longe(mapaI, c, c.casa) - longe(mapaI, c, casa);
           // depois de andar, já pode atacar?
@@ -120,16 +120,17 @@ function opcoesDado(v: VistaDuelo, id: string): Opcao[] {
           const depois = Math.max(0, melhorAtaque(vd, nc)[0] + coragem) * 0.3;
           l.push({ a: { tipo: 'dr_andar', id, i, criatura: c.id, casa }, valor: ganho * 0.4 + depois - custo });
         }
-      if (face === 'andar') continue;
-      for (const o of alvosAtaque(v, c)) l.push({ a: { tipo: 'dr_atacar', id, i, criatura: c.id, alvo: o.id }, valor: valorAtaque(v, c, o) + coragem - custo });
+      if (serve(face, 'atacar'))
+        for (const o of alvosAtaque(v, c)) l.push({ a: { tipo: 'dr_atacar', id, i, criatura: c.id, alvo: o.id }, valor: valorAtaque(v, c, o) + coragem - custo });
+      if (!serve(face, 'especial')) continue;
       for (const o of alvosEspecial(v, c)) {
-        if (c.tipo === 'mumia') l.push({ a: { tipo: 'dr_especial', id, i, criatura: c.id, alvo: o.id }, valor: 0.4 * valor(o) - 0.5 - custo });
+        if (c.tipo === 'mumia') l.push({ a: { tipo: 'dr_especial', id, i, criatura: c.id, alvo: o.id }, valor: 0.4 * valor(o) - 0.1 - custo });
         else {
           // puxa (1 ferimento) e luta já
           const [vd, no] = com(v, o, { ferimentos: o.ferimentos + 1, casa: vizinhas(c.casa).find((x) => distancia(x, o.casa) < distancia(c.casa, o.casa)) ?? o.casa });
           const mata = o.ferimentos + 1 > CRIATURAS[o.tipo].defesa;
           const x = mata ? valor(o) : valorAtaque(vd, { ...c, casa: c.casa }, no) * (colados(c, no) ? 1 : 0.5) + 0.5;
-          l.push({ a: { tipo: 'dr_especial', id, i, criatura: c.id, alvo: o.id }, valor: x + coragem - 0.6 - custo });
+          l.push({ a: { tipo: 'dr_especial', id, i, criatura: c.id, alvo: o.id }, valor: x + coragem - 0.1 - custo });
         }
       }
       // parede do Carvalho: só no início e para tapar o inimigo mais perto
@@ -146,7 +147,7 @@ function opcoesDado(v: VistaDuelo, id: string): Opcao[] {
 /** o dado a perder quando nada vale a pena: o que menos falta faz */
 function passar(v: VistaDuelo, id: string): Jogada {
   const d = v.magos[id].dados;
-  const ordem: Face[] = ['fazer', 'andar', 'coringa'];
+  const ordem: Face[] = ['habilidade', 'fazer', 'andar', 'coringa'];
   const i = d.indexOf(ordem.find((f) => d.includes(f))!);
   return { tipo: 'dr_passar', id, i: Math.max(0, i) };
 }
@@ -325,7 +326,9 @@ export function jogadaBot(v: VistaDuelo, id: string, r: Sorte = Math.random): Jo
         const mapaI = mapa(v, id);
         const perto = minhas(v, id).some((c) => (mapaI.get(c.casa) ?? 99) <= CRIATURAS[c.tipo].passos + ideal(c));
         const sobra: Face | undefined = conta('andar') > n || (perto && conta('andar') > 1) ? 'andar' : conta('fazer') > n || (!perto && conta('fazer') > 1) ? 'fazer' : undefined;
-        if (sobra) return { tipo: 'dr_rodar', id, i: m.dados.indexOf(sobra) };
+        const especial = minhas(v, id).some((c) => ['velhoPescador', 'mumia', 'carvalho'].includes(c.tipo));
+        const inutil: Face | undefined = !especial && m.dados.includes('habilidade') ? 'habilidade' : sobra;
+        if (inutil) return { tipo: 'dr_rodar', id, i: m.dados.indexOf(inutil) };
       }
       return { tipo: 'dr_pronto', id };
     }

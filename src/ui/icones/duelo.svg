@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <!-- varinha de madeira a meio de desenhar a raposa (molde de src/jogos/duelo-rabiscos/artes/moldes.tsx) -->
+  <rect x="4" y="4" width="152" height="152" rx="34" fill="#3C3489" stroke="#000" stroke-width="6"/>
+  <g transform="translate(18 26) scale(0.31)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M190 145L200 155L210 145M178 125Q205 140 226 122M172 140L145 220L200 210L250 220L228 140M155 220L120 280L160 280L195 213M205 213L250 280L290 280L245 220M150 205Q80 230 50 165L25 175L45 105L95 90L75 120Q105 180 162 170M228 160L285 160M275 140L300 180M286 160L385 65" stroke="#AFA9EC" stroke-width="7" stroke-dasharray="4 16"/>
+    <path d="M200 155L138 105L140 25L170 65L225 65L260 25L262 105L236 125" stroke="#FAC775" stroke-width="15"/>
+    <circle cx="182" cy="92" r="10" fill="#FAC775" stroke="none"/>
+  </g>
+  <g transform="translate(91 64) rotate(-35)">
+    <path d="M-3 0L3 0L7 84L-7 84Z" fill="#8a5a33" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M0 14l2 10M-2 34l3 12M1 56l-2 10" stroke="#5a3a1a" stroke-width="2" stroke-linecap="round"/>
+    <rect x="-8" y="62" width="16" height="6" rx="2" fill="#C99A2E" stroke="#000" stroke-width="2.5"/>
+    <circle cx="0" cy="0" r="5" fill="#F1EFE8" stroke="#000" stroke-width="2.5"/>
+  </g>
+  <path d="M91 50l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#FAC775" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="104" cy="46" r="2.5" fill="#F1EFE8"/>
+  <circle cx="78" cy="52" r="2" fill="#F1EFE8"/>
+  <circle cx="134" cy="30" r="2.5" fill="#F1EFE8"/>
+</svg>

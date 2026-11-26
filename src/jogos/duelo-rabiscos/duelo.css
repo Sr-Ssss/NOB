@@ -87,3 +87,21 @@
 .dr-luta { animation-name: dr-aparece-tel; }
 @keyframes dr-aparece-tel { from { transform: scale(0.95); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .dr-peca, .dr-resultado .dr-marca, .dr-por-cima, .dr-luta { animation: none; } }
+.dr-rivais { display: flex; justify-content: flex-end; gap: 8px; margin: -4px 0 0; }
+.dr-rival { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; }
+.dr-rival.on { background: var(--noite-2); box-shadow: 0 0 0 2px #ffd25a; }
+.dr-rival.fora { opacity: 0.4; }
+.dr-perfil { display: block; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; border: 3px solid; background: #fffdf2; }
+.dr-perfil svg.dr-mago { display: block; width: 60px; height: auto; margin: -6px 0 0 -8px; }
+.dr-rival-dados { display: flex; gap: 1px; }
+.dr-baralho { position: relative; width: 100%; touch-action: pan-y; user-select: none; outline-offset: 4px; }
+.dr-baralho-carta { position: absolute; transition: left 0.2s, width 0.2s, height 0.2s; cursor: pointer; border-radius: 16px; }
+.dr-baralho-carta:focus-visible { outline: 4px solid #fff; outline-offset: 2px; }
+.dr-baralho-carta.frente .cj { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); }
+.dr-baralho-carta.on .cj { outline: 6px solid #fff; outline-offset: -6px; }
+.dr-baralho-carta.apagada { opacity: 0.45; cursor: default; }
+.dr-rola { display: inline-block; line-height: 0; }
+.dr-rola.a-rodar { animation: dr-abana 0.13s linear infinite alternate; }
+@keyframes dr-abana { from { transform: rotate(-14deg) translateY(-3px); } to { transform: rotate(14deg) translateY(2px); } }
+.dr-anda { transition: transform 0.45s cubic-bezier(0.3, 1.4, 0.6, 1); }
+@media (prefers-reduced-motion: reduce) { .dr-rola.a-rodar { animation: none; } .dr-anda { transition: none; } }

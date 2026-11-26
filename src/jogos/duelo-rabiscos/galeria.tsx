@@ -1,4 +1,10 @@
 /** Só em dev: `#/demo-duelo?galeria=1`, as estruturas de obstáculos lado a lado, para escolher */
+import { Dado } from './artes/dados';
+import { ARTE_EFEITO, EfeitosPeca, type Efeito } from './artes/efeitos';
+import { Arte } from './artes/lapis';
+import type { Cria } from './regras';
+import { CRIATURAS, type Criatura } from './criaturas';
+import { CartaJogo, type EstiloCarta } from './artes/cartaJogo';
 import { centroHex } from './artes/tabuleiro';
 import { INCLINA, projecao } from './colmeia';
 import { Estrutura, type TipoEstrutura } from './estruturas';
@@ -58,7 +64,42 @@ function Uma({ tipo, nome, nova }: { tipo: TipoEstrutura; nome: string; nova: bo
 
 export function GaleriaEstruturas() {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px', padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(470px, 1fr))', gap: '12px', padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
+      <figure class="cartao" style={{ margin: 0, gridColumn: '1 / -1', display: 'flex', gap: '16px', justifyContent: 'center', color: 'var(--tinta)' }}>
+        {(['andar', 'fazerAlgo', 'habilidade', 'coringa', 'ataqueVazio', 'ataque1', 'ataque2', 'defesaVazio', 'defesa1', 'feridaCoracao'] as const).map((f) => (
+          <span key={f} style={{ textAlign: 'center' }}>
+            <Dado face={f} tam={64} />
+            <br />
+            {f}
+          </span>
+        ))}
+      </figure>
+      {(['pergaminho', 'classe', 'noite'] as EstiloCarta[]).map((e, i) => (
+        <figure key={e} class="cartao" style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--tinta)' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <CartaJogo criatura="mumia" estilo={e} ranhuras={{ andar: 'usada', especial: 'acesa' }} ferimentos={1} />
+            <CartaJogo criatura={(['ogre', 'elfo', 'raposa'] as const)[i]} estilo={e} ranhuras={{ atacar: 'acesa' }} />
+          </div>
+          <figcaption><b>{i + 1}. {['Pergaminho', 'Cor da classe', 'Noite mágica'][i]}</b></figcaption>
+        </figure>
+      ))}
+      <figure class="cartao efeitos-galeria" style={{ margin: 0, display: 'flex', gap: '16px', alignItems: 'center', color: 'var(--tinta)' }}>
+        {(Object.keys(ARTE_EFEITO) as Efeito[]).map((e) => (
+          <span key={e} style={{ textAlign: 'center' }}>
+            <Arte c={ARTE_EFEITO[e]} tam={64} />
+            <br />
+            {e}
+          </span>
+        ))}
+        <svg viewBox="-60 -40 140 60" width="280" height="120">
+          <EfeitosPeca c={{ sono: true, escudo: true, furia: true, maisAtaque: true, fantasma: true } as Cria} />
+        </svg>
+      </figure>
+      <figure class="cartao todas-cartas" style={{ margin: 0, display: 'flex', flexWrap: 'wrap', gap: '8px', gridColumn: '1 / -1' }}>
+        {(Object.keys(CRIATURAS) as Criatura[]).map((c) => (
+          <CartaJogo key={c} criatura={c} estilo="classe" />
+        ))}
+      </figure>
       {NOMES.map(([t, n, nova]) => (
         <Uma key={t} tipo={t} nome={n} nova={nova} />
       ))}

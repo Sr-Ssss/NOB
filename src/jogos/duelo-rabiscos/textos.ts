@@ -16,18 +16,18 @@ export const NOME_CLASSE_PT: Record<Classe, string> = {
   barbaro: 'Bárbaro',
 };
 
-/** nome e especial; `gema` = o especial custa 1 gema */
-export const TEXTO_CRIATURA_PT: Record<Criatura, { nome: string; especial: string; gema?: boolean }> = {
+/** nome e especial; `habilidade` = o especial usa o dado Habilidade */
+export const TEXTO_CRIATURA_PT: Record<Criatura, { nome: string; especial: string; habilidade?: boolean }> = {
   duende: { nome: 'Duende', especial: '+1 dado se outro Lacaio teu estiver colado ao alvo.' },
   sapinho: { nome: 'Sapinho Saltitão', especial: 'Quem o mata leva 1 ferimento.' },
   corvo: { nome: 'Corvo', especial: 'Passa por cima de criaturas e obstáculos.' },
   lobo: { nome: 'Lobo', especial: 'Depois de atacar, anda 1.' },
-  velhoPescador: { nome: 'Velho Pescador', especial: 'Em vez de atacar, puxa um inimigo até 3, faz-lhe 1 ferimento e luta corpo a corpo.', gema: true },
-  mumia: { nome: 'Múmia', especial: 'Em vez de atacar, tira 1 ferimento a um amigo até 2 de distância.', gema: true },
+  velhoPescador: { nome: 'Velho Pescador', especial: 'Com o dado Habilidade, puxa um inimigo até 3, faz-lhe 1 ferimento e luta corpo a corpo.', habilidade: true },
+  mumia: { nome: 'Múmia', especial: 'Com o dado Habilidade, tira 1 ferimento a um amigo até 2 de distância.', habilidade: true },
   elfo: { nome: 'Elfo', especial: 'Atira até 3 de distância, mas não colado.' },
   dragaozinho: { nome: 'Dragãozinho', especial: 'Luta colado ou atira a 2. Se o tiro falhar, faz 1 ferimento.' },
   golem: { nome: 'Golem', especial: 'Amigos colados têm +1 dado de defesa.' },
-  carvalho: { nome: 'Carvalho Vivo', especial: 'Em vez de atacar, cria uma parede numa casa colada. Dura 2 voltas.', gema: true },
+  carvalho: { nome: 'Carvalho Vivo', especial: 'Com o dado Habilidade, cria uma parede numa casa colada. Dura 2 voltas.', habilidade: true },
   cavaleiro: { nome: 'Cavaleiro', especial: 'Relança 1 dado vazio, a atacar e a defender.' },
   raposa: { nome: 'Raposa Espadachim', especial: 'Num empate corpo a corpo, ela sobrevive.' },
   minotauro: { nome: 'Minotauro', especial: 'Ao morrer, faz 1 ferimento aos inimigos colados.' },
@@ -144,7 +144,7 @@ export const TXT_PT = {
   magos: 'Magos',
 };
 
-export const NOME_FACE_PT: Record<Face, string> = { andar: 'Andar', fazer: 'Fazer algo', coringa: 'Coringa' };
+export const NOME_FACE_PT: Record<Face, string> = { andar: 'Andar', fazer: 'Fazer algo', habilidade: 'Habilidade', coringa: 'Coringa' };
 export const NOME_DADO_PT: Record<FaceDado, string> = {
   andar: 'Andar',
   fazerAlgo: 'Fazer algo',
@@ -161,7 +161,7 @@ export const NOME_DADO_PT: Record<FaceDado, string> = {
   feridaGema: 'Ferimento: gema',
   feridaVazio: 'Ferimento: vazio',
 };
-export const NOME_MODO_PT: Record<Modo, string> = { andar: 'Andar', atacar: 'Atacar', especial: 'Especial (1 gema)' };
+export const NOME_MODO_PT: Record<Modo, string> = { andar: 'Andar', atacar: 'Atacar', especial: 'Especial' };
 export const MOTIVO_PODER_PT = { usado: 'Já usaste um poder nesta vez', gemas: 'Faltam gemas', alvo: 'Sem alvo agora' };
 
 /**

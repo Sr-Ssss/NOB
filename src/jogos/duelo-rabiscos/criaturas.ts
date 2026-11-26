@@ -24,14 +24,14 @@ export const CRIATURAS: Record<Criatura, Ficha> = {
   lobo: f('batedor', 3, 3, 4, 2, 'garras'),
   velhoPescador: f('pescador', 3, 3, 2, 2, 'anzol'),
   mumia: f('pescador', 3, 4, 2, 1, 'ligaduras'),
-  elfo: f('arqueiro', 4, 2, 3, 3, 'seta'),
-  dragaozinho: f('arqueiro', 4, 3, 1, 2, 'queimado'),
-  golem: f('guardiao', 4, 5, 2, 2, 'amolgadela'),
-  carvalho: f('guardiao', 4, 6, 1, 2, 'amolgadela'),
+  elfo: f('arqueiro', 4, 2, 2, 2, 'seta'),
+  dragaozinho: f('arqueiro', 4, 2, 1, 2, 'queimado'),
+  golem: f('guardiao', 4, 5, 3, 2, 'amolgadela'),
+  carvalho: f('guardiao', 4, 6, 2, 2, 'amolgadela'),
   cavaleiro: f('duelista', 5, 4, 2, 3, 'corte'),
   raposa: f('duelista', 5, 3, 3, 3, 'corte'),
-  minotauro: f('barbaro', 6, 4, 2, 4, 'soco'),
-  ogre: f('barbaro', 6, 4, 2, 3, 'soco'),
+  minotauro: f('barbaro', 6, 5, 3, 4, 'soco'),
+  ogre: f('barbaro', 6, 5, 2, 4, 'soco'),
 };
 
 export type Poder = 'empurrao' | 'escudo' | 'retoque' | 'maisAtaque' | 'tempestade' | 'copia' | 'sono' | 'furia' | 'muralha' | 'troca';

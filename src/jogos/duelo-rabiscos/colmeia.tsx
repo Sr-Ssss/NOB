@@ -5,12 +5,13 @@ import { ICONES_CLASSE, MARCAS } from './artes/icones';
 import { Riscos, type Camada } from './artes/lapis';
 import { MOLDES } from './artes/moldes';
 import { Obstaculo } from './artes/obstaculos';
-import { ARTE_PLANA, ESTRUTURAS_POR_TAMANHO, Estrutura, type TipoEstrutura } from './estruturas';
+import { ARTE_PLANA, Barreira, ESTRUTURAS_POR_TAMANHO, Estrutura, type TipoEstrutura } from './estruturas';
 import { Hexagono, camadasHex, centroHex, type EstadoHex } from './artes/tabuleiro';
 import { CRIATURAS, type Classe, type Criatura } from './criaturas';
 import type { Cria, Desenhos, VistaDuelo } from './regras';
 import { distancia, ler, vizinhas, type Casa } from './tabuleiro';
 import { TEXTO_CRIATURA, TXT } from './textos';
+import { EfeitosPeca } from './artes/efeitos';
 
 /** cor e forma de cada mago, pela ordem da mesa */
 export const CORES_MAGO = ['#2f6fd0', '#d9571e', '#2c8a4b', '#8a3fb0'];
@@ -102,8 +103,6 @@ export function Retrato({ criatura, tracos, tam = 64 }: { criatura: Criatura; tr
   );
 }
 
-export const efeitos = (c: Cria) => (c.sono ? '💤' : '') + (c.escudo ? '🛡️' : '') + (c.furia ? '🔥' : '') + (c.maisAtaque ? '⚔️' : '') + (c.fantasma ? '👻' : '');
-
 /** `pe`: de pé, com os pés em (0,0) (perspetiva); senão centrada. A cor do dono vai no chão da casa */
 function Peca({ c, i, tracos, pe = false }: { c: Cria; i: number; tracos?: Traco[]; pe?: boolean }) {
   return (
@@ -129,9 +128,8 @@ function Peca({ c, i, tracos, pe = false }: { c: Cria; i: number; tracos?: Traco
           </text>
         </g>
       )}
-        <text x="-30" y="-20" font-size="18">
-          {efeitos(c)}
-        </text>
+        {/* efeitos dos poderes (sono, escudo, fúria, +1 ataque, fantasma) */}
+        <EfeitosPeca c={c} />
       </g>
     </g>
   );
@@ -234,6 +232,24 @@ export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome
     const frente = g.reduce((a, x) => (centroHex(...ler(x)).y > centroHex(...ler(a)).y ? x : a));
     estruturas.set(frente, { tipo, g, semente: c0 * 31 + l0 });
   }
+  // barreiras dos poderes: casas de muralha coladas formam um muro só, desenhado de pé
+  const barreiras: Casa[][] = [];
+  {
+    const muros = new Set(v.muralhas.map((m) => m.casa));
+    const visto = new Set<Casa>();
+    for (const c of muros) {
+      if (visto.has(c)) continue;
+      const g = [c];
+      visto.add(c);
+      for (let k = 0; k < g.length; k++)
+        for (const x of vizinhas(g[k]))
+          if (muros.has(x) && !visto.has(x)) {
+            visto.add(x);
+            g.push(x);
+          }
+      barreiras.push(g);
+    }
+  }
   const xs = centros.flatMap((q) => [q.x - (p3 ? 62 : 47) * q.f, q.x + (p3 ? 62 : 47) * q.f]);
   const ys = centros.flatMap((q) => [q.y - (p3 ? 130 : 54) * q.f, q.y + 54 * q.f]);
   const [x0, y0] = [Math.min(...xs), Math.min(...ys)];
@@ -299,7 +315,7 @@ export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome
                     objetos.push({
                       y: y + 0.01,
                       el: (
-                        <g key={'p' + c} class={tocar ? 'dr-casa toca' : undefined} onClick={tocar} transform={`translate(${x} ${y + 6 * f}) scale(${f * EM_PE * tam})`}>
+                        <g key={'p' + cr!.id} class={'dr-anda' + (tocar ? ' dr-casa toca' : '')} onClick={tocar} style={{ transform: `translate(${x}px, ${y + 6 * f}px) scale(${f * EM_PE * tam})` }}>
                           {peca}
                         </g>
                       ),
@@ -318,6 +334,16 @@ export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome
           </g>
         );
       })}
+      {p3 &&
+        barreiras.map((g) => {
+          const pontos = g.map((x) => {
+            const q = centroHex(...ler(x));
+            return p(q.x, q.y);
+          });
+          const ligacoes = g.flatMap((a, ia) => g.flatMap((b, ib) => (ib > ia && distancia(a, b) === 1 ? [[ia, ib] as [number, number]] : [])));
+          objetos.push({ y: Math.max(...pontos.map((q) => q.y)), el: <Barreira key={'b' + g[0]} p={pontos} ligacoes={ligacoes} /> });
+          return null;
+        })}
       {objetos.sort((a, b) => a.y - b.y).map((o) => o.el)}
     </svg>
   );

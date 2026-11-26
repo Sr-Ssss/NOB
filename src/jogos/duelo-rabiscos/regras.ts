@@ -31,8 +31,9 @@ export const T_BATALHA = 8;
 export const T_LOBO = 10;
 export const TIPOS_DUELO = ['dr_mago', 'dr_exercito', 'dr_desenho', 'dr_rodar', 'dr_pronto', 'dr_andar', 'dr_atacar', 'dr_especial', 'dr_poder', 'dr_relancar', 'dr_passar', 'dr_lobo'];
 
-export type Face = 'andar' | 'fazer' | 'coringa';
-const FACES: Face[] = ['andar', 'andar', 'fazer', 'fazer', 'fazer', 'coringa'];
+/** Habilidade: só para os especiais das criaturas (Velho Pescador, Múmia, Carvalho Vivo); a coringa serve para tudo */
+export type Face = 'andar' | 'fazer' | 'habilidade' | 'coringa';
+const FACES: Face[] = ['andar', 'andar', 'fazer', 'fazer', 'habilidade', 'coringa'];
 const ATAQUE = [0, 0, 0, 1, 1, 2];
 const DEFESA = [0, 0, 0, 1, 1, 1];
 /** dado de ferimento: substitui um dado normal, no ataque e na defesa, por cada ferimento */
@@ -238,9 +239,10 @@ function casaPuxar(e: VistaDuelo, c: Cria, o: Cria): Casa | undefined {
   return vizinhas(c.casa).filter((v) => livre(e, v)).sort((a, b) => distancia(a, o.casa) - distancia(b, o.casa))[0];
 }
 
-const podeEspecial = (e: VistaDuelo, c: Cria) => !c.agiu && podeAgir(e, c) && e.magos[c.dono].gemas >= 1;
+/** o especial gasta o dado Habilidade (ou a coringa) e a ação de atacar dessa volta; não gasta gemas */
+const podeEspecial = (e: VistaDuelo, c: Cria) => !c.agiu && podeAgir(e, c);
 
-/** alvos do especial de 1 gema: Velho Pescador (inimigo a puxar) e Múmia (amigo ferido a curar) */
+/** alvos do especial: Velho Pescador (inimigo a puxar) e Múmia (amigo ferido a curar) */
 export function alvosEspecial(e: VistaDuelo, c: Cria): Cria[] {
   if (!podeEspecial(e, c)) return [];
   if (c.tipo === 'velhoPescador') return e.criaturas.filter((o) => o.dono !== c.dono && chega(e, c, o, 2, 3) && casaPuxar(e, c, o) !== undefined);
@@ -248,15 +250,18 @@ export function alvosEspecial(e: VistaDuelo, c: Cria): Cria[] {
   return [];
 }
 
-/** casas onde o Carvalho Vivo pode pôr a parede (1 gema) */
+/** casas onde o Carvalho Vivo pode pôr a parede */
 export const casasEspecial = (e: VistaDuelo, c: Cria): Casa[] => (c.tipo === 'carvalho' && podeEspecial(e, c) ? vizinhas(c.casa).filter((v) => livre(e, v)) : []);
+
+/** que face serve para quê */
+export const serve = (face: Face, para: 'andar' | 'atacar' | 'especial'): boolean => face === 'coringa' || face === { andar: 'andar', atacar: 'fazer', especial: 'habilidade' }[para];
 
 /** este dado serve para alguma coisa agora? */
 export function dadoServe(e: VistaDuelo, id: string, face: Face): boolean {
   return e.criaturas.some(
     (c) =>
       c.dono === id &&
-      ((face !== 'fazer' && casasAndar(e, c).length > 0) || (face !== 'andar' && (alvosAtaque(e, c).length > 0 || alvosEspecial(e, c).length > 0 || casasEspecial(e, c).length > 0))),
+      ((serve(face, 'andar') && casasAndar(e, c).length > 0) || (serve(face, 'atacar') && alvosAtaque(e, c).length > 0) || (serve(face, 'especial') && (alvosEspecial(e, c).length > 0 || casasEspecial(e, c).length > 0))),
   );
 }
 
@@ -654,7 +659,7 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
     case 'dr_andar': {
       const c = cria(s, a.criatura);
       const face = m.dados[a.i];
-      if (!minhaVez || !c || c.dono !== a.id || !face || face === 'fazer' || !casasAndar(s, c).includes(a.casa)) return false;
+      if (!minhaVez || !c || c.dono !== a.id || !face || !serve(face, 'andar') || !casasAndar(s, c).includes(a.casa)) return false;
       m.dados.splice(a.i, 1);
       c.casa = a.casa;
       c.andou = true;
@@ -666,12 +671,11 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
       const c = cria(s, a.criatura);
       const alvo = cria(s, a.alvo);
       const face = m.dados[a.i];
-      if (!minhaVez || !c || c.dono !== a.id || !face || face === 'andar') return false;
+      if (!minhaVez || !c || c.dono !== a.id || !face || !serve(face, a.tipo === 'dr_atacar' ? 'atacar' : 'especial')) return false;
       if (a.tipo === 'dr_especial' && c.tipo === 'carvalho') {
         if (!a.casa || !casasEspecial(s, c).includes(a.casa)) return false;
         m.dados.splice(a.i, 1);
         c.agiu = true;
-        m.gemas--;
         s.muralhas.push({ casa: a.casa, ate: s.volta + 1 });
         acabarVez(s, agora, rnd);
         return true;
@@ -683,7 +687,6 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
         atacar(s, c, alvo, agora, rnd);
         return true;
       }
-      m.gemas--;
       if (c.tipo === 'mumia') alvo.ferimentos--;
       else {
         // puxa, fere e luta já, se ambos continuarem vivos

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 160 160">
+  <!-- robôs reais do jogo (src/jogos/ragerob/desenho.tsx): crocodilo + triângulo + lagartas vs rino + quadrado + pernas -->
+  <defs>
+    <g id="par"><circle r="6" fill="#9aa0a6" stroke="#1a1a1a" stroke-width="2"/><path d="M-3 0H3M0-3V3" stroke="#1a1a1a" stroke-width="1.5"/></g>
+    <rect id="lag" width="14" height="24" rx="5" fill="#222" stroke="#1a1a1a" stroke-width="3"/>
+    <path id="perna" d="M23.7 -14.8L42.5 -24.8L51 -6.8" fill="none" stroke="#3a3d42" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </defs>
+  <rect x="4" y="4" width="152" height="152" rx="34" fill="#C9A26B" stroke="#000" stroke-width="6"/>
+  <g fill="#A8834F"><ellipse cx="30" cy="132" rx="14" ry="5"/><ellipse cx="128" cy="30" rx="12" ry="4"/><ellipse cx="120" cy="136" rx="9" ry="3"/></g>
+  <path d="M20 26l10 6M136 118l-8 8M24 100l6-2" stroke="#7B5A2E" stroke-width="3" stroke-linecap="round"/>
+  <g transform="translate(46 100) rotate(55) scale(0.6)">
+    <use xlink:href="#lag" href="#lag" x="-38" y="-29"/><use xlink:href="#lag" href="#lag" x="-38" y="5"/><use xlink:href="#lag" href="#lag" x="24" y="-29"/><use xlink:href="#lag" href="#lag" x="24" y="5"/>
+    <path d="M-13 -32.2L-10 -64.2L10 -64.2L13 -32.2Z" fill="#3f9a3a" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="-4" cy="-60.2" r="1.5" fill="#1a1a1a"/><circle cx="4" cy="-60.2" r="1.5" fill="#1a1a1a"/>
+    <path d="M-10 -50l3 3M10 -50l-3 3M-11 -42l3 3M11 -42l-3 3" stroke="#2a6a28" stroke-width="2"/>
+    <circle cx="-9" cy="-30.2" r="6" fill="#3f9a3a" stroke="#1a1a1a" stroke-width="2"/><circle cx="9" cy="-30.2" r="6" fill="#3f9a3a" stroke="#1a1a1a" stroke-width="2"/>
+    <circle cx="-6" cy="-30.2" r="4" fill="#f2c230" stroke="#1a1a1a" stroke-width="1.5"/><circle cx="6" cy="-30.2" r="4" fill="#f2c230" stroke="#1a1a1a" stroke-width="1.5"/>
+    <rect x="-6.8" y="-32.7" width="1.6" height="5" fill="#1a1a1a"/><rect x="5.2" y="-32.7" width="1.6" height="5" fill="#1a1a1a"/>
+    <polygon points="-1,-36 34,19 -32,17" fill="#87c8eb" stroke="#1a1a1a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M-5 -18.7L0 -25.5L5 -18.7" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+    <use xlink:href="#par" href="#par" x="0" y="-12"/><use xlink:href="#par" href="#par" x="-17" y="15"/><use xlink:href="#par" href="#par" x="17" y="15"/>
+  </g>
+  <g transform="translate(114 100) rotate(-55) scale(0.6)">
+    <use xlink:href="#perna" href="#perna"/><use xlink:href="#perna" href="#perna" transform="translate(0 29.6)"/><use xlink:href="#perna" href="#perna" transform="scale(-1 1)"/><use xlink:href="#perna" href="#perna" transform="scale(-1 1) translate(0 29.6)"/>
+    <path d="M-2 -52.2L0 -80.2L2 -52.2Z" fill="#efe3c4" stroke="#1a1a1a" stroke-width="2"/>
+    <path d="M-16 -30.2L-12 -48.2L0 -56.2L12 -48.2L16 -30.2Z" fill="#8b8f95" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M-10 -38.2L0 -46.2L10 -38.2" fill="none" stroke="#5f6368" stroke-width="2"/>
+    <circle cx="-6" cy="-36.2" r="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/><circle cx="6" cy="-36.2" r="4" fill="#fff" stroke="#1a1a1a" stroke-width="1.5"/>
+    <circle cx="-6" cy="-36.2" r="1.8" fill="#1a1a1a"/><circle cx="6" cy="-36.2" r="1.8" fill="#1a1a1a"/>
+    <path d="M-11 -42.2L-2 -39.2M11 -42.2L2 -39.2" stroke="#1a1a1a" stroke-width="2"/>
+    <polygon points="-26.7,-26.7 28.1,-25.1 26.2,25.2 -28,26.4" fill="#e0412b" stroke="#1a1a1a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M-5 -18.7L0 -25.5L5 -18.7" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+    <use xlink:href="#par" href="#par" x="-17" y="-17"/><use xlink:href="#par" href="#par" x="17" y="-17"/><use xlink:href="#par" href="#par" x="-17" y="17"/><use xlink:href="#par" href="#par" x="17" y="17"/>
+  </g>
+  <path d="M80 40l5 12 12-4-7 10 10 7-13 0 2 13-9-9-9 9 2-13-13 0 10-7-7-10 12 4z" fill="#FAC775" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+</svg>

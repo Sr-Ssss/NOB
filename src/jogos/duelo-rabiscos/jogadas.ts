@@ -1,6 +1,6 @@
 /** O que se pode escolher no telemóvel, passo a passo (o reducer volta a validar tudo). */
 import { CUSTO, type Poder } from './criaturas';
-import { alvosAtaque, alvosEspecial, casasAndar, casasEspecial, cria, livre, temEfeito, type AlvoPoder, type Cria, type Face, type FaceFerida, type VistaDuelo } from './regras';
+import { alvosAtaque, alvosEspecial, casasAndar, casasEspecial, cria, livre, serve, temEfeito, type AlvoPoder, type Cria, type Face, type FaceFerida, type VistaDuelo } from './regras';
 import { alcance, vizinhas, type Casa } from './tabuleiro';
 import type { FaceDado } from './artes/dados';
 
@@ -23,7 +23,7 @@ const vazias = (o: Opcoes) => !o.casas.length && !o.alvos.length;
 
 /** o que esta criatura pode fazer com este dado */
 export function modos(v: VistaDuelo, c: Cria, face: Face): Modo[] {
-  const l: Modo[] = face === 'andar' ? ['andar'] : face === 'fazer' ? ['atacar', 'especial'] : ['andar', 'atacar', 'especial'];
+  const l = (['andar', 'atacar', 'especial'] as Modo[]).filter((m) => serve(face, m));
   return l.filter((m) => !vazias(opcoesModo(v, c, m)));
 }
 
