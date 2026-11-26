@@ -42,6 +42,29 @@ function Historico({ v, l }: { v: PropsWifi['v']; l: Lado }) {
   );
 }
 
+/** os históricos (routers) não cabem no ecrã do telemóvel: um botão por equipa abre-os num popup */
+function BotoesHistorico({ v, lados }: { v: PropsWifi['v']; lados: Lado[] }) {
+  const [aberto, setAberto] = useState<Lado | null>(null);
+  return (
+    <>
+      <div class="linha">
+        {lados.map((l) => (
+          <button key={l} class="botao sec cresce" aria-label={t('swHistorico', { eq: nomeEquipa(l) })} onClick={() => setAberto(l)}>
+            📶 {nomeEquipa(l)}
+          </button>
+        ))}
+      </div>
+      {aberto && (
+        <div class="popup" onClick={() => setAberto(null)}>
+          <div class="cartao tel-wifi">
+            <Historico v={v} l={aberto} />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /** ecrã do Criptógrafo: código grande + 3 campos (número → pista) */
 function Criptografo({ sala, v, p, enviar }: { sala: PropsWifi['sala']; v: PropsWifi['v']; p: PrivadoWifi; enviar: Enviar }) {
   // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
@@ -51,9 +74,8 @@ function Criptografo({ sala, v, p, enviar }: { sala: PropsWifi['sala']; v: Props
   const ok = pistas.every((x) => x.trim()) && mal.every((m) => !m);
   const o = outro(p.lado);
   return (
-    <div class="cartao" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div class="centro">{t('swTeuCodigo')}</div>
-      <div class="meu-codigo">{codigo.join(' · ')}</div>
+    <div class="cartao" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div class="meu-codigo" aria-label={t('swTeuCodigo')}>{codigo.join(' · ')}</div>
       {codigo.map((n, i) => (
         <div key={i}>
           <div class="campo-pista">
@@ -69,7 +91,7 @@ function Criptografo({ sala, v, p, enviar }: { sala: PropsWifi['sala']; v: Props
           {mal[i] && <div class="mudou">⚠ {t('swBloqueada', { p: textoPalavra(mal[i]!, sala.idioma) })}</div>}
         </div>
       ))}
-      <button class="botao grande" disabled={!ok} onClick={() => jogo(enviar, { tipo: 'pistas', pistas })}>
+      <button class="botao" disabled={!ok} onClick={() => jogo(enviar, { tipo: 'pistas', pistas })}>
         {t('enviar')}
       </button>
       <div class="centro mini">
@@ -87,7 +109,7 @@ function RespostaPartilhada({ sala, v, eu, enviar }: { sala: PropsWifi['sala']; 
   const confirmei = r.confirmados.includes(eu);
   const quem = v.respondentes.filter((id) => sala.jogadores.find((j) => j.id === id)?.ligado);
   return (
-    <div class="cartao" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div class="cartao wifi-resp" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <b class="centro">{v.passo === 'intercetar' ? t('swIntercetar', { eq: nomeEquipa(v.turno) }) : t('swDescodificar')}</b>
       {pistas.map((pista, linha) => (
         <div key={linha} class="linha-resp">
@@ -110,12 +132,14 @@ function RespostaPartilhada({ sala, v, eu, enviar }: { sala: PropsWifi['sala']; 
           </div>
         </div>
       ))}
-      <button class="botao grande" disabled={!completa || confirmei} onClick={() => jogo(enviar, { tipo: 'confirmar' })}>
+      <button class="botao" disabled={!completa || confirmei} onClick={() => jogo(enviar, { tipo: 'confirmar' })}>
         {confirmei ? '✅ ' : ''}
         {t('swConfirmar')}
       </button>
-      <div class="centro">{t('swConfirmaram', { n: r.confirmados.length, t: v.precisa })}</div>
       <div class="confirmaram">
+        <b>
+          {r.confirmados.length}/{v.precisa}
+        </b>
         {quem.map((id) => (
           <span key={id}>
             <Feito ok={r.confirmados.includes(id)} /> {nomeDe(sala, id)}
@@ -169,7 +193,7 @@ function Eu({ sala, v, eu, privado: p, enviar }: PropsWifi & { eu: string; priva
       <>
         <p class="centro">{t('audiencia')}</p>
         {/* sem TV os routers por baixo já mostram os históricos */}
-        {v.fase !== 'palavras' && !sala.semTv && (['b', 'p'] as Lado[]).map((l) => <Historico key={l} v={v} l={l} />)}
+        {v.fase !== 'palavras' && !sala.semTv && <BotoesHistorico v={v} lados={['b', 'p']} />}
       </>
     );
   }
@@ -186,7 +210,7 @@ function Eu({ sala, v, eu, privado: p, enviar }: PropsWifi & { eu: string; priva
         {v.fase !== 'palavras' && <Fichas f={v.fichas[p.lado]} />}
       </div>
       {/* interceção: por cima, o histórico da outra equipa em vez das palavras */}
-      {intercetar ? <Historico v={v} l={o} /> : <Palavras sala={sala} p={p} trocar={v.fase === 'palavras' && !v.prontos.includes(eu) ? (i) => jogo(enviar, { tipo: 'trocar', i }) : undefined} />}
+      {!intercetar && <Palavras sala={sala} p={p} trocar={v.fase === 'palavras' && !v.prontos.includes(eu) ? (i) => jogo(enviar, { tipo: 'trocar', i }) : undefined} />}
 
       {v.fase === 'palavras' &&
         (v.prontos.includes(eu) ? (
@@ -219,12 +243,7 @@ function Eu({ sala, v, eu, privado: p, enviar }: PropsWifi & { eu: string; priva
         </div>
       )}
 
-      {v.fase !== 'palavras' && !sala.semTv && (
-        <>
-          {!intercetar && <Historico v={v} l={o} />}
-          <Historico v={v} l={p.lado} />
-        </>
-      )}
+      {v.fase !== 'palavras' && !sala.semTv && <BotoesHistorico v={v} lados={[o, p.lado]} />}
     </>
   );
 }
@@ -239,19 +258,21 @@ export function TelemovelWifi({ sala, v, agora, eu, privado, enviar }: PropsWifi
   if (v.fase === 'fim') {
     return (
       <div class="pag tel-wifi">
-        <h1 class="pergunta">{v.vencedor ? t('swGanharam', { eq: nomeEquipa(v.vencedor) }) : t('fim')}</h1>
-        {p && v.vencedor && <p class="centro">{v.vencedor === p.lado ? '🏆' : '📶❌'}</p>}
+        <h1 class="pergunta">
+          {p && v.vencedor ? (v.vencedor === p.lado ? '🏆 ' : '📶❌ ') : ''}
+          {v.vencedor ? t('swGanharam', { eq: nomeEquipa(v.vencedor) }) : t('fim')}
+        </h1>
         {(['b', 'p'] as Lado[]).map((l) => (
           <div key={l} class="cartao">
             <div class="linha" style={{ justifyContent: 'space-between' }}>
               <b>{nomeEquipa(l)}</b>
               <Fichas f={v.fichas[l]} />
             </div>
-            <div>{(v.palavrasFim?.[l] ?? []).map((w, i) => `${i + 1}. ${textoPalavra(w, sala.idioma)}`).join(' · ')}</div>
+            <div class="mini">{(v.palavrasFim?.[l] ?? []).map((w, i) => `${i + 1}. ${textoPalavra(w, sala.idioma)}`).join(' · ')}</div>
           </div>
         ))}
         <div class="cartao">
-          <PlacarWifi sala={sala} v={v} tam={40} />
+          <PlacarWifi sala={sala} v={v} tam={24} />
         </div>
         {lider ? (
           <div class="linha">

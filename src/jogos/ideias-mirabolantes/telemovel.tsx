@@ -133,11 +133,11 @@ function Investir({ sala, v, eu, enviar }: Omit<PropsIdeias, 'agora'> & { eu: st
             {!minha && (
               <div class="investe-linha">
                 <button class="botao sec" aria-label="−100 €" disabled={!n} onClick={() => mudar(c.inventor, -1)}>
-                  −100 €
+                  −
                 </button>
                 <b>{n * VALOR_NOTA} €</b>
                 <button class="botao sec" aria-label="+100 €" disabled={usadas >= NOTAS} onClick={() => mudar(c.inventor, 1)}>
-                  +100 €
+                  +
                 </button>
               </div>
             )}

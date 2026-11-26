@@ -64,3 +64,8 @@
 .pr-papel-j.fora { opacity: 0.6; }
 .pr-hist { background: var(--papiro); color: #2a1a08; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
 @media (prefers-reduced-motion: reduce) { .pr-balanco, .pr-folha, .pr-anda { animation: none; } }
+/* telemóvel sem scroll (360×640): lista em 2 colunas, rolos finos (o botão Identidade fica fixo por cima de ~536 px) */
+.jogo-pirata.tel .pr-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 6px 8px; }
+.jogo-pirata.tel .pr-linha { min-height: 44px; padding: 4px 6px; gap: 6px; font-size: 16px; }
+.jogo-pirata.tel .pr-rolo { height: 12px; }
+.jogo-pirata.tel .pr-frase { font-size: 20px; margin: 0; }

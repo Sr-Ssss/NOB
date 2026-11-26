@@ -54,3 +54,30 @@
 .investe-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .investe-linha b { font-size: 1.2em; min-width: 70px; text-align: center; }
 .sem-anim .barra { animation: none; }
+/* telemóvel sem scroll (360×640) */
+.im-tel .editor .tela { max-height: 34svh; width: auto; max-width: 100%; margin: 0 auto; }
+.im-tel input { min-height: 44px; }
+.im-tel h2.centro { font-size: 20px; margin: 0; }
+.investe { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; row-gap: 0; padding: 4px 8px; align-items: center; }
+.investe > :not(.investe-linha) { grid-column: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.investe .investe-linha { grid-column: 2; grid-row: 1 / span 3; gap: 4px; }
+.investe .investe-linha .botao { padding: 6px 12px; min-width: 44px; min-height: 44px; }
+.investe .investe-linha b { min-width: 56px; font-size: 1em; }
+.jogo-ideias:not(.tv) .barras.compacto { height: 150px; }
+.jogo-ideias:not(.tv) .im-revelar h1.pergunta { font-size: 22px; margin: 0; }
+.im-pitch.compacto { gap: 6px; margin-top: 0; }
+.im-pitch.compacto .im-pitch-corpo canvas, .im-pitch.compacto .im-pitch-corpo .tela { max-height: 24svh; width: auto; max-width: 100%; margin: 0 auto; }
+.investe i { display: none; }
+.im-tel .editor .tela { max-height: 28svh; }
+.im-tel input { min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
+.jogo-ideias:not(.tv) h2.centro { font-size: 18px; margin: 0; }
+.im-pitch.compacto .im-pitch-corpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.investe { font-size: 15px; line-height: 1.2; }
+.investe .investe-linha .botao { min-height: 40px; padding: 4px 10px; font-size: 20px; box-shadow: 0 2px 0 #bdb8a8; }
+.im-pitch.compacto .im-lado { gap: 4px; }
+.im-pitch.compacto .im-nome { font-size: 22px; }
+.im-pitch.compacto .im-slogan { font-size: 15px; }
+.im-pitch.compacto .im-etapas { gap: 3px; font-size: 12px; }
+.im-pitch.compacto .im-etapas span { padding: 1px 6px; }
+.im-pitch.compacto .im-problema { padding: 6px 10px; font-size: 15px; }
+.investe > span.mini { display: none; }

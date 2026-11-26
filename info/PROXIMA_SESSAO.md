@@ -368,3 +368,10 @@ Falta:
 - Feito: pensa (A, cérebro de giz), wifi (B, router), sevira (C, slide ?), mona (A, retrato), ideias (B, lâmpada c/ hélice), pirata (B, navio ao luar), maquinas (D, traidor no meio), rei (livro iluminado + dragão; estilo manuscrito medieval pedido pelo utilizador). ragerob (croc vs rino, robôs reais do jogo). semjuizo (A, martelo e pato). duelo (varinha de madeira + raposa a meio). 5050 (A, meio a meio). TODOS os ícones feitos. Ficheiro = id do registo.
 - Menu TV: 1 coluna com scroll, letra maior (estilo.css .tv-lobby/.lista-jogos).
 - Montra (só dev): `npm run dev` → `localhost:5173/#/montra?jogo=<id>&n=6&semtv=0`. Joga sozinho com bots (motor de ia.test.ts) e mostra TV + 3 telemóveis em cada fase. src/montra/Montra.tsx. Usar para rever designs sem gastar tokens.
+
+## Telemóvel sem scroll (360×640) — em curso (26/11)
+- Medição: script Playwright (msedge) nas demos `#/demo-<jogo>?…&ecra=tel`; fundo do conteúdo (sem o padding do `.pag`) ≤ 600 px.
+- Antes: 35 de 123 ecrãs passavam (wifi cripto 1128, ideias investir 1243, mona revelar 1097, pirata votar 924…).
+- Feito: `src/ui/estilo.css` (`.pag:not(.tv)` gap 10/padding-top 10, `.botao.grande` mais baixo, placar compacto); wifi (históricos em popup por botão 📶, respostas numa linha), pensa, mona (placas 2 colunas, revelação compacta), ideias (investir numa linha, pitch 2 colunas), pirata (lista 2 colunas — falta medir).
+- Já cabem: wifi, pensa, mona, ideias.
+- Falta: pirata (alvo ≤ 530, o botão Identidade é fixo a ~536), maquinas (nomear, poder, nomear semtv), rei (batata, fim, refens eu=j3), semjuizo (fim, juiz papel=juiz), 5050 (sem demo), lobby/menus de `src/ui/` e `src/jogar/`.

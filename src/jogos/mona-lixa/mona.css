@@ -73,3 +73,23 @@
 
 /* capturas (rota de demo): sem animações */
 .sem-anim *, .sem-anim *::before { animation: none !important; transition: none !important; }
+/* telemóvel sem scroll (360×640) */
+.placas-tel { gap: 6px; }
+.placas-tel .placa { font-size: 17px; padding: 7px 12px; min-height: 40px; }
+/* revelação no telemóvel: desenho pequeno e placas em 2 colunas, avatares mínimos */
+.museu.compacto { gap: 6px; margin-top: 0; }
+.museu.compacto .museu-obra { gap: 4px; }
+.museu.compacto .museu-obra .moldura { width: auto; max-width: 100%; }
+.museu.compacto .museu-obra canvas, .museu.compacto .museu-obra svg.tela, .museu.compacto .museu-obra .tela { max-height: 20svh; width: auto; max-width: 100%; }
+.museu.compacto .museu-autor svg { width: 24px; height: 24px; }
+.museu.compacto .museu-lado { gap: 6px; }
+.museu.compacto .placas { grid-template-columns: 1fr 1fr; gap: 6px; }
+.museu.compacto .placa { font-size: 13px; padding: 4px 6px; }
+.museu.compacto .placa::before, .museu.compacto .placa::after { display: none; }
+.museu.compacto .placa-quem { gap: 2px 4px; margin-top: 2px; }
+.museu.compacto .placa-quem svg, .museu.compacto .placa-bonecos svg { width: 18px; height: 18px; }
+.museu.compacto .placa-bonecos { gap: 1px; margin-top: 2px; }
+.jogo-mona .placas-tel { display: grid; grid-template-columns: 1fr 1fr; }
+.jogo-mona .placas-tel .placa { font-size: 15px; line-height: 1.15; }
+.jogo-mona > .moldura .tela { max-height: 30svh; width: auto; max-width: 100%; margin: 0 auto; display: block; }
+.jogo-mona h2.centro { font-size: 20px; margin: 0; }

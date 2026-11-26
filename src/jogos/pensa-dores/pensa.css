@@ -38,3 +38,11 @@
 .carteira, .carteira * { box-sizing: border-box; max-width: 100%; }
 .carteira .post-it { width: 100%; }
 .tel-pensa { overflow-x: hidden; }
+/* telemóvel sem scroll (360×640) */
+.tel-pensa .post-it { min-height: 96px; font-size: 20px; padding: 12px; }
+.tel-pensa .carteira { padding: 12px; gap: 8px; }
+.tel-pensa .estado { gap: 4px; }
+.tel-pensa .estado .boneco { width: 54px; font-size: 12px; }
+.tel-pensa .giz-titulo, .tel-pensa .giz-titulo.pequeno { font-size: 20px; }
+.tel-pensa .giz-grelha .giz-caixa { font-size: 16px; padding: 8px; gap: 4px; }
+.tel-pensa .giz-grelha { gap: 6px; }

@@ -108,3 +108,18 @@
 .cartao .botoes14 button, .cartao.equipa-lista .item button { border-color: var(--noite); color: var(--noite); }
 .cartao .botoes14 button.on, .cartao.equipa-lista .item button.on { border-color: var(--coral); color: var(--noite); }
 .cartao .mudou { color: #a3401f; }
+/* telemóvel sem scroll (360×640): respostas numa linha, código e campos compactos */
+.tel-wifi.pag:not(.tv) { gap: 8px; }
+.tel-wifi .minhas { gap: 6px; }
+.tel-wifi .minhas .postit { font-size: 20px; min-height: 44px; padding: 4px 8px; }
+.tel-wifi .meu-codigo { font-size: 40px; line-height: 1.1; }
+.tel-wifi .campo-pista input, .tel-wifi .campo-pista .num { min-height: 44px; height: 44px; }
+.tel-wifi .wifi-resp .linha-resp { flex-direction: row; align-items: center; }
+.tel-wifi .wifi-resp .linha-resp .pista { flex: 1; min-width: 0; flex-direction: column; align-items: stretch; gap: 2px; }
+.tel-wifi .wifi-resp .botoes14 { flex: 0 0 176px; gap: 4px; }
+.tel-wifi .wifi-resp .botoes14 button { min-height: 44px; font-size: 22px; }
+.tel-wifi .wifi-resp .mudou { font-size: 12px; }
+.tel-wifi .confirmaram { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; font-size: 14px; }
+.popup .cartao.tel-wifi { max-height: 90svh; overflow: hidden; }
+.tel-wifi .placar li { padding: 1px 0; gap: 8px; }
+.tel-wifi h1.pergunta { margin: 0; }

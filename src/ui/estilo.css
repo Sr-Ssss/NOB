@@ -181,6 +181,8 @@ label { font-weight: 700; display: block; margin-bottom: 4px; }
 }
 .tv .rodape-codigo, .rodape-codigo.tv { font-size: clamp(28px, 4cqw, 56px); bottom: 16px; }
 .pag { padding-bottom: 72px; }
+/* telemóvel: tudo num ecrã de 360×640 sem scroll (o código fica fixo em baixo) */
+.pag:not(.tv) { gap: 10px; padding-top: 10px; }
 .escolha-boneco:disabled { cursor: default; }
 /* bonecos piscam os olhos, devagar (src/ui/piscar.ts põe e tira `pisca`) */
 .olhos { transform-box: fill-box; transform-origin: center; }
@@ -388,3 +390,5 @@ html.texto-grande { zoom: 1.2; }
 .placar-torneio.tv { font-size: 2vw; padding: 3vw 12vw; height: 100vh; box-sizing: border-box; overflow: hidden; }
 .lista-placar { list-style: none; padding: 10px; margin: 0; display: grid; gap: 6px; }
 .lista-placar li { align-items: center; gap: 10px; }
+.pag:not(.tv) .botao.grande { font-size: 24px; padding: 12px; }
+.pag:not(.tv) .placar li { padding: 2px 0; }
