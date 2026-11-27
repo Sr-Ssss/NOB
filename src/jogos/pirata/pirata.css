@@ -69,3 +69,11 @@
 .jogo-pirata.tel .pr-linha { min-height: 44px; padding: 4px 6px; gap: 6px; font-size: 16px; }
 .jogo-pirata.tel .pr-rolo { height: 12px; }
 .jogo-pirata.tel .pr-frase { font-size: 20px; margin: 0; }
+.jogo-pirata.tel .pr-lista { gap: 2px; }
+.jogo-pirata.tel .pr-linha { min-height: 40px; }
+.jogo-pirata.tel > * { margin-top: 0; margin-bottom: 0; }
+.jogo-pirata.tel .palco-tel .pr-diario .pr-folha { min-height: 0; }
+.jogo-pirata.tel .pr-relatorio { min-height: 0; font-size: 18px; }
+.jogo-pirata.tel .pr-mar { padding: 10px; margin-top: 0; }
+.jogo-pirata.tel .pr-mar h2 { font-size: 20px; margin: 0; }
+.jogo-pirata.tel .pr-mar p { margin: 4px 0 0; }

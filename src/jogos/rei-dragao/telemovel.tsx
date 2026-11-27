@@ -6,6 +6,7 @@ import { avatarDe, nomeDe } from '../5050/tv';
 import { T_REFENS, type CartaR, type PapelR, type PrivadoRei, type VistaRei } from './regras';
 import { BOLA, Castelos, ICONE, PlacarRei, narracao, nomeEquipa, nomePapel, nomeSala, textoCarta, type PropsRei } from './comuns';
 import { AcabarPartida } from '../../ui/acabarPartida';
+import { BotaoPopup } from '../../ui/verPopup';
 import { eventosSegurar, tocarParaMostrar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
@@ -393,7 +394,10 @@ export function TelemovelRei({ sala, v, agora, eu, privado, enviar }: PropsRei &
           {sala.semTv ? (
             <>
               <h2 class="centro">{narracao(sala, v)}</h2>
-              <Castelos sala={sala} v={v} agora={agora} compacto />
+              {/* as torres com as cartas de todos não cabem por cima do placar: abrem-se pelo botão */}
+              <BotaoPopup rotulo="🏰 🃏">
+                <Castelos sala={sala} v={v} agora={agora} compacto />
+              </BotaoPopup>
             </>
           ) : (
             <p class="centro">{t('rdOlheTv')}</p>

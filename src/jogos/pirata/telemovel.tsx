@@ -7,6 +7,7 @@ import { limiarVigia, type Privado, type PrivadoPirata, type VistaPirata } from 
 import { Palco, PlacarPirata, Revelacao, SIMBOLO, nomePapel, type PropsPirata } from './comuns';
 import { Progresso } from '../../ui/ecraunico';
 import { AcabarPartida } from '../../ui/acabarPartida';
+import { BotaoPopup } from '../../ui/verPopup';
 import { chaveSegurar, eventosSegurar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
@@ -221,7 +222,8 @@ export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta 
   const lider = sala.vipId === eu;
   const fim = v.fase === 'fim';
   // sem TV, um só ecrã: por baixo da minha parte, o que a TV mostraria (igual para todos os papéis)
-  const comPalco = sala.semTv && (!v.participantes.includes(eu) || !v.vivos.includes(eu) || !['carta', 'noite', 'votar'].includes(v.fase));
+  // o Artilheiro, enquanto escolhe, não precisa do palco (é ele que a TV mostraria)
+  const comPalco = sala.semTv && !(v.fase === 'artilheiro' && v.artilheiro?.id === eu) && (!v.participantes.includes(eu) || !v.vivos.includes(eu) || !['carta', 'noite', 'votar'].includes(v.fase));
   const pirata = v.papeis[eu] === 'pirata';
   const ganhei = fim && (v.vencedor === 'piratas') === pirata;
   return (
@@ -248,7 +250,12 @@ export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta 
               {ganhei ? t('prGanhaste') : t('prPerdeste')} {t('prPontos', { n: v.pontos[eu] ?? 0 })}
             </h1>
           )}
-          {sala.semTv && <Revelacao sala={sala} v={v} compacto />}
+          {/* sem TV: a revelação (papéis e noites) não cabe por cima do placar; abre-se pelo botão */}
+          {sala.semTv && (
+            <BotaoPopup rotulo="📜 ☠️ 🔭 🩹">
+              <Revelacao sala={sala} v={v} compacto />
+            </BotaoPopup>
+          )}
           <div class="cartao">
             <PlacarPirata sala={sala} v={v} tam={36} />
           </div>

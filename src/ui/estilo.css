@@ -392,3 +392,36 @@ html.texto-grande { zoom: 1.2; }
 .lista-placar li { align-items: center; gap: 10px; }
 .pag:not(.tv) .botao.grande { font-size: 24px; padding: 12px; }
 .pag:not(.tv) .placar li { padding: 2px 0; }
+.pag:not(.tv) .placar li > svg { width: 28px; height: 28px; }
+.pag:not(.tv) > :is(p, h1, h2, h3) { margin-top: 0; margin-bottom: 0; }
+/* placar com muitos jogadores: 2 colunas */
+.pag:not(.tv) .placar ol:has(li:nth-child(7)) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; }
+.pag:not(.tv) .placar ol:has(li:nth-child(7)) li { gap: 4px; font-size: 15px; min-width: 0; }
+.pag:not(.tv) .placar ol:has(li:nth-child(7)) li .cresce { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* lobby no telemóvel: o meu boneco ao lado do nome, bonecos da sala mais pequenos */
+.pag:not(.tv) .centro:has(> .meu-boneco) { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.pag:not(.tv) .meu-boneco > svg { width: 84px; height: 84px; }
+.pag:not(.tv) .meu-boneco .lapis { font-size: 22px; }
+.pag:not(.tv) .centro:has(> .meu-boneco) .nome-grande { margin: 0; min-width: 0; flex: 1; font-size: 24px; }
+.pag:not(.tv) .fila-bonecos { gap: 2px; }
+.pag:not(.tv) .fila-bonecos .escolha-boneco .boneco { width: 60px; font-size: 13px; }
+.pag:not(.tv) .fila-bonecos .escolha-boneco svg { width: 40px; height: 40px; }
+.pag:not(.tv) .mais-bot { min-width: 52px; min-height: 52px; }
+.pag:not(.tv) .botao.escolher-jogo { font-size: 22px; padding: 10px; }
+/* menu de jogos no telemóvel: grelha de 3, sem scroll */
+.menu-tel .lista-tel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.menu-tel .lista-tel li { display: flex; }
+.menu-tel .item-tel { padding: 6px 4px; gap: 2px; }
+.menu-tel .item-tel:has(> .icone-jogo) { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.menu-tel .item-tel > .icone-jogo { width: 40px; height: 40px; }
+.menu-tel .item-tel-cab { flex-direction: column; align-items: center; text-align: center; gap: 0; font-size: 13px; line-height: 1.15; }
+.menu-tel .item-tel-cab small { font-size: 11px; opacity: 0.8; }
+.menu-tel .item-tel .porque { display: none; }
+/* 50/50 */
+.tel-5050 .frase { font-size: 20px; margin-bottom: 6px; }
+.tel-5050 .respostas { gap: 8px; }
+.pag:not(.tv) .fila-bonecos .escolha-boneco { padding: 0; min-height: 0; }
+.pag:not(.tv) .fila-bonecos .escolha-boneco .boneco { width: 54px; font-size: 12px; }
+.pag:not(.tv) .fila-bonecos .escolha-boneco svg { width: 36px; height: 36px; }
+.pag:not(.tv) .fila-bonecos .boneco .marca { font-size: 14px; top: -4px; right: 0; }
+.popup .cartao.popup-ver { max-height: 92svh; overflow-y: auto; }

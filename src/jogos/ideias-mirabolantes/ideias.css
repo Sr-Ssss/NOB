@@ -81,3 +81,7 @@
 .im-pitch.compacto .im-etapas span { padding: 1px 6px; }
 .im-pitch.compacto .im-problema { padding: 6px 10px; font-size: 15px; }
 .investe > span.mini { display: none; }
+.im-tel .editor .tela { max-height: 25svh; }
+.im-tel .im-problema { padding: 6px 10px; font-size: 1.1em; }
+.jogo-ideias .im-tel { gap: 6px; }
+.investe .investe-linha { grid-row: 1; }

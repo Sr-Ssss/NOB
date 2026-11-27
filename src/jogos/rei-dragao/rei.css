@@ -72,3 +72,20 @@
 .rd-revelado .rd-bola { font-size: 30px; }
 .rd-revelado p { font-size: 20px; margin: 0; }
 .rd-aviso { position: fixed; left: 12px; right: 12px; bottom: 176px; z-index: 42; background: var(--tinta); color: var(--creme); border: 3px solid #000; border-radius: 12px; padding: 10px; text-align: center; font-weight: 800; }
+/* telemóvel sem scroll (360×640): listas em 2 colunas, barra Mostrar mais baixa (o conteúdo acaba antes dela) */
+.jogo-rei.tel .rd-mostrar { padding: 6px 12px 48px; gap: 8px; }
+.jogo-rei.tel .rd-segurar { height: 48px; font-size: 16px; }
+.jogo-rei.tel .rd-revelado { bottom: 110px; }
+.jogo-rei.tel .rd-aviso { bottom: 112px; }
+.jogo-rei.tel .rd-tel-topo { margin: 0; font-size: 16px; }
+.jogo-rei.tel .rd-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0; }
+.jogo-rei.tel .rd-linha { padding: 3px 6px; gap: 6px; font-size: 15px; min-height: 40px; }
+.jogo-rei.tel .rd-pedido { padding: 6px; margin: 0; font-size: 17px; }
+.jogo-rei.tel .rd-pedido p { margin: 0 0 4px; }
+.jogo-rei.tel h3 { margin: 0; font-size: 17px; }
+.jogo-rei.tel .botao { min-height: 44px; padding: 8px 14px; font-size: 18px; }
+.jogo-rei.tel .rd-linha svg { width: 28px; height: 28px; }
+.jogo-rei.tel .rd-linha { min-height: 36px; }
+.jogo-rei.tel .rd-mini-torre { height: 96px; width: 64px; }
+.jogo-rei.tel .rd-mini-torre svg { width: 100%; height: 100%; }
+.jogo-rei.tel .rd-vai { margin: 0; font-size: 24px; }

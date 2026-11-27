@@ -243,7 +243,8 @@ function Eu({ sala, v, eu, privado: p, enviar }: PropsWifi & { eu: string; priva
         </div>
       )}
 
-      {v.fase !== 'palavras' && !sala.semTv && <BotoesHistorico v={v} lados={[o, p.lado]} />}
+      {/* sem TV também: os routers não cabem por baixo, abrem-se pelo botão */}
+      {v.fase !== 'palavras' && <BotoesHistorico v={v} lados={[o, p.lado]} />}
     </>
   );
 }
@@ -309,8 +310,8 @@ export function TelemovelWifi({ sala, v, agora, eu, privado, enviar }: PropsWifi
       {/* pausa por saída: o aviso próprio (src/ui/saidas.tsx) explica */}
       {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
       <Eu sala={sala} v={v} agora={agora} eu={eu} privado={privado} enviar={enviar} />
-      {/* sem TV, um só ecrã: os 2 routers (o que a TV mostraria) por baixo */}
-      {sala.semTv && v.ronda > 0 && (
+      {/* sem TV, a audiência vê os 2 routers (o que a TV mostraria) por baixo; os jogadores abrem-nos pelos botões 📶 */}
+      {sala.semTv && !p && v.ronda > 0 && (
         <div class="palco-tel">
           <Palco sala={sala} v={v} agora={agora} tel semRes={!!p} />
         </div>

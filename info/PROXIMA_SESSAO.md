@@ -369,9 +369,10 @@ Falta:
 - Menu TV: 1 coluna com scroll, letra maior (estilo.css .tv-lobby/.lista-jogos).
 - Montra (só dev): `npm run dev` → `localhost:5173/#/montra?jogo=<id>&n=6&semtv=0`. Joga sozinho com bots (motor de ia.test.ts) e mostra TV + 3 telemóveis em cada fase. src/montra/Montra.tsx. Usar para rever designs sem gastar tokens.
 
-## Telemóvel sem scroll (360×640) — em curso (26/11)
-- Medição: script Playwright (msedge) nas demos `#/demo-<jogo>?…&ecra=tel`; fundo do conteúdo (sem o padding do `.pag`) ≤ 600 px.
-- Antes: 35 de 123 ecrãs passavam (wifi cripto 1128, ideias investir 1243, mona revelar 1097, pirata votar 924…).
-- Feito: `src/ui/estilo.css` (`.pag:not(.tv)` gap 10/padding-top 10, `.botao.grande` mais baixo, placar compacto); wifi (históricos em popup por botão 📶, respostas numa linha), pensa, mona (placas 2 colunas, revelação compacta), ideias (investir numa linha, pitch 2 colunas), pirata (lista 2 colunas — falta medir).
-- Já cabem: wifi, pensa, mona, ideias.
-- Falta: pirata (alvo ≤ 530, o botão Identidade é fixo a ~536), maquinas (nomear, poder, nomear semtv), rei (batata, fim, refens eu=j3), semjuizo (fim, juiz papel=juiz), 5050 (sem demo), lobby/menus de `src/ui/` e `src/jogar/`.
+## Telemóvel sem scroll (360×640) — feito (27/11)
+- Regra: em 360×640 o fundo do conteúdo (sem o padding do `.pag` nem o que é fixo) ≤ 600 px; em Pirata, Máquinas e Rei acaba antes do botão fixo (Identidade / Mostrar, ~530 px).
+- Teste: `e2e/tel-scroll.spec.ts` (155 casos: todas as fases, com e sem TV, vários papéis). Lobby, menu de jogos e 5050 medidos pelo fluxo real (criar sala + bots), sem teste fixo.
+- Antes: 35 de 123 ecrãs passavam do limite (wifi cripto 1128, ideias investir 1243, mona revelar 1097, pirata votar 924, menu de jogos 1345, lobby c/ 12 927). Depois: todos cabem.
+- Como: `src/ui/estilo.css` (`.pag:not(.tv)` gap/margens menores, `.botao.grande` mais baixo, placar compacto e em 2 colunas com 7+, lobby com o boneco ao lado do nome, menu de jogos em grelha de 3); listas de jogadores em 2 colunas (pirata, maquinas, rei); o que não cabe vai para popup: `src/ui/verPopup.tsx` (`BotaoPopup`, na revelação final do Pirata e do Rei sem TV) e os históricos 📶 do Wi-Fi.
+- Perdeu-se no telemóvel: slogan e autor no investir das Ideias; a mesa das provas na revelação do Sem Juízo sem TV.
+- Testes da TV que falham sem relação com isto (falham também com o CSS antigo): `tv-scroll` « lobby da TV (vazio) » (lista de jogos com 12) e `lobby.spec` « Tornar TV ».

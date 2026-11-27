@@ -74,3 +74,15 @@
 .tv .sj-resultado-linha .sj-mesa { width: 720px; flex: none; }
 .sj-ganhos { margin: 0; text-align: center; font-size: 1.15em; }
 .jogo-semjuizo .placar li { padding: 0; }
+/* telemóvel sem scroll (360×640): votos do júri em 2 colunas */
+.sj-votos-juri { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 15px; }
+.sj-votos-juri > b { grid-column: 1 / -1; }
+/* revelação no telemóvel (sem TV): sem a mesa das provas, cena e martelos pequenos */
+.pag:not(.tv) .sj-resultado { gap: 8px; }
+.pag:not(.tv) .sj-resultado .sj-mesa { display: none; }
+.pag:not(.tv) .sj-resultado .sj-cena { max-height: 90px; }
+.pag:not(.tv) .sj-resultado .sj-folha p { margin: 2px 0 0; }
+.pag:not(.tv) .sj-carimbo { font-size: 28px; border-width: 4px; }
+.pag:not(.tv) .sj-martelos { gap: 4px 10px; font-size: 13px; }
+.pag:not(.tv) .sj-martelos > div { flex-direction: row; gap: 3px; }
+.pag:not(.tv) .sj-martelos svg { width: 24px; height: 24px; }

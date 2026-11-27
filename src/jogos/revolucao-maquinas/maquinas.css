@@ -64,3 +64,19 @@
 @keyframes rm-voa { 0%, 100% { transform: translate(-20px, 0) rotate(-8deg); } 50% { transform: translate(20px, -16px) rotate(8deg); } }
 .sem-anim .rm-nave, .sem-anim .rm-ponteiro { animation: none; transition: none; }
 @media (prefers-reduced-motion: reduce) { .rm-nave { animation: none; } .rm-ponteiro { transition: none; } }
+/* telemóvel sem scroll (360×640): lista em 2 colunas; o botão Identidade fica fixo por cima */
+.jogo-maquinas.tel .rm-frase { font-size: 20px; margin: 0 4px; }
+.jogo-maquinas.tel .rm-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0; }
+.jogo-maquinas.tel .rm-linha { padding: 4px 8px; font-size: 1em; gap: 6px; min-height: 44px; }
+.jogo-maquinas.tel .palco-tel .rm-manometro svg { height: 48px; }
+.jogo-maquinas.tel .palco-tel .rm-corpo { height: 56px; }
+.jogo-maquinas.tel .palco-tel .rm-postos.compacto { flex-wrap: nowrap; gap: 2px; padding: 22px 2px 4px; }
+.jogo-maquinas.tel .palco-tel .rm-posto { min-width: 0; flex: 1; }
+.jogo-maquinas.tel .palco-tel .rm-posto svg { width: 28px; height: 28px; }
+.jogo-maquinas.tel .rm-linha svg { width: 28px; height: 28px; }
+.jogo-maquinas.tel .rm-linha { min-height: 40px; padding: 2px 8px; }
+.jogo-maquinas.tel .topo > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.jogo-maquinas.tel .botao.grande { padding: 8px; }
+.jogo-maquinas.tel .palco-tel .rm-manometro svg { height: 40px; }
+.jogo-maquinas.tel .palco-tel .rm-corpo { height: 40px; }
+.jogo-maquinas.tel .palco-tel .rm-painel { gap: 4px; padding: 4px 8px; }
