@@ -10,7 +10,7 @@ export interface DefDuelo {
   desenhar: number; // s por criatura
   obstaculos: Obstaculos;
 }
-export const DEF_PADRAO_DUELO: DefDuelo = { tinta: 12, desenhar: 60, obstaculos: 'poucos' };
+export const DEF_PADRAO_DUELO: DefDuelo = { tinta: 15, desenhar: 60, obstaculos: 'poucos' };
 export const MIN_JOGADORES = 2;
 export const MAX_JOGADORES = 4;
 export const MIN_LIGADOS = 2;
@@ -244,15 +244,10 @@ function chega(e: VistaDuelo, c: Cria, o: Cria, min: number, max: number): boole
   return d >= min && d <= max && linhaLivre(c.casa, o.casa, tapada(e));
 }
 
-/** inimigos que pode atingir à distância com o dado Fazer algo (só o Elfo e o Dragãozinho) */
+/** inimigos que pode atingir à distância com o dado Fazer algo: todas atiram, de 2 até ao alcance (27/11, como no Necromolds) */
 export function alvosAtaque(e: VistaDuelo, c: Cria): Cria[] {
   if (c.agiu || !podeAgir(e, c)) return [];
-  return e.criaturas.filter((o) => {
-    if (o.dono === c.dono) return false;
-    if (c.tipo === 'elfo') return chega(e, c, o, 2, 3);
-    if (c.tipo === 'dragaozinho') return chega(e, c, o, 2, 2);
-    return false;
-  });
+  return e.criaturas.filter((o) => o.dono !== c.dono && chega(e, c, o, 2, CRIATURAS[c.tipo].alcance));
 }
 
 /** inimigos colados com quem pode lutar sem dado (26/11); o Elfo não luta colado */
@@ -322,7 +317,9 @@ export function dadosAtaque(e: VistaDuelo, c: Cria, alvo: Cria): number {
   if (c.tipo === 'ogre') bonus += c.ferimentos;
   if (c.furia) bonus += 2;
   if (c.maisAtaque) bonus++;
-  return Math.max(1, CRIATURAS[c.tipo].dados + Math.min(MAX_BONUS, bonus));
+  // colado usa os dados do corpo a corpo; de longe, os do tiro
+  const f = CRIATURAS[c.tipo];
+  return Math.max(1, (colados(c, alvo) ? f.dados : f.tiro) + Math.min(MAX_BONUS, bonus));
 }
 
 /** total de dados de defesa, já com os de ferimento */
@@ -533,7 +530,8 @@ function matar(s: EstadoDuelo, alvo: Cria, autor?: Cria): void {
   if (!s.criaturas.includes(alvo)) return;
   s.criaturas = s.criaturas.filter((c) => c !== alvo);
   const m = s.magos[alvo.dono];
-  if (!alvo.fantasma) m.gemas = Math.min(MAX_GEMAS, m.gemas + 1);
+  // perder uma criatura cara (5+ de tinta) dá 2 gemas, para ajudar a recuperar
+  if (!alvo.fantasma) m.gemas = Math.min(MAX_GEMAS, m.gemas + (CRIATURAS[alvo.tipo].tinta >= 5 ? 2 : 1));
   if (alvo.tipo === 'sapinho' && autor) ferir(s, autor, undefined, CRIATURAS.sapinho.marca);
   if (alvo.tipo === 'minotauro') for (const c of s.criaturas.filter((o) => o.dono !== alvo.dono && colados(o, alvo))) ferir(s, c, undefined, CRIATURAS.minotauro.marca);
   if (!s.criaturas.some((c) => c.dono === alvo.dono && !c.fantasma)) s.criaturas = s.criaturas.filter((c) => c.dono !== alvo.dono);

@@ -13,6 +13,8 @@ export const ICONES_STATUS = {
   passos: PEGADAS,
   ferimento: [['M50 5Q80 6 92 34Q99 62 78 84Q52 102 22 84Q0 62 8 34Q20 6 50 5Z', '#eadcf0', 7], ['M60 16L42 40L58 52L40 84', undefined, 8]],
   ataque: [['M92 8L92 30L50 72L30 52L70 10Z', '#e9eef2', 7], ['M18 44L56 82M37 63L14 86', undefined, 10]],
+  tiro: [['M50 6A44 44 0 1 1 49.9 6Z', '#ffe9b0', 7], ['M50 28A22 22 0 1 1 49.9 28Z', undefined, 6], ['M50 47L50 53', undefined, 10]],
+  casas: [['M50 6L88 28L88 72L50 94L12 72L12 28Z', '#e6e1d4', 7]],
   gema: [['M26 12L74 12L94 40L50 94L6 40Z', '#c9f0e4', 7], ['M6 40L94 40M34 40L50 92L66 40L50 12Z', undefined, 4]],
 } satisfies Record<string, Camada[]>;
 export type Status = keyof typeof ICONES_STATUS;
@@ -42,6 +44,7 @@ export function Carta({ criatura, ferimentos = 0, children }: { criatura: Criatu
       <div class="dr-carta-classe">{NOME_CLASSE[f.classe]}</div>
       <div class="dr-carta-status">
         <Valor s="ataque" n={f.dados} />
+        <Valor s="tiro" n={f.tiro} />
         <Valor s="defesa" n={f.defesa} />
         <Valor s="passos" n={f.passos} />
         {ferimentos > 0 && <Valor s="ferimento" n={ferimentos} />}

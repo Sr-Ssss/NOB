@@ -13,25 +13,29 @@ export interface Ficha {
   passos: number;
   dados: number;
   marca: Marca;
+  /** dados do tiro (de longe, com o dado Fazer algo); `dados` são os do corpo a corpo */
+  tiro: number;
+  /** até onde atira, em casas (de 2 até aqui; colado luta sem dado) */
+  alcance: number;
 }
 
-const f = (classe: Classe, tinta: number, defesa: number, passos: number, dados: number, marca: Marca): Ficha => ({ classe, tinta, defesa, passos, dados, marca });
+const f = (classe: Classe, tinta: number, defesa: number, passos: number, dados: number, marca: Marca, tiro: number, alcance: number): Ficha => ({ classe, tinta, defesa, passos, dados, marca, tiro, alcance });
 
 export const CRIATURAS: Record<Criatura, Ficha> = {
-  duende: f('lacaio', 2, 1, 2, 2, 'dentada'),
-  sapinho: f('lacaio', 2, 1, 3, 1, 'dentada'),
-  corvo: f('batedor', 2, 1, 4, 2, 'garras'),
-  lobo: f('batedor', 3, 2, 4, 3, 'garras'),
-  velhoPescador: f('pescador', 3, 2, 2, 2, 'anzol'),
-  mumia: f('pescador', 3, 3, 1, 2, 'ligaduras'),
-  elfo: f('arqueiro', 4, 1, 3, 3, 'seta'),
-  dragaozinho: f('arqueiro', 4, 2, 2, 3, 'queimado'),
-  golem: f('guardiao', 4, 4, 2, 2, 'amolgadela'),
-  carvalho: f('guardiao', 4, 5, 1, 2, 'amolgadela'),
-  cavaleiro: f('duelista', 5, 4, 2, 4, 'corte'),
-  raposa: f('duelista', 4, 2, 3, 5, 'corte'),
-  minotauro: f('barbaro', 6, 4, 3, 6, 'soco'),
-  ogre: f('barbaro', 5, 5, 2, 3, 'soco'),
+  duende: f('lacaio', 2, 1, 2, 2, 'dentada', 1, 2),
+  sapinho: f('lacaio', 2, 1, 2, 1, 'dentada', 1, 2),
+  corvo: f('batedor', 2, 1, 3, 2, 'garras', 1, 2),
+  lobo: f('batedor', 3, 2, 4, 4, 'garras', 1, 2),
+  velhoPescador: f('pescador', 3, 2, 2, 3, 'anzol', 1, 3),
+  mumia: f('pescador', 3, 3, 1, 3, 'ligaduras', 1, 2),
+  elfo: f('arqueiro', 4, 2, 3, 1, 'seta', 3, 3),
+  dragaozinho: f('arqueiro', 5, 3, 2, 4, 'queimado', 3, 3),
+  golem: f('guardiao', 4, 3, 2, 3, 'amolgadela', 1, 2),
+  carvalho: f('guardiao', 4, 4, 1, 2, 'amolgadela', 1, 2),
+  cavaleiro: f('duelista', 5, 4, 2, 4, 'corte', 1, 2),
+  raposa: f('duelista', 4, 2, 3, 5, 'corte', 2, 2),
+  minotauro: f('barbaro', 6, 4, 3, 6, 'soco', 2, 2),
+  ogre: f('barbaro', 5, 4, 2, 4, 'soco', 2, 2),
 };
 
 export type Poder = 'empurrao' | 'escudo' | 'retoque' | 'maisAtaque' | 'tempestade' | 'copia' | 'sono' | 'furia' | 'muralha' | 'troca';

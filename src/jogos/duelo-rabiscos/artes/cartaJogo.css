@@ -37,6 +37,11 @@
 .cj-ranhura { --r: #8a8794; width: 50px; height: 46px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 2.5px dashed var(--r); background: rgba(0, 0, 0, 0.18); }
 .cj-r-andar { --r: #7bd36b; }
 .cj-r-atacar { --r: #ffcc33; }
+/* casas que anda / até onde atira: hexágono e ×n na ranhura, por baixo do dado fantasma */
+.cj-ranhura { position: relative; }
+.cj-casas { position: absolute; bottom: 0; left: 50%; width: 21px; height: 21px; margin-left: -10.5px; display: grid; place-items: center; pointer-events: none; }
+.cj-casas > * { grid-area: 1 / 1; }
+.cj-casas b { color: #2a2733; font-size: 12px; font-weight: 800; line-height: 1; }
 .cj-r-especial { --r: #b98cf0; }
 .cj-fantasma { opacity: 0.4; filter: grayscale(0.5); line-height: 0; }
 .cj-acesa { border-style: solid; background: color-mix(in srgb, var(--r) 30%, #15131b); box-shadow: 0 0 0 3px color-mix(in srgb, var(--r) 70%, transparent); animation: cj-pisca 0.9s ease-in-out infinite alternate; cursor: pointer; }
@@ -47,3 +52,4 @@
 .cj-luta { border-style: solid; background: color-mix(in srgb, #ff5a4a 35%, #15131b); box-shadow: 0 0 0 3px rgba(255, 90, 74, 0.7); animation: cj-pisca 0.9s ease-in-out infinite alternate; cursor: pointer; --r: #ff5a4a; }
 @keyframes cj-pisca { to { box-shadow: 0 0 0 6px color-mix(in srgb, var(--r) 25%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .cj-acesa { animation: none; } }
+.cj-ranhura:has(.cj-casas) .cj-fantasma { margin-bottom: 15px; }

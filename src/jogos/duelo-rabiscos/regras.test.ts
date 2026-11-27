@@ -24,7 +24,7 @@ import {
   type EstadoDuelo,
   type Face,
 } from './regras';
-import { MAX_BYTES_DESENHO, foraDuelo, importanteDuelo, limparDesenho, sairDuelo } from './regras';
+import { DEF_PADRAO_DUELO, MAX_BYTES_DESENHO, foraDuelo, importanteDuelo, limparDesenho, sairDuelo } from './regras';
 import { LADO, N_OBSTACULOS, distancia, emLinha, ligado, linhaLivre, novoTabuleiro, vizinhas } from './tabuleiro';
 
 const T = 1_000;
@@ -126,7 +126,7 @@ describe('preparação', () => {
     e = ap(e, { tipo: 'dr_desenho', id: 'j1', criatura: 'lobo', tracos: [], pronto: true });
     expect(e.fase).toBe('rodar');
     // tinta que sobra + 1 da volta (lê os custos das fichas)
-    expect([e.magos.j1.gemas, e.magos.j2.gemas]).toEqual([12 - 2 * CRIATURAS.golem.tinta - CRIATURAS.lobo.tinta + 1, 12 - 2 * CRIATURAS.ogre.tinta + 1]);
+    expect([e.magos.j1.gemas, e.magos.j2.gemas]).toEqual([DEF_PADRAO_DUELO.tinta - 2 * CRIATURAS.golem.tinta - CRIATURAS.lobo.tinta + 1, DEF_PADRAO_DUELO.tinta - 2 * CRIATURAS.ogre.tinta + 1]);
     expect(e.comecou).toBe('j2');
     expect(new Set(e.criaturas.map((x) => x.casa)).size).toBe(5);
     expect(e.magos.j1.dados).toHaveLength(4);
@@ -324,12 +324,12 @@ describe('especiais das criaturas', () => {
     e = ap(e, { tipo: 'dr_especial', id: 'j1', i: 0, criatura: 1, alvo: 2 });
     expect([c(e, 2).ferimentos, e.magos.j1.gemas]).toEqual([1, 1]);
   });
-  it('Elfo atira a 2–3; Dragãozinho luta colado ou a 2', () => {
+  it('Elfo atira a 2–3; Dragãozinho luta colado ou a 2–3', () => {
     const e = cena([['j1', 'elfo', '0,0'], ['j1', 'dragaozinho', '0,2'], ['j2', 'ogre', '1,0'], ['j2', 'ogre', '3,0'], ['j2', 'ogre', '1,2'], ['j2', 'ogre', '2,3']]);
     expect(alvosAtaque(e, c(e, 1)).map((x) => x.id)).toEqual(e.criaturas.filter((x) => x.dono === 'j2' && [2, 3].includes(distancia(x.casa, '0,0'))).map((x) => x.id));
     expect(alvosLuta(e, c(e, 2)).map((x) => x.id)).toEqual([5]);
     expect(alvosLuta(e, c(e, 1))).toEqual([]);
-    expect(alvosAtaque(e, c(e, 2)).every((x) => distancia(x.casa, '0,2') === 2)).toBe(true);
+    expect(alvosAtaque(e, c(e, 2)).every((x) => [2, 3].includes(distancia(x.casa, '0,2')))).toBe(true);
     const m = cena([['j1', 'elfo', '0,0'], ['j2', 'ogre', '3,0']]);
     m.muralhas = [{ casa: '1,0', ate: 9 }];
     expect(alvosAtaque(m, c(m, 1))).toEqual([]);

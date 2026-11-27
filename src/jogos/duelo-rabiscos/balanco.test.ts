@@ -46,7 +46,7 @@ it.skipIf(!process.env.N)('balanço', () => {
   };
   const voltas: Record<number, number[]> = {};
   for (let s = 1; s <= N; s++) {
-    const tinta = [6, 12, 20][s % 3];
+    const tinta = [6, 15, 20][s % 3];
     const r = sorteDe(s * 7919);
     let e = novoDuelo(['b0', 'b1'], { tinta, obstaculos: (['nenhum', 'poucos', 'muitos'] as const)[(s >> 2) % 3] }, 1_000, [], s);
     const roupas = [...ROUPAS].sort(() => r() - 0.5);

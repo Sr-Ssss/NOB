@@ -139,10 +139,10 @@ export function CartaJogo({
             <IconeClasse classe={f.classe} tam={18} />
           </span>
         </div>
-        <div class="cj-stats" aria-label={`ataque ${f.dados}, defesa ${f.defesa}, passos ${f.passos}`}>
+        <div class="cj-stats" aria-label={`ataque ${f.dados}, tiro ${f.tiro}, defesa ${f.defesa}`}>
           <Stat s="ataque" n={f.dados} />
+          <Stat s="tiro" n={f.tiro} />
           <Stat s="defesa" n={f.defesa} />
-          <Stat s="passos" n={f.passos} />
         </div>
         {/* custo em tinta: no canto de cima à esquerda, numa gota */}
         <span class="cj-tinta" aria-label={`custa ${f.tinta} de tinta`}>
@@ -176,6 +176,12 @@ export function CartaJogo({
                 aoTocar?.(r);
               }}
             >
+              {r !== 'especial' && e !== 'usada' && e !== 'luta' && (
+                <span class="cj-casas" aria-label={r === 'andar' ? `anda ${f.passos} casas` : `atira até ${f.alcance} casas`}>
+                  <Arte c={ICONES_STATUS.casas} tam={21} />
+                  <b>{r === 'andar' ? f.passos : f.alcance}</b>
+                </span>
+              )}
               {e === 'luta' ? <Dado face="ataque2" tam={36} /> : e === 'usada' ? <Dado face={FACE[r]} tam={34} /> : <span class="cj-fantasma"><Dado face={FACE[r]} tam={30} /></span>}
             </button>
           );
