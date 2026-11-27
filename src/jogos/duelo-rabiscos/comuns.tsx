@@ -85,7 +85,8 @@ export function Luta({
   rolar = true,
   caiu,
   marca,
-}: Omit<PropsDuelo, 'agora'> & { desenhos: Desenhos; b: Batalha; de: Quem; alvo: Quem; tam: number; eu?: string; aoTocar?: (i: number) => void; rolar?: boolean; caiu?: [boolean, boolean]; marca?: Marca }) {
+  selo,
+}: Omit<PropsDuelo, 'agora'> & { desenhos: Desenhos; b: Batalha; de: Quem; alvo: Quem; tam: number; eu?: string; aoTocar?: (i: number) => void; rolar?: boolean; caiu?: [boolean, boolean]; marca?: Marca; selo?: Selo }) {
   // `caiu` (só na batalha acabada): quem caiu fica cinzento, mais pequeno e com a marca do golpe; quem ficou de pé salta
   const lado = (q: Quem, ataca: boolean) => {
     const morreu = caiu?.[ataca ? 0 : 1];
@@ -95,6 +96,7 @@ export function Luta({
       meu ? (
         <button key={i} class="dr-bt-dado" aria-label={TXT.rodarDado(NOME_DADO[f])} onClick={() => aoTocar(i)}>
           <DadoRola face={f} tam={tam} rolar={rolar} />
+          {selo && <SeloDado selo={selo} />}
         </button>
       ) : (
         <span key={i} role="img" aria-label={NOME_DADO[f]}>
@@ -129,8 +131,18 @@ export function Luta({
   );
 }
 
+/** o que custa tocar num dado para o rodar outra vez: grátis (setinha) ou 1 gema */
+export type Selo = 'gratis' | 'gema';
+export function SeloDado({ selo }: { selo: Selo }) {
+  return (
+    <span class={'dr-selo ' + selo} aria-hidden="true">
+      {selo === 'gema' ? <Gemas n={1} tam={14} /> : '↻'}
+    </span>
+  );
+}
+
 /** a batalha que está a acontecer, ou a última (com o resultado e a marca no golpe) */
-export function BatalhaOuUltima(p: Omit<PropsDuelo, 'agora'> & { desenhos: Desenhos; tam: number; eu?: string; aoTocar?: (i: number) => void }) {
+export function BatalhaOuUltima(p: Omit<PropsDuelo, 'agora'> & { desenhos: Desenhos; tam: number; eu?: string; aoTocar?: (i: number) => void; selo?: Selo }) {
   const { v } = p;
   if (v.fase === 'batalha' && v.batalha) {
     const de = cria(v, v.batalha.de);

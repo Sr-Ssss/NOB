@@ -58,6 +58,50 @@
 .dr-fumo circle { fill: #e4e0d6; stroke: #2b2a33; stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: dr-fumo 1.4s ease-out both; }
 @keyframes dr-fumo { 0% { transform: scale(0.2); opacity: 0; } 25% { transform: scale(1.1); opacity: 1; } 100% { transform: translateY(-60%) scale(1.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .dr-fumo circle { animation: none; opacity: 0.8; } }
+/* a tua vez: bandeja dos dados com a bolinha para largar; a casa marcada pulsa até ao 2.º toque */
+.dr-bandeja { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.dr-largar { width: 52px; height: 52px; border-radius: 50%; border: 3px dashed var(--tinta, #2b2a33); background: #fffdf2; font-size: 24px; display: grid; place-items: center; animation: cj-pisca 0.9s ease-in-out infinite alternate; }
+.dr-largar.gema { border-color: #2fa88f; background: #e6fbf4; }
+.dr-vez2 .dr-casa[aria-pressed='true'] path { animation: dr-marca 0.7s ease-in-out infinite alternate; }
+@keyframes dr-marca { to { opacity: 0.45; } }
+.dr-fantasma-peca { opacity: 0.55; pointer-events: none; animation: dr-marca 0.7s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .dr-fantasma-peca, .dr-vez2 .dr-casa[aria-pressed='true'] path, .dr-largar { animation: none; } }
+/* selo no dado: tocar roda-o outra vez (setinha = grátis; gema = custa 1) */
+.dr-bt-dado { position: relative; }
+.dr-selo { position: absolute; right: -6px; bottom: -6px; min-width: 22px; height: 22px; padding: 0 2px; display: grid; place-items: center; border-radius: 11px; background: #fffdf2; border: 2px solid #2b2a33; font-size: 15px; font-weight: 800; line-height: 1; color: #2b2a33; }
+.dr-selo.gema { background: #e6fbf4; }
+.dr-ok { font-size: 34px; line-height: 1; padding-block: 8px; }
+.dr-espera { font-size: 34px; text-align: center; margin: 8px 0 0; }
+/* telemóvel: tudo à vista sem scroll num ecrã normal (≈ 360×640 sem contar a barra do anúncio) */
+.pag.jogo-duelo:not(.tv) { gap: 8px; padding-top: 10px; }
+.dr-topo-tel { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dr-topo-tel .dr-faixa { justify-content: flex-start; text-align: left; font-size: 15px; }
+.dr-topo-tel .dr-rivais { margin: 0; }
+.dr-topo-tel .dr-perfil svg { width: 40px; height: 40px; }
+.dr-vez2 { gap: 8px; }
+.dr-vez2 .dr-mesa-tel .dr-colmeia, .dr-vez2 .dr-mesa-tel.cima .dr-colmeia { max-height: 24svh; }
+.dr-vez2 .dr-bt-dado svg { width: 44px; height: 44px; }
+.dr-vez2 .dr-largar { width: 44px; height: 44px; }
+.dr-poderes.compacto { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.dr-poderes.compacto .dr-poder { flex-direction: row; align-items: center; min-height: 0; padding: 4px 10px; border-radius: 999px; font-size: 14px; font-weight: 800; }
+.dr-armado { background: #ff7a2f; animation: cj-pisca 0.6s ease-in-out infinite alternate; }
+/* escolher o exército: cartas novas em ponto pequeno, barra de tinta e vagas das classes */
+.dr-mini-carta { position: relative; width: 140px; height: 210px; margin: 0 auto; }
+.dr-mini-carta > .cj { transform: scale(0.636); transform-origin: 0 0; position: absolute; left: 0; top: 0; }
+.dr-quantas { position: absolute; right: -6px; top: -6px; z-index: 3; min-width: 34px; padding: 2px 6px; border-radius: 999px; background: #ff7a2f; color: #fff; font-size: 18px; text-align: center; border: 2px solid #fff; }
+.dr-tinta-barra { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.dr-tinta-fundo { flex: 1; height: 12px; border-radius: 6px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+.dr-tinta-fundo > span { display: block; height: 100%; background: #b9c4f5; transition: width 0.2s; }
+.dr-classes { display: flex; gap: 4px; }
+.dr-classe-vaga { width: 28px; height: 28px; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, 0.6); display: grid; place-items: center; background: rgba(255, 255, 255, 0.1); }
+.dr-classe-vaga:has(svg) { border-style: solid; background: #fffdf2; }
+/* 1.ª volta: mãozinha a apontar o próximo toque */
+.dr-dica { position: relative; }
+/* sem TV, o tabuleiro vai para cima (como antes do invólucro da mãozinha) */
+.dr-mesa-caixa:has(> .dr-mesa-tel.cima) { order: -1; position: sticky; top: 0; z-index: 3; }
+.dr-dica::after { content: '👆'; position: absolute; right: 6px; bottom: -6px; font-size: 34px; z-index: 6; pointer-events: none; animation: dr-mao 0.9s ease-in-out infinite; }
+@keyframes dr-mao { 50% { transform: translateY(-10px); } }
+@media (prefers-reduced-motion: reduce) { .dr-dica::after { animation: none; } }
 .dr-so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .dr-resultado p { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 0; font-weight: 800; }
 .dr-placar li { display: flex; align-items: center; gap: 12px; }

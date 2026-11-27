@@ -140,11 +140,15 @@ describe('preparação', () => {
 });
 
 describe('volta e vez', () => {
-  it('relança 1 dado de ação por volta', () => {
+  it('relançar dados de ação: o 1.º é grátis, os outros custam 1 gema', () => {
     const e = preparar([{ duende: 6 }, { duende: 6 }]);
+    e.magos.j1.gemas = 0;
     const f = ap(e, { tipo: 'dr_rodar', id: 'j1', i: 0 }, () => 5);
     expect(f.magos.j1.dados[0]).toBe('coringa');
     expect(ap(f, { tipo: 'dr_rodar', id: 'j1', i: 1 })).toBe(f);
+    f.magos.j1.gemas = 2;
+    const g = ap(f, { tipo: 'dr_rodar', id: 'j1', i: 1 }, () => 5);
+    expect([g.magos.j1.dados[1], g.magos.j1.gemas]).toEqual(['coringa', 1]);
   });
   it('uma ação de cada vez, a alternar; cada criatura anda 1 vez por volta', () => {
     let e = cena([['j1', 'ogre', '0,0'], ['j2', 'ogre', '7,7']]);
@@ -618,10 +622,10 @@ describe('face de ferimento nos dados de batalha (26/11)', () => {
     const f = ap(e, { tipo: 'dr_atacar', id: 'j1', i: 0, criatura: 1, alvo: 2 }, marcados(2, 0, 0, 2));
     expect([c(f, 1).ferimentos, c(f, 2).ferimentos]).toEqual([0, 1]);
   });
-  it('corpo a corpo: as faces de ferimento de quem perdeu ferem quem ganhou', () => {
+  it('o dado de defesa não fere: só quem ataca deixa feridas', () => {
     const e = cena([['j1', 'cavaleiro', '0,0'], ['j2', 'golem', '1,0'], ['j2', 'ogre', '7,7']]);
     const f = ap(e, { tipo: 'dr_lutar', id: 'j1', criatura: 1, alvo: 2 }, marcados(5, 5, 0, 0, 0, 2, 2, 0));
-    expect([cria(f, 2), c(f, 1).ferimentos]).toEqual([undefined, 2]);
+    expect([cria(f, 2), c(f, 1).ferimentos]).toEqual([undefined, 0]);
   });
 });
 

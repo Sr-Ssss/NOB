@@ -36,6 +36,7 @@ export const DADOS = {
   ataqueGema: [ATAQUE, ['M36 30L64 30L78 47L50 78L22 47Z', '#c9f0e4', 6], ['M22 47L78 47', undefined, 4]],
   defesaVazio: [DEFESA, VAZIO],
   defesaGema: [DEFESA, ['M36 30L64 30L78 47L50 78L22 47Z', '#c9f0e4', 6], ['M22 47L78 47', undefined, 4]],
+  // (já não sai: a defesa só bloqueia)
   defesaFere: [DEFESA, ['M50 20Q72 46 72 60Q70 80 50 80Q30 80 28 60Q28 46 50 20Z', '#e8505b', 5], ['M56 40L44 56L56 62L46 74', '#fff', 4]],
   defesa1: [DEFESA, ['M50 22Q63 29 76 30Q77 61 50 78Q23 61 24 30Q37 29 50 22Z', '#8fbce8', 5], ['M36 49L47 60L65 38', undefined, 8]],
   feridaEspada: [...FERIDO, ['M66 26L70 38L46 66L36 57L60 30Z', '#ffd9a8', 5], ['M31 52L51 70M40 61L28 75', undefined, 6]],

@@ -80,6 +80,8 @@ export const TXT: typeof T.TXT_PT = {
   cheio: 'Drawing full: undo a stroke to continue.',
   vazio: 'No drawing? The outline counts.',
   acabei: 'Done',
+  proxima: 'Next',
+  acabeiOutraVez: 'Tap again to finish',
   espera: 'Done! Waiting for the other wizards.',
   soVer: 'This duel is full: watch the match.',
   colmeia: 'Hive',

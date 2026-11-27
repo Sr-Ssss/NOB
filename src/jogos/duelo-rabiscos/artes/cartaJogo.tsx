@@ -12,7 +12,7 @@ import './cartaJogo.css';
 export type EstiloCarta = 'classe';
 export type Ranhura = 'andar' | 'atacar' | 'especial';
 /** livre; acesa = o dado escolhido encaixa aqui; usada = já fez isto nesta volta (o dado fica lá dentro) */
-export type EstadoRanhura = 'livre' | 'acesa' | 'usada' | 'fechada';
+export type EstadoRanhura = 'livre' | 'acesa' | 'usada' | 'fechada' | 'luta';
 
 /** cores fortes de cada classe (escolha do utilizador, 26/11: "cor da classe", mais vibrante) */
 export const COR_CLASSE: Record<Classe, string> = {
@@ -170,13 +170,13 @@ export function CartaJogo({
               key={r}
               class={`cj-ranhura cj-r-${r} cj-${e}`}
               aria-label={NOME_MODO[r]}
-              disabled={e !== 'acesa' || !aoTocar}
+              disabled={(e !== 'acesa' && e !== 'luta') || !aoTocar}
               onClick={(ev) => {
                 ev.stopPropagation();
                 aoTocar?.(r);
               }}
             >
-              {e === 'usada' ? <Dado face={FACE[r]} tam={34} /> : <span class="cj-fantasma"><Dado face={FACE[r]} tam={30} /></span>}
+              {e === 'luta' ? <Dado face="ataque2" tam={36} /> : e === 'usada' ? <Dado face={FACE[r]} tam={34} /> : <span class="cj-fantasma"><Dado face={FACE[r]} tam={30} /></span>}
             </button>
           );
         })}

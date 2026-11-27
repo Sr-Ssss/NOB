@@ -88,6 +88,8 @@ export const TXT_PT = {
   cheio: 'Desenho cheio: desfaz um risco para continuar.',
   vazio: 'Sem desenho, vale o molde.',
   acabei: 'Acabei',
+  proxima: 'Próxima',
+  acabeiOutraVez: 'Toca outra vez para acabar',
   espera: 'Feito! À espera dos outros magos.',
   soVer: 'Este duelo já está cheio: vê a partida.',
   colmeia: 'Colmeia',

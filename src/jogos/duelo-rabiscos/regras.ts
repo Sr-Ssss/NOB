@@ -39,7 +39,8 @@ export const FERE = 3;
 /** face de gema dos dados de batalha (26/11): não conta como risco/bloqueio; dá 1 gema a quem a tirou */
 export const GEMA = 4;
 const ATAQUE = [0, GEMA, FERE, 1, 1, 2];
-const DEFESA = [0, GEMA, FERE, 1, 1, 1];
+// a defesa só bloqueia: sem face de ferimento (26/11)
+const DEFESA = [0, GEMA, 0, 1, 1, 1];
 /** riscos (ou bloqueios) de uma lista de dados normais */
 export const acertos = (l: number[]): number => l.reduce((t, v) => t + (v === FERE || v === GEMA ? 0 : v), 0);
 const gemasDe = (l: number[]): number => l.filter((v) => v === GEMA).length;
@@ -712,7 +713,9 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
       if (s.acabaram.length === s.participantes.length) comecar(s, agora, rnd);
       return true;
     case 'dr_rodar':
-      if (s.fase !== 'rodar' || m.relancou || m.pronto || !m.dados[a.i]) return false;
+      // o 1.º é grátis; os seguintes custam 1 gema cada (26/11)
+      if (s.fase !== 'rodar' || m.pronto || !m.dados[a.i] || (m.relancou && m.gemas < 1)) return false;
+      if (m.relancou) m.gemas--;
       m.dados[a.i] = FACES[dar(s, rnd)];
       m.relancou = true;
       return true;

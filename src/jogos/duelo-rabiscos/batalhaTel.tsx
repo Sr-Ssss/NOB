@@ -5,7 +5,7 @@ import { nomeDe } from '../5050/tv';
 import { Dado, DadoRola } from './artes/dados';
 import type { EstadoHex } from './artes/tabuleiro';
 import { CORES_MAGO, ColmeiaDuelo, Retrato, indice } from './colmeia';
-import { BatalhaOuUltima, Classificacao, Gemas, NomeMago, faixa, useBatalhaNova, useEsperaBatalha, type PropsDuelo } from './comuns';
+import { BatalhaOuUltima, Classificacao, Gemas, NomeMago, SeloDado, faixa, useBatalhaNova, useEsperaBatalha, type PropsDuelo } from './comuns';
 import { Baralho } from './baralho';
 import { EfeitosHtml, efeitosTexto } from './artes/efeitos';
 import { CartaJogo, type EstadoRanhura, type Ranhura } from './artes/cartaJogo';
@@ -18,7 +18,7 @@ import { CUSTO, MAGOS_PODERES, type Poder } from './criaturas';
 import { acaoModo, faceAcao, modos, motivoPoder, opcoesModo, passoPoder, poderCompleto, tocarPoder, type Modo, type Opcoes } from './jogadas';
 import { casasLobo, cria, foraDuelo, podeRelancar, type AlvoPoder, type Cria, type Desenhos } from './regras';
 import type { Casa } from './tabuleiro';
-import { MOTIVO_PODER, NOME_FACE, NOME_MODO, TEXTO_CRIATURA, TEXTO_PODER, TXT } from './textos';
+import { NOME_FACE, TEXTO_CRIATURA, TEXTO_PODER, TXT } from './textos';
 
 type Enviar = (a: AcaoSala) => void;
 export type PropsBatalha = PropsDuelo & { eu: string; desenhos: Desenhos; enviar: Enviar };
@@ -32,11 +32,11 @@ function acender(v: PropsDuelo['v'], o: Opcoes): Map<Casa, EstadoHex> {
 }
 
 /** o tabuleiro do telemóvel: zoom com dois dedos; sem TV vai para cima do painel e fica preso ao topo */
-function Mesa({ v, sala, desenhos, acesas, marcadas, aoTocar }: Pick<PropsBatalha, 'v' | 'sala' | 'desenhos'> & { acesas?: Map<Casa, EstadoHex>; marcadas?: Casa[]; aoTocar?: (c: Casa) => void }) {
+function Mesa({ v, sala, desenhos, acesas, marcadas, aoTocar, fantasma }: Pick<PropsBatalha, 'v' | 'sala' | 'desenhos'> & { acesas?: Map<Casa, EstadoHex>; marcadas?: Casa[]; aoTocar?: (c: Casa) => void; fantasma?: { c: Cria; casa: Casa } }) {
   return (
     <div class={'dr-mesa-tel' + (sala.semTv ? ' cima' : '')}>
       <Zoom>
-        <ColmeiaDuelo v={v} desenhos={desenhos} nome={(id) => nomeDe(sala, id)} acesas={acesas} marcadas={marcadas} aoTocar={aoTocar} />
+        <ColmeiaDuelo v={v} desenhos={desenhos} nome={(id) => nomeDe(sala, id)} acesas={acesas} marcadas={marcadas} aoTocar={aoTocar} fantasma={fantasma} />
       </Zoom>
     </div>
   );
@@ -73,26 +73,26 @@ function Rivais({ v, sala, eu }: Pick<PropsBatalha, 'v' | 'sala' | 'eu'>) {
 }
 
 /** as ranhuras da carta: o dado fica na da ação já feita nesta volta; acende-se a que o dado escolhido pode usar */
-function ranhurasDe(c: Cria, podem: Modo[] = []): Partial<Record<Ranhura, EstadoRanhura>> {
+function ranhurasDe(c: Cria, podem: Modo[] = [], lutaSemDado = false): Partial<Record<Ranhura, EstadoRanhura>> {
   const r: Partial<Record<Ranhura, EstadoRanhura>> = {};
   if (c.andou) r.andar = 'usada';
   // o especial conta como o ataque da volta
   if (c.agiu) Object.assign(r, { atacar: 'usada', especial: 'fechada' });
   for (const m of podem) {
     const k: Ranhura = m === 'lutar' ? 'atacar' : m;
-    if (!r[k]) r[k] = 'acesa';
+    if (!r[k]) r[k] = m === 'lutar' && lutaSemDado ? 'luta' : 'acesa';
   }
   return r;
 }
 
 /** as tuas criaturas como cartas (com o teu desenho), para o baralho */
-function cartaDe(c: Cria, desenhos: Desenhos, apagada = false, podem: Modo[] = [], aoTocar?: (r: Ranhura) => void) {
+function cartaDe(c: Cria, desenhos: Desenhos, apagada = false, podem: Modo[] = [], aoTocar?: (r: Ranhura) => void, lutaSemDado = false) {
   return {
     id: c.id,
     apagada,
     rotulo: `${TEXTO_CRIATURA[c.tipo].nome}${c.ferimentos ? ', ' + TXT.ferimentos(c.ferimentos) : ''} ${efeitosTexto(c)}`,
     carta: (
-      <CartaJogo criatura={c.tipo} estilo="classe" ferimentos={c.ferimentos} ranhuras={ranhurasDe(c, podem)} aoTocar={aoTocar} efeitos={<EfeitosHtml c={c} tam={16} class="cj-efeitos" />}>
+      <CartaJogo criatura={c.tipo} estilo="classe" ferimentos={c.ferimentos} ranhuras={ranhurasDe(c, podem, lutaSemDado)} aoTocar={aoTocar} efeitos={<EfeitosHtml c={c} tam={16} class="cj-efeitos" />}>
         <Retrato criatura={c.tipo} tracos={desenhos[c.dono]?.[c.tipo]} tam={150} />
       </CartaJogo>
     ),
@@ -104,19 +104,28 @@ function Rodar({ v, sala, eu, desenhos, enviar }: PropsBatalha) {
   return (
     <div class="cartao dr-bloco">
       {sala.semTv && <Mesa v={v} sala={sala} desenhos={desenhos} />}
-      <h2>{TXT.rodar}</h2>
-      <div class="dr-dados">
+      <div class="dr-bandeja">
         {m.dados.map((f, i) => (
-          <button key={i} class="dr-bt-dado" disabled={m.relancou || m.pronto} aria-label={TXT.rodarDado(NOME_FACE[f])} onClick={() => jogo(enviar, { tipo: 'dr_rodar', i })}>
+          <button
+            key={i}
+            class="dr-bt-dado"
+            disabled={m.pronto || (m.relancou && m.gemas < 1)}
+            aria-label={TXT.rodarDado(NOME_FACE[f])}
+            onClick={() => jogo(enviar, { tipo: 'dr_rodar', i })}
+          >
             <DadoRola face={faceAcao(f)} tam={60} />
-            <small>{NOME_FACE[f]}</small>
+            {!m.pronto && <SeloDado selo={m.relancou ? 'gema' : 'gratis'} />}
           </button>
         ))}
+        <Gemas n={m.gemas} />
       </div>
-      <p class="mini">{m.pronto ? TXT.aEspera : m.relancou ? TXT.rodou : TXT.rodarAjuda}</p>
-      {!m.pronto && (
-        <button class="botao grande" onClick={() => jogo(enviar, { tipo: 'dr_pronto' })}>
-          {TXT.ficoAssim}
+      {m.pronto ? (
+        <p class="dr-espera" role="status" aria-label={TXT.aEspera}>
+          ⏳
+        </p>
+      ) : (
+        <button class="botao grande dr-ok" aria-label={TXT.ficoAssim} onClick={() => jogo(enviar, { tipo: 'dr_pronto' })}>
+          ✓
         </button>
       )}
     </div>
@@ -156,32 +165,46 @@ function UsarPoder({ poder, fechar, ...p }: PropsBatalha & { poder: Poder; fecha
   );
 }
 
+/**
+ * A tua vez (26/11): 2 toques e sem texto.
+ * Dado → as ranhuras onde encaixa acendem → tocar numa → as casas acendem → tocar numa casa marca-a (fantasma a pulsar)
+ * → tocar outra vez na mesma faz a jogada. Lutar colado: espadas cruzadas na carta, sem dado.
+ * Trocar o dado: bolinha de gema (Habilidade/Fazer algo) ou caixote (Andar/Coringa) ao lado dos dados.
+ */
 function Vez(p: PropsBatalha) {
   const { v, sala, eu, desenhos, enviar } = p;
   const m = v.magos[eu];
   const minhas = v.criaturas.filter((c) => c.dono === eu);
   const [dado, setDado] = useState<number | null>(null);
   const [qual, setQual] = useState<number | null>(null);
-  const [querModo, setModo] = useState<Modo | null>(null);
+  const [modo, setModo] = useState<Modo | null>(null);
   const [casa, setCasa] = useState<Casa | null>(null);
   const [poder, setPoder] = useState<Poder | null>(null);
   if (poder) return <UsarPoder {...p} poder={poder} fechar={() => setPoder(null)} />;
   const face = dado === null ? undefined : m.dados[dado];
   const c = qual === null ? undefined : cria(v, qual);
-  const l = c ? modos(v, c, face) : [];
-  const modo = querModo && l.includes(querModo) ? querModo : l[0];
   const o = c && modo ? opcoesModo(v, c, modo) : { casas: [], alvos: [] };
   const acesas = acender(v, o);
-  const alvo = v.criaturas.find((x) => x.casa === casa && o.alvos.includes(x.id))?.id;
-  const algumServe = minhas.some((x) => modos(v, x, face).length > 0);
+  const escolher = (x: Cria, r: Ranhura) => {
+    const l = modos(v, x, face);
+    setQual(x.id);
+    setModo(r === 'atacar' && l.includes('lutar') && (!face || !l.includes('atacar')) ? 'lutar' : r);
+    setCasa(null);
+  };
+  const tocar = (k: Casa) => {
+    if (!c || !modo || !acesas.has(k)) return;
+    // 1.º toque marca (fantasma); 2.º toque na mesma casa joga
+    if (casa !== k) return setCasa(k);
+    const alvo = v.criaturas.find((x) => x.casa === k && o.alvos.includes(x.id))?.id;
+    jogo(enviar, acaoModo(modo, dado ?? 0, c.id, k, alvo));
+  };
+  const largaGema = face === 'habilidade' || face === 'fazer';
+  // na 1.ª volta, uma mãozinha aponta para o próximo toque (dado → carta → tabuleiro)
+  const dica = v.volta === 1 ? (!face && !qual ? 'dados' : !modo ? 'cartas' : 'mesa') : '';
   return (
     <>
-      <div class="cartao dr-bloco">
-        <h2>
-          {TXT.minhaVez} <Gemas n={m.gemas} />
-        </h2>
-        <b>{TXT.passoDado}</b>
-        <div class="dr-dados">
+      <div class="cartao dr-bloco dr-vez2">
+        <div class={'dr-bandeja' + (dica === 'dados' ? ' dr-dica' : '')}>
           {m.dados.map((f, i) => (
             <button
               key={i}
@@ -189,82 +212,55 @@ function Vez(p: PropsBatalha) {
               aria-pressed={i === dado}
               aria-label={NOME_FACE[f]}
               onClick={() => {
-                setDado(i);
+                setDado(i === dado ? null : i);
+                setQual(null);
+                setModo(null);
                 setCasa(null);
               }}
             >
-              <Dado face={faceAcao(f)} tam={56} />
-              <small>{NOME_FACE[f]}</small>
+              <Dado face={faceAcao(f)} tam={52} />
+            </button>
+          ))}
+          {face && (
+            <button class={'dr-largar' + (largaGema ? ' gema' : '')} aria-label={largaGema ? TXT.passarGema : TXT.passar} onClick={() => jogo(enviar, { tipo: 'dr_passar', i: dado })}>
+              {largaGema ? <Gemas n={1} tam={26} /> : <span aria-hidden="true">🗑️</span>}
+            </button>
+          )}
+          <Gemas n={m.gemas} />
+        </div>
+        {/* poderes do mago: pequenos, logo por baixo dos dados (tudo cabe no ecrã sem scroll) */}
+        <div class="dr-poderes compacto" role="group" aria-label={TXT.poderes}>
+          {MAGOS_PODERES[m.roupa!].map((x) => (
+            <button key={x} class="dr-poder" disabled={motivoPoder(v, eu, x) !== null} title={TEXTO_PODER[x].efeito} onClick={() => setPoder(x)}>
+              {TEXTO_PODER[x].nome} <Gemas n={CUSTO[x]} tam={16} />
             </button>
           ))}
         </div>
-        {(face || algumServe) && (
-          <>
-            <b>{face ? TXT.passoCriatura : TXT.lutarSemDado}</b>
-            {!algumServe && <p>{TXT.semJogada}</p>}
-            <Baralho
-              cartas={minhas.map((x) =>
-                cartaDe(x, desenhos, !modos(v, x, face).length, modos(v, x, face), (r) => {
-                  // tocar numa ranhura acesa escolhe a criatura e a ação; Atacar colado = lutar sem dado
-                  setQual(x.id);
-                  setModo(r === 'atacar' && modos(v, x, face).includes('lutar') ? 'lutar' : r);
-                  setCasa(null);
-                }),
-              )}
-              escolhida={qual}
-              escolher={(id) => {
-                setQual(id);
-                setCasa(null);
-              }}
-            />
-          </>
-        )}
-        {c && modo && (
-          <>
-            <b>{TXT.passoAlvo}</b>
-            {l.length > 1 && (
-              <div class="opcoes">
-                {l.map((x) => (
-                  <button
-                    key={x}
-                    class={'opcao' + (x === modo ? ' on' : '')}
-                    aria-pressed={x === modo}
-                    onClick={() => {
-                      setModo(x);
-                      setCasa(null);
-                    }}
-                  >
-                    {NOME_MODO[x]}
-                  </button>
-                ))}
-              </div>
-            )}
-            {l.length === 1 && <span>{NOME_MODO[modo]}</span>}
-          </>
-        )}
-        <Mesa v={v} sala={sala} desenhos={desenhos} acesas={acesas} marcadas={[...(c ? [c.casa] : []), ...(casa ? [casa] : [])]} aoTocar={setCasa} />
-        <button class="botao grande" disabled={!casa || !acesas.has(casa)} onClick={() => casa && c && modo && jogo(enviar, acaoModo(modo, dado ?? 0, c.id, casa, alvo))}>
-          {TXT.confirmarJogada}
-        </button>
-        {dado !== null && face && (
-          <button class="botao sec" onClick={() => jogo(enviar, { tipo: 'dr_passar', i: dado })}>
-            {face === 'habilidade' ? TXT.passarGema : TXT.passar}
-          </button>
-        )}
-      </div>
-      <div class="dr-poderes" role="group" aria-label={TXT.poderes}>
-        <small>{TXT.poderes}</small>
-        {MAGOS_PODERES[m.roupa!].map((x) => {
-          const motivo = motivoPoder(v, eu, x);
-          return (
-            <button key={x} class="dr-poder" disabled={motivo !== null} onClick={() => setPoder(x)}>
-              <b>
-                {TEXTO_PODER[x].nome} <Gemas n={CUSTO[x]} tam={20} />
-              </b>
-              <small>{motivo ? MOTIVO_PODER[motivo] : TEXTO_PODER[x].efeito}</small>
-            </button>
-          );
-        })}
+        <div class={dica === 'cartas' ? 'dr-dica' : undefined}>
+        <Baralho
+          cartas={minhas.map((x) => {
+            const l = modos(v, x, face);
+            return cartaDe(x, desenhos, !l.length, l, (r) => escolher(x, r), !face);
+          })}
+          escolhida={qual}
+          escolher={(id) => {
+            setQual(id);
+            setModo(null);
+            setCasa(null);
+          }}
+        />
+        </div>
+        <div class={'dr-mesa-caixa' + (dica === 'mesa' ? ' dr-dica' : '')}>
+        <Mesa
+          v={v}
+          sala={sala}
+          desenhos={desenhos}
+          acesas={acesas}
+          marcadas={[...(c ? [c.casa] : []), ...(casa ? [casa] : [])]}
+          aoTocar={tocar}
+          fantasma={c && casa && modo === 'andar' ? { c, casa } : undefined}
+        />
+        </div>
       </div>
     </>
   );
@@ -299,15 +295,17 @@ function BaralhoVer({ cartas }: { cartas: ReturnType<typeof cartaDe>[] }) {
 function SoVer({ v, sala, eu, desenhos }: PropsBatalha) {
   const m = v.magos[eu];
   return (
-    <div class="cartao dr-bloco">
+    <div class="cartao dr-bloco dr-vez2">
       {sala.semTv && <Mesa v={v} sala={sala} desenhos={desenhos} />}
-      <b>
-        {TXT.meusDados} <Gemas n={m.gemas} />
-      </b>
-      <div class="dr-dados">
-        {m.dados.length ? m.dados.map((f, i) => <span key={i} role="img" aria-label={NOME_FACE[f]}><Dado face={faceAcao(f)} tam={44} /></span>) : <small>{TXT.semDados}</small>}
+      {/* os teus dados e gemas numa linha; sem títulos (menos texto, cabe no ecrã) */}
+      <div class="dr-bandeja" role="group" aria-label={TXT.meusDados}>
+        {m.dados.map((f, i) => (
+          <span key={i} role="img" aria-label={NOME_FACE[f]}>
+            <Dado face={faceAcao(f)} tam={40} />
+          </span>
+        ))}
+        <Gemas n={m.gemas} />
       </div>
-      <b>{TXT.meuExercito}</b>
       <BaralhoVer cartas={v.criaturas.filter((c) => c.dono === eu).map((c) => cartaDe(c, desenhos))} />
     </div>
   );
@@ -345,22 +343,28 @@ export function BatalhaTel(p: PropsBatalha) {
   const minhaVez = vivo && v.fase === 'vez' && v.vez === eu;
   return (
     <>
-      <p class="dr-faixa" role="status">
-        {jogador && <NomeMago sala={sala} v={v} id={eu} />} <span>{faixa(sala, v)}</span>
-      </p>
-      <Rivais v={v} sala={sala} eu={eu} />
+      {/* uma linha só: tu e de quem é a vez, à esquerda; os rivais, pequenos, à direita */}
+      <div class="dr-topo-tel">
+        <p class="dr-faixa" role="status">
+          {jogador && <NomeMago sala={sala} v={v} id={eu} />} <span>{faixa(sala, v)}</span>
+        </p>
+        <Rivais v={v} sala={sala} eu={eu} />
+      </div>
       {luta && (
         <div class="cartao dr-bloco">
-          <BatalhaOuUltima sala={sala} v={v} desenhos={desenhos} tam={40} eu={eu} aoTocar={relanco ? (i) => jogo(enviar, { tipo: 'dr_relancar', i }) : undefined} />
+          <BatalhaOuUltima
+            sala={sala}
+            v={v}
+            desenhos={desenhos}
+            tam={40}
+            eu={eu}
+            aoTocar={relanco ? (i) => jogo(enviar, { tipo: 'dr_relancar', i }) : undefined}
+            selo={relanco ? (v.magos[eu].gratis > 0 ? 'gratis' : 'gema') : undefined}
+          />
           {relanco && (
-            <>
-              <p>
-                {TXT.relancar} {v.magos[eu].gratis > 0 ? TXT.relancarGratis : TXT.relancarGema} <Gemas n={v.magos[eu].gemas} />
-              </p>
-              <button class="botao grande" onClick={() => jogo(enviar, { tipo: 'dr_pronto' })}>
-                {TXT.ficar}
-              </button>
-            </>
+            <button class="botao grande dr-ok" aria-label={TXT.ficar} onClick={() => jogo(enviar, { tipo: 'dr_pronto' })}>
+              ✓
+            </button>
           )}
         </div>
       )}
@@ -372,7 +376,7 @@ export function BatalhaTel(p: PropsBatalha) {
       ) : v.fase === 'rodar' ? (
         <Rodar {...p} />
       ) : minhaVez ? (
-        <Vez key={`${v.volta}:${v.magos[eu].dados.length}`} {...p} />
+        <Vez key={`${v.volta}:${v.magos[eu].dados.length}:${v.ultimo?.n}`} {...p} />
       ) : v.fase === 'lobo' && cria(v, v.lobo ?? undefined)?.dono === eu ? (
         <Lobo {...p} />
       ) : (

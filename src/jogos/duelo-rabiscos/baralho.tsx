@@ -32,8 +32,10 @@ export function Baralho({ cartas, escolhida, escolher }: { cartas: CartaBaralho[
   }, []);
   const n = cartas.length;
   // tamanho: a carta normal e a da frente (maior); o passo entre cartas faz caber todas
-  const normal = Math.min(150, larg * 0.42);
-  const grande = normal * 1.25;
+  // a carta da frente cabe em ~25% da altura do ecrã (tudo visível sem scroll num telemóvel normal)
+  const altMax = typeof innerHeight === 'number' ? innerHeight * 0.25 : 999;
+  const grande = Math.min(150 * 1.25, larg * 0.42 * 1.25, (altMax * LARG) / ALT);
+  const normal = grande / 1.25;
   const passo = n > 1 ? Math.min(normal * 0.8, (larg - grande) / (n - 1)) : 0;
   const total = grande + passo * (n - 1);
   const x0 = (larg - total) / 2;

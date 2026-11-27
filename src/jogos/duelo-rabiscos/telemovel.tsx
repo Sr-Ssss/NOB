@@ -9,7 +9,10 @@ import { useRascunho, useSoRascunho } from '../../ui/rascunho';
 import { Tela } from '../../ui/tela';
 import { bytesTracos, type Traco } from '../../ui/tracos';
 import { avatarDe, nomeDe } from '../5050/tv';
-import { Carta, CartaMago } from './artes/carta';
+import { CartaMago, ICONES_STATUS } from './artes/carta';
+import { CartaJogo } from './artes/cartaJogo';
+import { IconeClasse } from './artes/icones';
+import { Arte } from './artes/lapis';
 import { ENCAIXE } from './artes/magos';
 import { Molde } from './artes/moldes';
 import { Palco, type PropsDuelo } from './comuns';
@@ -73,11 +76,23 @@ function EscolherExercito({ v, sala, agora, enviar }: Props) {
   }, [v.terminaEm, v.pausaRestante]);
   return (
     <>
+      {/* tinta que resta (barra que esvazia), as classes escolhidas (até 3) e ✓ */}
       <div class="dr-barra">
-        <b>{TXT.resta(resta, tinta)}</b>
-        <span class="mini">{TXT.classes(Object.keys(x).length, MAX_CLASSES)}</span>
-        <button class="botao" disabled={!valido} onClick={() => jogo(enviar, { tipo: 'dr_exercito', exercito: x })}>
-          {TXT.confirmar}
+        <span class="dr-tinta-barra" role="img" aria-label={TXT.resta(resta, tinta)}>
+          <Arte c={ICONES_STATUS.tinta} tam={26} />
+          <span class="dr-tinta-fundo">
+            <span style={{ width: `${(100 * resta) / tinta}%` }} />
+          </span>
+          <b>{resta}</b>
+        </span>
+        <span class="dr-classes" role="img" aria-label={TXT.classes(Object.keys(x).length, MAX_CLASSES)}>
+          {Array.from({ length: MAX_CLASSES }, (_, i) => {
+            const k = (Object.keys(x) as Criatura[])[i];
+            return <span key={i} class="dr-classe-vaga">{k && <IconeClasse classe={CRIATURAS[k].classe} tam={22} />}</span>;
+          })}
+        </span>
+        <button class="botao dr-ok" aria-label={TXT.confirmar} disabled={!valido} onClick={() => jogo(enviar, { tipo: 'dr_exercito', exercito: x })}>
+          ✓
         </button>
       </div>
       <button class="chip" aria-expanded={sugerir} onClick={() => setSugerir(!sugerir)}>
@@ -103,7 +118,10 @@ function EscolherExercito({ v, sala, agora, enviar }: Props) {
           const { nome } = TEXTO_CRIATURA[c];
           return (
             <div key={c} class={'dr-escolha' + (n ? ' on' : motivo ? ' apagada' : '')}>
-              <Carta criatura={c} />
+              <div class="dr-mini-carta">
+                <CartaJogo criatura={c} estilo="classe" />
+                {n > 0 && <b class="dr-quantas">×{n}</b>}
+              </div>
               <div class="dr-contador">
                 <button class="opcao" aria-label={TXT.menos(nome)} disabled={!n} onClick={() => setX(mudarExercito(x, c, -1))}>
                   −
@@ -130,6 +148,8 @@ function Desenhar({ v, sala, eu, agora, enviar }: Props) {
   const [c, setC] = useState(criaturas[0]);
   const [molde, setMolde] = useState(true);
   const [cheio, setCheio] = useState(false);
+  // acabar pede 2 toques: o 1.º só arma o botão (não se acaba sem querer)
+  const [armado, setArmado] = useState(false);
   const porEnviar = useRef(new Set<Criatura>(Object.keys(desenhos) as Criatura[]));
   const tracos = desenhos[c] ?? [];
   // "vale o que houver": guarda sozinho pouco depois de cada risco
@@ -162,6 +182,7 @@ function Desenhar({ v, sala, eu, agora, enviar }: Props) {
             onClick={() => {
               setC(k);
               setCheio(false);
+              setArmado(false);
             }}
           >
             {desenhos[k]?.length ? '✓ ' : ''}
@@ -183,15 +204,30 @@ function Desenhar({ v, sala, eu, agora, enviar }: Props) {
       <p class="centro mini" role="status">
         {cheio ? TXT.cheio : TXT.vazio}
       </p>
-      <button
-        class="botao grande"
-        onClick={() => {
-          porEnviar.current.clear();
-          criaturas.forEach((k, i) => jogo(enviar, { tipo: 'dr_desenho', criatura: k, tracos: desenhos[k] ?? [], pronto: i === criaturas.length - 1 }));
-        }}
-      >
-        {TXT.acabei}
-      </button>
+      {/* a seguir: passa à próxima criatura; só na última se acaba (com 2 toques) */}
+      {criaturas.indexOf(c) < criaturas.length - 1 ? (
+        <button
+          class="botao grande"
+          onClick={() => {
+            setC(criaturas[criaturas.indexOf(c) + 1]);
+            setCheio(false);
+          }}
+        >
+          {TXT.proxima} ▶
+        </button>
+      ) : (
+        <button
+          class={'botao grande' + (armado ? ' dr-armado' : '')}
+          onClick={() => {
+            if (!armado) return setArmado(true);
+            porEnviar.current.clear();
+            criaturas.forEach((k, i) => jogo(enviar, { tipo: 'dr_desenho', criatura: k, tracos: desenhos[k] ?? [], pronto: i === criaturas.length - 1 }));
+          }}
+          onBlur={() => setArmado(false)}
+        >
+          {armado ? TXT.acabeiOutraVez : '✓ ' + TXT.acabei}
+        </button>
+      )}
     </div>
   );
 }

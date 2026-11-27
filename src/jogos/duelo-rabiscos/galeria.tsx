@@ -66,7 +66,7 @@ export function GaleriaEstruturas() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(470px, 1fr))', gap: '12px', padding: '16px', maxWidth: '1400px', margin: '0 auto' }}>
       <figure class="cartao" style={{ margin: 0, gridColumn: '1 / -1', display: 'flex', gap: '16px', justifyContent: 'center', color: 'var(--tinta)' }}>
-        {(['andar', 'fazerAlgo', 'habilidade', 'coringa', 'ataqueVazio', 'ataque1', 'ataque2', 'ataqueFere', 'ataqueGema', 'defesaVazio', 'defesa1', 'defesaFere', 'defesaGema', 'feridaEspada', 'feridaCoracao', 'feridaDefEscudo', 'feridaDefGema'] as const).map((f) => (
+        {(['andar', 'fazerAlgo', 'habilidade', 'coringa', 'ataqueVazio', 'ataque1', 'ataque2', 'ataqueFere', 'ataqueGema', 'defesaVazio', 'defesa1', 'defesaGema', 'feridaEspada', 'feridaCoracao', 'feridaDefEscudo', 'feridaDefGema'] as const).map((f) => (
           <span key={f} style={{ textAlign: 'center' }}>
             <Dado face={f} tam={64} />
             <br />

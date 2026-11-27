@@ -43,5 +43,7 @@
 .cj-acesa .cj-fantasma { opacity: 1; filter: none; }
 .cj-usada { border-style: solid; background: color-mix(in srgb, var(--r) 25%, #15131b); }
 .cj-fechada { opacity: 0.35; }
+/* lutar colado, sem dado: espadas cruzadas a pulsar */
+.cj-luta { border-style: solid; background: color-mix(in srgb, #ff5a4a 35%, #15131b); box-shadow: 0 0 0 3px rgba(255, 90, 74, 0.7); animation: cj-pisca 0.9s ease-in-out infinite alternate; cursor: pointer; --r: #ff5a4a; }
 @keyframes cj-pisca { to { box-shadow: 0 0 0 6px color-mix(in srgb, var(--r) 25%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .cj-acesa { animation: none; } }

@@ -242,10 +242,12 @@ interface Props {
   marcadas?: Casa[];
   aoTocar?: (c: Casa) => void;
   nome?: (id: string) => string;
+  /** a criatura a andar, meio transparente, na casa escolhida (antes do 2.º toque) */
+  fantasma?: { c: Cria; casa: Casa };
 }
 
 /** a colmeia toda; com `aoTocar`, as casas acesas são botões */
-export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome = (x) => x }: Props) {
+export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome = (x) => x, fantasma }: Props) {
   const p3 = perspetivaLigada();
   const fumo = useFumo(v);
   const planos = v.tabuleiro.casas.map((c) => ({ c, ...centroHex(...ler(c)) }));
@@ -380,6 +382,21 @@ export function ColmeiaDuelo({ v, desenhos, acesas, marcadas = [], aoTocar, nome
           objetos.push({ y: Math.max(...pontos.map((q) => q.y)), el: <Barreira key={'b' + g[0]} p={pontos} ligacoes={ligacoes} /> });
           return null;
         })}
+      {fantasma &&
+        (() => {
+          const q = centroHex(...ler(fantasma.casa));
+          const o = p3 ? p(q.x, q.y) : { ...q, f: 1 };
+          const tam = TAMANHO[CRIATURAS[fantasma.c.tipo].classe];
+          objetos.push({
+            y: o.y + 0.02,
+            el: (
+              <g key="fantasma" class="dr-fantasma-peca" style={{ transform: `translate(${o.x}px, ${o.y + (p3 ? 6 * o.f : 0)}px) scale(${p3 ? o.f * EM_PE * tam : 1})` }}>
+                <Peca c={{ ...fantasma.c, casa: fantasma.casa }} i={indice(v, fantasma.c.dono)} tracos={desenhos[fantasma.c.dono]?.[fantasma.c.tipo]} pe={p3} />
+              </g>
+            ),
+          });
+          return null;
+        })()}
       {fumo &&
         fumo.casas.map((c) => {
           const q = centroHex(...ler(c));

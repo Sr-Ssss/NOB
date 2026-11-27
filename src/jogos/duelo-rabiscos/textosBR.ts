@@ -80,6 +80,8 @@ export const TXT: typeof T.TXT_PT = {
   cheio: 'Desenho cheio: desfaça um risco para continuar.',
   vazio: 'Sem desenho, vale o molde.',
   acabei: 'Terminei',
+  proxima: 'Próxima',
+  acabeiOutraVez: 'Toque de novo para terminar',
   espera: 'Feito! Esperando os outros magos.',
   soVer: 'Este duelo já está cheio: assista à partida.',
   colmeia: 'Colmeia',
