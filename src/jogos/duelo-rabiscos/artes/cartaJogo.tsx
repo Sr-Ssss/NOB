@@ -94,6 +94,31 @@ function ComSimbolos({ texto }: { texto: string }) {
   );
 }
 
+/** n casas como hexágonos colados: 1; 2 lado a lado; 3.º em cima no meio; 4.º ao lado do de cima */
+const R = 5;
+const W = Math.sqrt(3) * R;
+const hexagono = (x: number, y: number) =>
+  Array.from({ length: 6 }, (_, k) => {
+    const a = (Math.PI / 3) * k - Math.PI / 2;
+    return `${(x + R * Math.cos(a)).toFixed(2)},${(y + R * Math.sin(a)).toFixed(2)}`;
+  }).join(' ');
+function Favo({ n }: { n: number }) {
+  const todas: [number, number][] = n <= 1 ? [[0, 0]] : [[-W / 2, 0], [W / 2, 0], [0, -1.5 * R], [W, -1.5 * R]];
+  const casas = todas.slice(0, Math.max(1, n));
+  // caixa à volta das casas (+1 para o traço)
+  const x0 = Math.min(...casas.map(([x]) => x)) - W / 2 - 1;
+  const y0 = Math.min(...casas.map(([, y]) => y)) - R - 1;
+  const lg = Math.max(...casas.map(([x]) => x)) + W / 2 + 1 - x0;
+  const al = Math.max(...casas.map(([, y]) => y)) + R + 1 - y0;
+  return (
+    <svg width={lg} height={al} viewBox={`${x0} ${y0} ${lg} ${al}`}>
+      {casas.map(([x, y], k) => (
+        <polygon key={k} points={hexagono(x, y)} fill="#e6e1d4" stroke="#2a2733" stroke-width={1.3} stroke-linejoin="round" />
+      ))}
+    </svg>
+  );
+}
+
 function Stat({ s, n }: { s: Status; n: number }) {
   return (
     <span class="cj-stat">
@@ -178,11 +203,10 @@ export function CartaJogo({
             >
               {r !== 'especial' && e !== 'usada' && e !== 'luta' && (
                 <span class="cj-casas" aria-label={r === 'andar' ? `anda ${f.passos} casas` : `atira até ${f.alcance} casas`}>
-                  <Arte c={ICONES_STATUS.casas} tam={21} />
-                  <b>{r === 'andar' ? f.passos : f.alcance}</b>
+                  <Favo n={r === 'andar' ? f.passos : f.alcance} />
                 </span>
               )}
-              {e === 'luta' ? <Dado face="ataque2" tam={36} /> : e === 'usada' ? <Dado face={FACE[r]} tam={34} /> : <span class="cj-fantasma"><Dado face={FACE[r]} tam={30} /></span>}
+              {e === 'luta' ? <Dado face="ataque2" tam={36} /> : e === 'usada' ? <Dado face={FACE[r]} tam={34} /> : <span class="cj-fantasma"><Dado face={FACE[r]} tam={38} /></span>}
             </button>
           );
         })}

@@ -15,11 +15,11 @@
 .cj-sub svg { background: #fffdf2; border-radius: 50%; }
 
 /* números à esquerda e custo/ferimentos/efeitos à direita, como etiquetas coladas à borda */
-.cj-stats { position: absolute; left: 0; top: 52px; display: flex; flex-direction: column; gap: 4px; z-index: 1; }
-.cj-direita { position: absolute; right: 0; top: 52px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; z-index: 1; }
+.cj-stats { position: absolute; right: 6px; align-items: flex-end; top: 52px; display: flex; flex-direction: column; gap: 4px; z-index: 1; }
+.cj-direita { position: absolute; left: 0; top: 52px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; z-index: 1; }
 .cj-stat, .cj-feridas { display: flex; align-items: center; gap: 2px; line-height: 1; font-size: 13px; background: #fffdf2; border: 2px solid #2b2a33; box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25); }
-.cj-stat { padding: 2px 5px 2px 3px; border-left: 0; border-radius: 0 8px 8px 0; }
-.cj-feridas { padding: 2px 3px 2px 5px; border-right: 0; border-radius: 8px 0 0 8px; }
+.cj-stat { padding: 1px 5px 1px 0; background: none; border: 0; box-shadow: none; font-weight: 800; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+.cj-feridas { padding: 2px 5px 2px 3px; border-left: 0; border-radius: 0 8px 8px 0; }
 /* custo: gota grande com o número dentro, diferente das etiquetas */
 .cj-tinta { position: absolute; left: 3px; top: 3px; width: 34px; height: 34px; display: grid; place-items: center; z-index: 2; filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.3)); }
 .cj-tinta > * { grid-area: 1 / 1; }
@@ -39,17 +39,16 @@
 .cj-r-atacar { --r: #ffcc33; }
 /* casas que anda / até onde atira: hexágono e ×n na ranhura, por baixo do dado fantasma */
 .cj-ranhura { position: relative; }
-.cj-casas { position: absolute; bottom: 0; left: 50%; width: 21px; height: 21px; margin-left: -10.5px; display: grid; place-items: center; pointer-events: none; }
-.cj-casas > * { grid-area: 1 / 1; }
-.cj-casas b { color: #2a2733; font-size: 12px; font-weight: 800; line-height: 1; }
+.cj-casas { position: absolute; right: -8px; z-index: 1; bottom: -2px; display: flex; flex-direction: column; justify-content: flex-end; gap: 0; pointer-events: none; line-height: 0; }
 .cj-r-especial { --r: #b98cf0; }
-.cj-fantasma { opacity: 0.4; filter: grayscale(0.5); line-height: 0; }
+.cj-fantasma { opacity: 0.85; line-height: 0; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff); }
 .cj-acesa { border-style: solid; background: color-mix(in srgb, var(--r) 30%, #15131b); box-shadow: 0 0 0 3px color-mix(in srgb, var(--r) 70%, transparent); animation: cj-pisca 0.9s ease-in-out infinite alternate; cursor: pointer; }
-.cj-acesa .cj-fantasma { opacity: 1; filter: none; }
+.cj-acesa .cj-fantasma { opacity: 1; }
 .cj-usada { border-style: solid; background: color-mix(in srgb, var(--r) 25%, #15131b); }
 .cj-fechada { opacity: 0.35; }
 /* lutar colado, sem dado: espadas cruzadas a pulsar */
 .cj-luta { border-style: solid; background: color-mix(in srgb, #ff5a4a 35%, #15131b); box-shadow: 0 0 0 3px rgba(255, 90, 74, 0.7); animation: cj-pisca 0.9s ease-in-out infinite alternate; cursor: pointer; --r: #ff5a4a; }
 @keyframes cj-pisca { to { box-shadow: 0 0 0 6px color-mix(in srgb, var(--r) 25%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .cj-acesa { animation: none; } }
-.cj-ranhura:has(.cj-casas) .cj-fantasma { margin-bottom: 15px; }
+/* ranhura vazia: só o símbolo do dado, sem o quadrado branco (fica a cor da ranhura) */
+.cj-fantasma .dr-dado > g > path:first-child { fill: none; stroke: none; }
