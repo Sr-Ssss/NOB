@@ -1,15 +1,16 @@
+import { PodioEscada } from '../../ui/podio';
+import { podio } from '../../core/jogo';
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../core/i18n';
 import type { AcaoSala, VistaSala } from '../../core/sala';
 import { Temporizador } from '../../ui/comuns';
 import { AcabarPartida } from '../../ui/acabarPartida';
-import { nomeDe } from '../5050/tv';
 import { ArenaSvg, ModuloMini, PecaSvg, RoboCartao } from './desenho';
 import { T_QUADRO, arenaDe, entre, type Quadro } from './quadro';
 import { CABECAS, CORPOS, LOCOS, PRECO, type Cabeca, type Corpo, type Loco } from './pecas';
 import { Apostadores, Palco, Premios, QuemEnviou, Rosto, etiquetaModulo, infoModulo, moeda, nomeCabeca, nomeCorpo, nomeFase, nomeLoco, nomeRobo, roboPorId } from './comuns';
-import { PASSOS_LANCE, PRECO_CONTROLO, T_COMBATE, T_CONTROLO, ativos, classificacao, posicoes, roboDe, type VistaRagerob } from './regras';
+import { PASSOS_LANCE, PRECO_CONTROLO, T_COMBATE, T_CONTROLO, ativos, classificacao, posicoes, prometido, roboDe, type VistaRagerob } from './regras';
 import './ragerob.css';
 
 type Enviar = (a: AcaoSala) => void;
@@ -153,36 +154,33 @@ function Montar({ v, sala, eu, enviar }: PropsTelRagerob) {
   );
 }
 
-/** leilão ao vivo: o palco e os 3 botões (entrada, +50, +100); o valor vai absoluto */
+/** leilão ao vivo: os 5 ao mesmo tempo, um botão por módulo (entrada ou +50); o valor vai absoluto e não passa do que sobra */
 function Leilao({ v, sala, eu, enviar }: PropsTelRagerob) {
   const l = v.leilao;
   if (!l) return null;
-  const din = v.carteira[eu] ?? 0;
-  const base = PRECO[v.loja[l.item]];
-  const meu = l.lance?.id === eu;
-  const lance = (valor: number) => {
+  const livre = (v.carteira[eu] ?? 0) - prometido(v, eu);
+  const lance = (item: number, valor: number) => {
     navigator.vibrate?.(15);
-    jogo(enviar, { tipo: 'rr_lance', id: '', item: l.item, valor });
+    jogo(enviar, { tipo: 'rr_lance', id: '', item, valor });
   };
-  const fechado = l.martelo || meu;
   return (
     <div class="rr-coluna">
-      <Palco v={v} sala={sala} />
-      <div class={'rr-lances' + (meu ? ' meu' : '')}>
-        <button class={'rr-btn-lance entrada' + (!l.lance && !fechado && din >= base ? ' pisca' : '')} disabled={fechado || !!l.lance || din < base} onClick={() => lance(base)}>
-          🙋 {t('rrDarEntrada')}
-          <small>{moeda(base)}</small>
-        </button>
-        {PASSOS_LANCE.map((p) => {
-          const n = (l.lance?.valor ?? base) + p;
+      <p class="rr-livre">{t('rrLivre', { n: livre })}</p>
+      <Palco
+        v={v}
+        sala={sala}
+        botao={(k) => {
+          const x = l.lances[k];
+          if (x?.id === eu) return <span class="rr-btn-lance meu">✅</span>;
+          const n = x ? x.valor + PASSOS_LANCE[0] : PRECO[v.loja[k]];
           return (
-            <button key={p} class="rr-btn-lance" disabled={fechado || !l.lance || din < n} aria-label={t('rrCobrir', { n: p, v: n })} onClick={() => lance(n)}>
-              +{p}
+            <button class={'rr-btn-lance' + (x ? '' : ' entrada')} disabled={n > livre} aria-label={x ? t('rrCobrir', { n: PASSOS_LANCE[0], v: n }) : t('rrDarEntrada')} onClick={() => lance(k, n)}>
+              {x ? `+${PASSOS_LANCE[0]}` : '🙋'}
               <small>{moeda(n)}</small>
             </button>
           );
-        })}
-      </div>
+        }}
+      />
     </div>
   );
 }
@@ -401,13 +399,7 @@ export function TelemovelRagerob(p: PropsTelRagerob) {
         {semTv ? (
           <>
             {/* sem TV: a classificação e (só o líder) jogar outra vez / menu */}
-            <ol class="rr-ordem rr-ordem-tel">
-              {lista.map((x, i) => (
-                <li key={x.id}>
-                  {['🥇', '🥈', '🥉'][i] ?? `${i + 1}.º`} {nomeDe(p.sala, x.id)} · {v.def.modo === 'normal' ? moeda(x.valor) : t('rrPontos', { n: x.valor })}
-                </li>
-              ))}
-            </ol>
+            <PodioEscada sala={p.sala} podio={podio(v.participantes, Object.fromEntries(lista.map((x) => [x.id, x.valor])))} />
             {p.sala.vipId === eu && (
               <div class="linha">
                 <button class="botao cresce" onClick={() => p.enviar({ tipo: 'outra_vez', id: '' })}>

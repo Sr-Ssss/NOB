@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import type { VistaSala } from '../../core/sala';
 import { t } from '../../core/i18n';
 import { Avatar, Boneco, COR_NAO, COR_SIM, CORAL, Feito, Temporizador } from '../../ui/comuns';
+import { PodioEscada } from '../../ui/podio';
 import { T_REVELAR, type Resultado, type Vista5050 } from './regras';
 
 export interface PropsJogo {
@@ -65,21 +66,8 @@ export function Barra({ r }: { r: Resultado }) {
   );
 }
 
-export function Placar({ sala, v, tam = 48 }: { sala: VistaSala; v: Vista5050; tam?: number }) {
-  return (
-    <div class="placar">
-      <ol>
-        {v.podio.map((p) => (
-          <li key={p.id}>
-            <span class="lugar">{p.lugar}º</span>
-            <Avatar n={avatarDe(sala, p.id)} tam={tam} />
-            <span class="cresce">{nomeDe(sala, p.id)}</span>
-            <span>{p.pontos}</span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
+export function Placar({ sala, v, tv = false }: { sala: VistaSala; v: Vista5050; tv?: boolean }) {
+  return <PodioEscada sala={sala} podio={v.podio} tv={tv} />;
 }
 
 export function Premios({ sala, v }: { sala: VistaSala; v: Vista5050 }) {
@@ -163,12 +151,21 @@ export function Balanca({
     const caiu = vis.filter((v) => v.lado === lado);
     return (
       <g class="prato" style={{ transform: `translateY(${lado === 'a' ? dy : -dy}px)` }}>
-        <line x1={x} y1={PIVO_Y} x2={x - 110} y2={PIVO_Y + 200} stroke="#1d1b26" stroke-width="4" />
-        <line x1={x} y1={PIVO_Y} x2={x + 110} y2={PIVO_Y + 200} stroke="#1d1b26" stroke-width="4" />
-        {/* prato: tampo + taça (meio 3D) */}
-        <path d={`M${x - 160} ${PIVO_Y + 205} Q${x} ${PIVO_Y + 330} ${x + 160} ${PIVO_Y + 205} Z`} fill={cor} stroke="#1d1b26" stroke-width="6" />
-        <ellipse cx={x} cy={PIVO_Y + 205} rx="160" ry="26" fill={cor} stroke="#1d1b26" stroke-width="6" />
-        <ellipse cx={x} cy={PIVO_Y + 205} rx="140" ry="16" fill="#000" opacity="0.18" />
+        {/* fios de latão */}
+        <g stroke="#1d1b26" stroke-width="6">
+          <line x1={x} y1={PIVO_Y} x2={x - 120} y2={PIVO_Y + 205} />
+          <line x1={x} y1={PIVO_Y} x2={x + 120} y2={PIVO_Y + 205} />
+        </g>
+        <g stroke="#f5c542" stroke-width="2">
+          <line x1={x} y1={PIVO_Y} x2={x - 120} y2={PIVO_Y + 205} />
+          <line x1={x} y1={PIVO_Y} x2={x + 120} y2={PIVO_Y + 205} />
+        </g>
+        {/* prato: taça com volume e brilho + aro de latão */}
+        <path d={`M${x - 160} ${PIVO_Y + 205} Q${x} ${PIVO_Y + 330} ${x + 160} ${PIVO_Y + 205} Z`} fill={`url(#b5-${lado})`} stroke="#1d1b26" stroke-width="7" />
+        <path d={`M${x - 125} ${PIVO_Y + 228} Q${x - 70} ${PIVO_Y + 262} ${x - 15} ${PIVO_Y + 268}`} fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="9" stroke-linecap="round" />
+        <ellipse cx={x} cy={PIVO_Y + 205} rx="160" ry="24" fill="url(#b5-lat)" stroke="#1d1b26" stroke-width="6" />
+        <ellipse cx={x} cy={PIVO_Y + 207} rx="140" ry="14" fill={cor} />
+        <ellipse cx={x} cy={PIVO_Y + 207} rx="140" ry="14" fill="#000" opacity="0.3" />
         {/* bonecos sentados no prato (filas de 4, de baixo para cima) */}
         {caiu.map((v, i) => {
           const col = i % 4;
@@ -201,19 +198,37 @@ export function Balanca({
 
   return (
     <svg class="balanca" viewBox="0 0 1000 560" role="img" aria-label={`${a} / ${b}`}>
-      {/* base e coluna com sombra */}
-      <path d="M400 540 L600 540 L570 505 L430 505 Z" fill="#8d89b3" stroke="#1d1b26" stroke-width="6" />
-      <rect x="486" y={PIVO_Y} width="28" height="360" fill="#b5b1d6" stroke="#1d1b26" stroke-width="6" />
-      <rect x="500" y={PIVO_Y + 4} width="10" height="352" fill="#8d89b3" />
+      <defs>
+        <linearGradient id="b5-mad" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f0bf86" /><stop offset=".45" stop-color="#d4945a" /><stop offset="1" stop-color="#9c6533" /></linearGradient>
+        <linearGradient id="b5-madV" x1="0" x2="1"><stop offset="0" stop-color="#a86d38" /><stop offset=".35" stop-color="#e3a86c" /><stop offset=".6" stop-color="#d0904f" /><stop offset="1" stop-color="#8f5a2b" /></linearGradient>
+        <linearGradient id="b5-lat" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff1b8" /><stop offset=".3" stop-color="#f5c542" /><stop offset=".75" stop-color="#c98a1c" /><stop offset="1" stop-color="#8a5a0e" /></linearGradient>
+        <radialGradient id="b5-a" cx=".35" cy=".25" r=".9"><stop offset="0" stop-color="#ff8f8f" /><stop offset=".5" stop-color={COR_SIM} /><stop offset="1" stop-color="#9c2d31" /></radialGradient>
+        <radialGradient id="b5-b" cx=".35" cy=".25" r=".9"><stop offset="0" stop-color="#8fb0ff" /><stop offset=".5" stop-color={COR_NAO} /><stop offset="1" stop-color="#26408f" /></radialGradient>
+        <radialGradient id="b5-mostr" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#fff" /><stop offset=".7" stop-color="#F1EFE8" /><stop offset="1" stop-color="#cfcabb" /></radialGradient>
+      </defs>
+      {/* base e coluna de madeira polida (com anel de latão) */}
+      <ellipse cx="500" cy="548" rx="230" ry="12" fill="#0b0820" opacity="0.5" />
+      <path d="M340 545 h320 q8 0 4 -10 l-26 -36 h-276 l-26 36 q-4 10 4 10 z" fill="url(#b5-mad)" stroke="#1d1b26" stroke-width="7" stroke-linejoin="round" />
+      <path d="M372 511 h256" stroke="#fff" stroke-opacity=".35" stroke-width="5" stroke-linecap="round" />
+      <path d="M360 530 q60 -6 120 0 t120 0" fill="none" stroke="#8f5a2b" stroke-width="3" opacity=".7" />
+      <rect x="474" y={PIVO_Y} width="52" height="352" rx="12" fill="url(#b5-madV)" stroke="#1d1b26" stroke-width="7" />
+      <path d={`M490 ${PIVO_Y + 90} q6 60 0 120 t2 120 M512 ${PIVO_Y + 110} q-5 50 0 100`} fill="none" stroke="#8f5a2b" stroke-width="3" opacity=".7" />
+      <rect x="462" y="474" width="76" height="26" rx="8" fill="url(#b5-lat)" stroke="#1d1b26" stroke-width="6" />
       {prato('a', PIVO_X - BRACO, a, COR_SIM)}
       {prato('b', PIVO_X + BRACO, b, COR_NAO)}
-      {/* braço */}
+      {/* braço de latão polido, curvo, com pontas */}
       <g class="braco" style={{ transform: `rotate(${-graus}deg)` }}>
-        <rect x={PIVO_X - BRACO - 12} y={PIVO_Y - 12} width={BRACO * 2 + 24} height="24" rx="12" fill="#F1EFE8" stroke="#1d1b26" stroke-width="6" />
-        <rect x={PIVO_X - BRACO} y={PIVO_Y + 2} width={BRACO * 2} height="7" rx="3" fill="#bdb8a8" />
+        <path d={`M${PIVO_X - BRACO - 20} ${PIVO_Y} Q${PIVO_X} ${PIVO_Y - 40} ${PIVO_X + BRACO + 20} ${PIVO_Y}`} fill="none" stroke="#1d1b26" stroke-width="36" stroke-linecap="round" />
+        <path d={`M${PIVO_X - BRACO - 20} ${PIVO_Y} Q${PIVO_X} ${PIVO_Y - 40} ${PIVO_X + BRACO + 20} ${PIVO_Y}`} fill="none" stroke="url(#b5-lat)" stroke-width="24" stroke-linecap="round" />
+        <path d={`M${PIVO_X - BRACO + 10} ${PIVO_Y - 10} Q${PIVO_X} ${PIVO_Y - 44} ${PIVO_X + BRACO - 10} ${PIVO_Y - 10}`} fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="5" stroke-linecap="round" />
+        <path d={`M${PIVO_X - BRACO - 30} ${PIVO_Y} l-24 -16 v32 z M${PIVO_X + BRACO + 30} ${PIVO_Y} l24 -16 v32 z`} fill="url(#b5-lat)" stroke="#1d1b26" stroke-width="5" />
+        <circle cx={PIVO_X - BRACO} cy={PIVO_Y} r="14" fill="url(#b5-lat)" stroke="#1d1b26" stroke-width="5" />
+        <circle cx={PIVO_X + BRACO} cy={PIVO_Y} r="14" fill="url(#b5-lat)" stroke="#1d1b26" stroke-width="5" />
       </g>
-      {/* eixo com o relógio */}
-      <circle cx={PIVO_X} cy={PIVO_Y} r="62" fill={segundos !== null && segundos <= 5 ? CORAL : '#F1EFE8'} stroke="#1d1b26" stroke-width="7" />
+      {/* eixo com o relógio: moldura de madeira com marcas */}
+      <circle cx={PIVO_X} cy={PIVO_Y} r="72" fill="url(#b5-mad)" stroke="#1d1b26" stroke-width="7" />
+      <path d={`M${PIVO_X} ${PIVO_Y - 64} v10 M${PIVO_X} ${PIVO_Y + 54} v10 M${PIVO_X - 64} ${PIVO_Y} h10 M${PIVO_X + 54} ${PIVO_Y} h10`} stroke="#1d1b26" stroke-width="4" stroke-linecap="round" />
+      <circle cx={PIVO_X} cy={PIVO_Y} r="52" fill={segundos !== null && segundos <= 5 ? CORAL : 'url(#b5-mostr)'} stroke="#1d1b26" stroke-width="5" />
       <text x={PIVO_X} y={PIVO_Y + 22} text-anchor="middle" class="relogio">
         {segundos === null ? '⚖' : segundos}
       </text>
@@ -238,10 +253,14 @@ export function Tv5050({
       {v.restante !== null && !sala.pausaSaida && <div class="aviso">{t('pausa')}</div>}
 
       {v.fase === 'escrever' && (
-        <>
+        <div class="escrever-tv">
+          <div class="icone-balanca" aria-hidden="true">⚖️</div>
           <h1 class="pergunta">{t('fEscrever')}</h1>
+          <p class="contagem">
+            {v.enviaram.length}/{v.participantes.length} ✅
+          </p>
           <Estado sala={sala} ids={v.participantes} feitos={v.enviaram} tam={110} />
-        </>
+        </div>
       )}
 
       {(v.fase === 'mostrar' || v.fase === 'votar') && v.dilema && (
@@ -265,19 +284,17 @@ export function Tv5050({
       )}
 
       {v.fase === 'placar' && (
-        <div class="cartao">
-          <h2>{t('placar')}</h2>
-          {v.enviaram.length === 0 && <p>{t('semDilemas')}</p>}
-          <Placar sala={sala} v={v} tam={72} />
-        </div>
+        <>
+          <h1 class="pergunta">{t('placar')}</h1>
+          {v.enviaram.length === 0 && <p class="centro">{t('semDilemas')}</p>}
+          <Placar sala={sala} v={v} tv />
+        </>
       )}
 
       {v.fase === 'fim' && (
         <>
           <h1 class="pergunta">{t('fim')}</h1>
-          <div class="cartao">
-            <Placar sala={sala} v={v} tam={80} />
-          </div>
+          <Placar sala={sala} v={v} tv />
           <Premios sala={sala} v={v} />
           <div class="linha">
             <button class={'botao' + (selFim === 0 ? ' foco' : '')} onClick={onOutraVez}>

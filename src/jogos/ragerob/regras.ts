@@ -6,7 +6,8 @@ import { quadroValido, type Quadro } from './quadro';
  * Ragerob: regras em info/jogos/rinha-de-robos.md. A física corre só no host (a TV ou, sem TV, o telemóvel que tem a sala),
  * que manda o fim do combate (`rr_fim`), as vidas (`rr_vidas`) e, sem TV, os quadros da arena (`rr_quadro`). Este reducer só trata dinheiro, loja, apostas,
  * torneio/liga e quem conduz.
- * Leilão ao vivo (25/11): um módulo de cada vez em palco, lances públicos, o dinheiro só sai ao bater o martelo.
+ * Leilão ao vivo (27/11): os 5 módulos ao mesmo tempo, um só relógio, lances públicos; quem lidera não pode prometer mais do que tem
+ * (soma dos lances em que lidera ≤ carteira); o dinheiro só sai ao bater o martelo.
  * Apostas por pódio (25/11, modo normal): escolhe-se um robô, sem pôr dinheiro; paga-se dinheiro novo pelo lugar dele.
  * Decisões do utilizador (17/11): loja privada 30 s, apostas 20 s, instalar 20 s, combate 90 s; depois a arena encolhe
  * a arder até sobrar um (ou nenhum); colocação = ordem de KO (KO ao mesmo tempo = empate); Pilotos: cada um escolhe
@@ -36,9 +37,9 @@ export const PRECO_CONTROLO = 100;
 export const T_CONTROLO = 15;
 /** loja privada */
 export const T_LOJA = 30;
-/** leilão: tempo de cada módulo, mínimo garantido depois de um lance, martelo */
-export const T_LANCE = 10;
-export const T_LANCE_EXTRA = 6;
+/** leilão (os 5 ao mesmo tempo): tempo total, mínimo garantido depois de um lance, martelo */
+export const T_LEILAO = 30;
+export const T_LANCE_EXTRA = 5;
 export const T_MARTELO = 2;
 export const PASSOS_LANCE = [50, 100];
 export const T_APOSTA = 20;
@@ -91,10 +92,9 @@ export type AcaoRagerob =
   | { tipo: 'ligados'; ids: string[] }
   | { tipo: 'tick' };
 
-/** o módulo em palco (id = jogador ou, nos Pilotos, o robô da IA) */
+/** os 5 módulos em palco: quem lidera cada um (id = jogador ou, nos Pilotos, o robô da IA) */
 export interface Leilao {
-  item: number;
-  lance: { id: string; valor: number } | null;
+  lances: ({ id: string; valor: number } | null)[];
   /** o martelo bateu: mostra-se quem levou */
   martelo: boolean;
 }
@@ -228,7 +228,7 @@ function abrirLoja(s: EstadoRagerob, agora: number): EstadoRagerob {
     loja: privada ? [] : sorteio(0),
     lojaPrivada: privada ? Object.fromEntries(s.participantes.map((j, i) => [j, sorteio(i + 1)])) : {},
   };
-  return privada ? r : abrirItem(r, 0, agora);
+  return privada ? r : abrirLeilao(r, agora);
 }
 
 /** até quanto a IA (robôs sem dono no modo Pilotos) licita neste módulo: um módulo ao calhas por ronda, se couber e tiver encaixe livre */
@@ -239,52 +239,60 @@ function limiteIa(s: EstadoRagerob, i: number, item: number): number {
   return Math.min(s.carteira[robo.id] ?? 0, PRECO[s.loja[item]] + 50 * Math.floor(rnd(s.seed + 13 * s.ronda + i) * 5));
 }
 
-/** põe em palco o módulo `k` (salta os que ninguém pode pagar); depois do último, fecha a loja */
-function abrirItem(s: EstadoRagerob, k: number, agora: number): EstadoRagerob {
-  const vendidos = [...s.vendidos];
+/** põe os 5 em palco ao mesmo tempo (se ninguém puder pagar nenhum, fecha logo a loja) */
+function abrirLeilao(s: EstadoRagerob, agora: number): EstadoRagerob {
   const alguem = (n: number) => s.participantes.some((j) => (s.carteira[j] ?? 0) >= PRECO[s.loja[n]]) || s.robos.some((_, i) => limiteIa(s, i, n) >= PRECO[s.loja[n]]);
-  while (k < s.loja.length && !alguem(k)) {
-    vendidos.push(null);
-    k++;
-  }
-  const r = { ...s, vendidos };
-  return k >= s.loja.length ? fecharLoja(r, agora) : { ...r, leilao: { item: k, lance: null, martelo: false }, terminaEm: agora + T_LANCE * 1000 };
+  if (!s.loja.some((_, k) => alguem(k))) return fecharLoja({ ...s, vendidos: s.loja.map(() => null) }, agora);
+  return { ...s, leilao: { lances: s.loja.map(() => null), martelo: false }, terminaEm: agora + T_LEILAO * 1000 };
 }
 
-/** o menor lance que se aceita agora */
-export function lanceMinimo(s: Pick<EstadoRagerob, 'leilao' | 'loja'>): number {
-  const l = s.leilao!;
-  return l.lance ? l.lance.valor + 1 : PRECO[s.loja[l.item]];
+/** o menor lance que se aceita agora neste módulo */
+export function lanceMinimo(s: Pick<EstadoRagerob, 'leilao' | 'loja'>, item: number): number {
+  const l = s.leilao!.lances[item];
+  return l ? l.valor + 1 : PRECO[s.loja[item]];
 }
 
-function darLance(s: EstadoRagerob, id: string, valor: number, agora: number): EstadoRagerob {
+/** quanto `id` já prometeu nos módulos em que lidera (menos `fora`) */
+export function prometido(s: Pick<EstadoRagerob, 'leilao'>, id: string, fora = -1): number {
+  return (s.leilao?.lances ?? []).reduce((t, l, k) => (l?.id === id && k !== fora ? t + l.valor : t), 0);
+}
+
+function darLance(s: EstadoRagerob, id: string, item: number, valor: number, agora: number): EstadoRagerob {
   const l = s.leilao;
-  if (!l || l.martelo || l.lance?.id === id || !Number.isInteger(valor) || valor < lanceMinimo(s) || valor > (s.carteira[id] ?? 0)) return s;
-  return { ...s, leilao: { ...l, lance: { id, valor } }, terminaEm: Math.max(s.terminaEm, agora + T_LANCE_EXTRA * 1000) };
+  if (!l || l.martelo || !Number.isInteger(item) || item < 0 || item >= l.lances.length || l.lances[item]?.id === id) return s;
+  if (!Number.isInteger(valor) || valor < lanceMinimo(s, item) || valor + prometido(s, id, item) > (s.carteira[id] ?? 0)) return s;
+  return { ...s, leilao: { ...l, lances: l.lances.map((x, k) => (k === item ? { id, valor } : x)) }, terminaEm: Math.max(s.terminaEm, agora + T_LANCE_EXTRA * 1000) };
 }
 
 /** a IA dá lances ao vivo: espera um bocado (pelo tempo que falta, para a pausa não a baralhar) e cobre até ao limite */
 function lanceIa(s: EstadoRagerob, agora: number): EstadoRagerob {
-  const l = s.leilao!;
-  const valor = l.lance ? l.lance.valor + PASSOS_LANCE[0] : PRECO[s.loja[l.item]];
-  const quando = (l.lance ? 1500 : 5000) + 3000 * rnd(s.seed + 19 * s.ronda + 5 * l.item + valor);
-  if (s.terminaEm - agora > quando) return s;
-  const querem = s.robos.filter((x, i) => x.id !== l.lance?.id && limiteIa(s, i, l.item) >= valor).map((x) => x.id);
-  return querem.length ? darLance(s, escolhe(querem, s.seed + 23 * s.ronda + l.item + valor), valor, agora) : s;
+  let r = s;
+  for (let item = 0; item < r.loja.length; item++) {
+    const l = r.leilao!.lances[item];
+    const valor = l ? l.valor + PASSOS_LANCE[0] : PRECO[r.loja[item]];
+    const quando = (l ? 1500 : 5000) + 3000 * rnd(r.seed + 19 * r.ronda + 5 * item + valor);
+    if (r.terminaEm - agora > quando) continue;
+    const querem = r.robos.filter((x, i) => x.id !== l?.id && limiteIa(r, i, item) >= valor).map((x) => x.id);
+    if (querem.length) r = darLance(r, escolhe(querem, r.seed + 23 * r.ronda + item + valor), item, valor, agora);
+  }
+  return r;
 }
 
-/** bate o martelo: só agora sai o dinheiro */
+/** bate o martelo nos 5: só agora sai o dinheiro */
 function baterMartelo(s: EstadoRagerob, agora: number): EstadoRagerob {
   const l = s.leilao!;
-  const m = s.loja[l.item];
-  let r: EstadoRagerob = { ...s, leilao: { ...l, martelo: true }, vendidos: [...s.vendidos, l.lance], terminaEm: agora + T_MARTELO * 1000 };
-  if (!l.lance) return r;
-  const { id, valor } = l.lance;
-  r = gastar(r, id, valor);
-  const robo = r.robos.find((x) => x.id === id && !x.dono);
-  // a IA instala logo no 1.º encaixe livre
-  if (robo && !r.participantes.includes(id)) return instalarNoRobo(r, id, m, robo.modulos.indexOf(null));
-  return { ...r, inventario: { ...r.inventario, [id]: [...(r.inventario[id] ?? []), m] } };
+  let r: EstadoRagerob = { ...s, leilao: { ...l, martelo: true }, vendidos: [...l.lances], terminaEm: agora + T_MARTELO * 1000 };
+  l.lances.forEach((x, k) => {
+    if (!x) return;
+    const m = s.loja[k];
+    r = gastar(r, x.id, x.valor);
+    const robo = r.robos.find((y) => y.id === x.id && !y.dono);
+    // a IA instala logo no 1.º encaixe livre
+    if (robo && !r.participantes.includes(x.id)) {
+      if (robo.modulos.includes(null)) r = instalarNoRobo(r, x.id, m, robo.modulos.indexOf(null));
+    } else r = { ...r, inventario: { ...r.inventario, [x.id]: [...(r.inventario[x.id] ?? []), m] } };
+  });
+  return r;
 }
 
 /** o dinheiro gasto some (o que entra é novo) */
@@ -453,7 +461,7 @@ function avancar(s: EstadoRagerob, agora: number): EstadoRagerob {
     case 'montar':
       return fecharMontar(s, agora);
     case 'loja':
-      if (s.leilao) return s.leilao.martelo ? abrirItem(s, s.leilao.item + 1, agora) : baterMartelo(s, agora);
+      if (s.leilao) return s.leilao.martelo ? fecharLoja(s, agora) : baterMartelo(s, agora);
       return fecharLoja(s, agora);
     case 'aposta':
       return abrirInstalar(s, agora);
@@ -537,8 +545,8 @@ export function reduzRagerob(s: EstadoRagerob, a: AcaoRagerob, agora: number): E
       return talvezAvancar(r, agora);
     }
     case 'rr_lance':
-      if (s.fase !== 'loja' || s.pausaRestante !== null || s.leilao?.item !== a.item || !ativos(s).includes(a.id)) return s;
-      return darLance(s, a.id, a.valor, agora);
+      if (s.fase !== 'loja' || s.pausaRestante !== null || !s.leilao || !ativos(s).includes(a.id)) return s;
+      return darLance(s, a.id, a.item, a.valor, agora);
     case 'rr_comprar': {
       if (s.fase !== 'loja' || s.def.loja !== 'privada') return s;
       const m = s.lojaPrivada[a.id]?.[a.item];

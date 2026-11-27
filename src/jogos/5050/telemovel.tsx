@@ -240,9 +240,7 @@ export function Telemovel5050({
       {(v.fase === 'placar' || v.fase === 'fim') && (
         <>
           {v.fase === 'fim' && <h1 class="pergunta">{t('fim')}</h1>}
-          <div class="cartao">
-            <Placar sala={sala} v={v} tam={40} />
-          </div>
+          <Placar sala={sala} v={v} />
           {v.fase === 'fim' && <Premios sala={sala} v={v} />}
           {v.fase === 'fim' && lider && (
             <div class="linha">

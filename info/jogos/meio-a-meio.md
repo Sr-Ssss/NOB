@@ -58,3 +58,9 @@ O autor escreve uma pergunta com 2 respostas e tenta dividir a sala exatamente a
 ## Conteúdo
 - 300 frases família (pt-BR + EN), 6 temas × 50 (Comida, Escola/Trabalho, Animais, Superpoderes, Férias, Casa).
 - Cada sessão sorteia sem repetir.
+
+## Design (aprovado 2026-11-27)
+- Votar no telemóvel: grelha pergunta + 2 metades iguais.
+- TV "escrever": centrado, ⚖️ a baloiçar, contagem x/n ✅.
+- Balança: topo de latão (D2) + base de madeira polida (D1), gradientes `b5-*` no SVG.
+- Placar/fim: `PodioEscada` (`src/ui/podio.tsx`) — padrão para todos os jogos.

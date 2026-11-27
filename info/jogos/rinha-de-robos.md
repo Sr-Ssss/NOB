@@ -241,3 +241,8 @@ Para continuar numa sessão nova: ler isto, `info/arquitetura.md` (Ecrãs, Desig
 - Decisão completa: modo normal, 500 iniciais; 1 toque escolhe o robô (muda até ao fim do tempo, rosto visível ao vivo); sem valor, entrada, mínimo, bolo nem consolação; dinheiro novo pelo lugar (250/150/100/50; final 400/150); sem escolha = 0; o gasto no leilão/controlo/troca some; com 0 ainda se escolhe. Pilotos fica igual.
 
 - **Desempenho na TV (25/11):** a TV desenha a arena em canvas (`arenaCanvas.tsx`, pinta o mesmo JSX de `desenho.tsx`; fundo, robôs e textos em cache; máx. 1280 px) e o Preact só refaz o resto 4×/s. CPU 6× mais lento: 24 → 49 fps. `ArenaSvg` fica só para os telemóveis. Componentes usados na arena não podem ter hooks; atributos SVG novos têm de ser suportados em `pintar`. Falta testar numa TV a sério.
+
+## Design (27/11, aprovado)
+- Leilão: os 5 módulos ao mesmo tempo, 30 s (+5 s mínimo a cada lance), martelo nos 5 de uma vez. Soma dos lances em que lidera ≤ carteira.
+- Cada módulo mostra a carinha de quem lidera (TV: 5 lado a lado; telemóvel: lista com um botão 🙋/+50; +100 saiu).
+- Fundo var(--fundo); fim com PodioEscada (TV e telemóvel sem TV).

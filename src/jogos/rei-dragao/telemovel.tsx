@@ -4,31 +4,66 @@ import { t, type Chave } from '../../core/i18n';
 import { Avatar, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { T_REFENS, type CartaR, type PapelR, type PrivadoRei, type VistaRei } from './regras';
-import { BOLA, Castelos, ICONE, PlacarRei, narracao, nomeEquipa, nomePapel, nomeSala, textoCarta, type PropsRei } from './comuns';
+import { BOLA, COR_EQ, Castelos, Emblema, ICONE, ORLA_DE, Simbolo, narracao, nomeEquipa, nomePapel, nomeSala, type PropsRei } from './comuns';
 import { AcabarPartida } from '../../ui/acabarPartida';
 import { BotaoPopup } from '../../ui/verPopup';
+import { PodioEscada } from '../../ui/podio';
 import { eventosSegurar, tocarParaMostrar } from '../../ui/acessibilidade';
 
 type Enviar = (a: AcaoSala) => void;
 const jogo = (enviar: Enviar, acao: Record<string, unknown>) => enviar({ tipo: 'jogo', acao: { id: '', ...acao } as never });
 const Frase = ({ texto }: { texto: string }) => <h2 class="rm-frase">{texto}</h2>;
 
-/** ecrã escuro: só texto + bolinha de cor (sem fundo colorido) */
+/** ecrã escuro (sem fundo colorido: um ecrã muito brilhante denunciaria a cor) */
 function Escuro({ children }: { children: preact.ComponentChildren }) {
   return <div class="rd-escuro">{children}</div>;
 }
 
-function Carta({ c, p, so = false }: { c: CartaR; p?: PrivadoRei | null; so?: boolean }) {
+/** mini estandarte da sala (sol na Sala 1, lua na Sala 2) */
+function MiniEstandarte({ k }: { k: 0 | 1 }) {
   return (
-    <>
-      <div class="rd-bola">
-        {BOLA[c.cor]} {nomeEquipa(c.cor)}
+    <div class="rd-mini" aria-hidden="true">
+      <div class="rd-mini-vara" />
+      <div class="rd-mini-pano">
+        <Simbolo k={k} />
       </div>
-      {!so && <h2>{textoCarta(c)}</h2>}
-      {!so && <p>{t(('rdObj_' + c.papel) as Chave)}</p>}
-      {!so && p?.equipa && c.papel === 'traidor' && <p>{t('rdJogaPor', { eq: nomeEquipa(p.equipa) })}</p>}
-      {!so && p?.batata && <p>{t('rdComBatata')}</p>}
-    </>
+    </div>
+  );
+}
+
+/** a carta: cartão de couro com moldura dourada; o boneco no emblema com a orla da equipa */
+function Carta({ c, n, p }: { c: CartaR; n: number; p?: PrivadoRei | null }) {
+  return (
+    <div class="rd-carta">
+      <i class="rd-canto c1" />
+      <i class="rd-canto c2" />
+      <i class="rd-canto c3" />
+      <i class="rd-canto c4" />
+      <span class="rd-carta-icone" aria-hidden="true">
+        {ICONE[c.papel]}
+      </span>
+      <h2>{nomePapel(c.papel)}</h2>
+      <Emblema n={n} orla={ORLA_DE[c.cor]} />
+      <div class="rd-equipa">
+        <span class="rd-bolinha" style={{ background: COR_EQ[c.cor] }} />
+        {nomeEquipa(c.cor)}
+      </div>
+      <hr />
+      <p>{t(('rdObj_' + c.papel) as Chave)}</p>
+      {p?.equipa && c.papel === 'traidor' && <p>{t('rdJogaPor', { eq: nomeEquipa(p.equipa) })}</p>}
+      {p?.batata && <p>{t('rdComBatata')}</p>}
+    </div>
+  );
+}
+
+/** "Mostrar cor": só o emblema grande + o nome da equipa */
+function MinhaCor({ c, n }: { c: CartaR; n: number }) {
+  return (
+    <div class="rd-minha-cor">
+      <small>{t('rdMinhaCor')}</small>
+      <Emblema n={n} orla={ORLA_DE[c.cor]} />
+      <b>{nomeEquipa(c.cor)}</b>
+    </div>
   );
 }
 
@@ -232,9 +267,10 @@ function Ronda({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei
         </button>
       )}
       <div class="rd-mostrar">
-        <SegurarMostrar rotulo={t('rdMostrarCor')} conteudo={<Carta c={p.carta} so />} />
-        <SegurarMostrar rotulo={t('rdMostrarCarta')} conteudo={<Carta c={p.carta} />} aoLargar={() => p.batata && !p.pedi && setMenu('batata')} />
+        <SegurarMostrar rotulo={t('rdMostrarCor')} conteudo={<MinhaCor c={p.carta} n={avatarDe(sala, eu)} />} />
+        <SegurarMostrar rotulo={t('rdMostrarCarta')} conteudo={<Carta c={p.carta} n={avatarDe(sala, eu)} />} aoLargar={() => p.batata && !p.pedi && setMenu('batata')} />
       </div>
+      {aqui.length <= 6 && !p.pedido && !p.pedi && menu === 'nada' && !(lider && ultimos) && <MiniEstandarte k={k} />}
       <h3>{t('rdNaSala')}</h3>
       <div class="rd-lista">
         {[...aqui]
@@ -263,11 +299,7 @@ function Eu({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei; e
     case 'ir':
       return (
         <>
-          <div class="rd-mini-torre" aria-hidden="true">
-            <svg viewBox="0 0 200 320" width="120" height="180">
-              <path d="M20 316 V70 h24 v-34 h28 v34 h28 v-34 h28 v34 h28 v-34 h24 V316 Z" fill={k === 0 ? '#3E63DD' : '#E5484D'} stroke="#000" stroke-width="6" />
-            </svg>
-          </div>
+          <MiniEstandarte k={k} />
           <h1 class="rd-vai">{t('rdVaiPara', { sala: nomeSala(v, k) })}</h1>
           {ja ? (
             <>
@@ -285,19 +317,21 @@ function Eu({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei; e
       if (ja || !p)
         return (
           <>
+            <div class="rd-espera-emb">
+              <Emblema n={avatarDe(sala, eu)} />
+            </div>
             <Frase texto={narracao(sala, v)} />
             {sala.vipId === eu && <Avancar v={v} enviar={enviar} />}
           </>
         );
       return (
         <Escuro>
-          <p>{t('rdSuaCarta')}</p>
-          <Carta c={p.carta} p={p} />
-          <div class="linha">
-            <button class="botao sec" onClick={() => setInfo(true)}>
-              {t('rdInfo')}
+          <Carta c={p.carta} n={avatarDe(sala, eu)} p={p} />
+          <div class="rd-carta-botoes">
+            <button class="botao rd-btn-info" aria-label={t('rdInfo')} onClick={() => setInfo(true)}>
+              ℹ️
             </button>
-            <button class="botao cresce" onClick={() => jogo(enviar, { tipo: 'rd_ok' })}>
+            <button class="botao rd-btn-ok" onClick={() => jogo(enviar, { tipo: 'rd_ok' })}>
               {t('rdOk')}
             </button>
           </div>
@@ -307,11 +341,18 @@ function Eu({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei; e
       return (
         <>
           <Frase texto={'👑 ' + t('rdLideres')} />
-          {([0, 1] as const).map((s) => (
-            <p key={s} class="centro" style={{ fontSize: 22 }}>
-              {nomeSala(v, s)}: <b>{nomeDe(sala, v.lideres[s])}</b>
-            </p>
-          ))}
+          <div class="rd-minis">
+            {([0, 1] as const).map((s) => (
+              <div key={s}>
+                <MiniEstandarte k={s} />
+                <p class="rd-mini-nome">
+                  {nomeSala(v, s)}
+                  <br />
+                  👑 {nomeDe(sala, v.lideres[s])}
+                </p>
+              </div>
+            ))}
+          </div>
         </>
       );
     case 'ronda':
@@ -320,6 +361,7 @@ function Eu({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei; e
       if (v.mudando.includes(eu))
         return (
           <>
+            <MiniEstandarte k={k} />
             <h1 class="rd-vai">{t('rdFoste', { sala: nomeSala(v, k) })}</h1>
             {!v.chegaram.includes(eu) && (
               <button class="botao grande" onClick={() => jogo(enviar, { tipo: 'rd_cheguei' })}>
@@ -328,7 +370,12 @@ function Eu({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei; e
             )}
           </>
         );
-      return <Frase texto={t('rdFicas', { sala: nomeSala(v, k) })} />;
+      return (
+        <>
+          <MiniEstandarte k={k} />
+          <Frase texto={t('rdFicas', { sala: nomeSala(v, k) })} />
+        </>
+      );
     case 'aposta':
       if (p?.carta.papel === 'apostador' && !p.aposta)
         return (
@@ -350,7 +397,12 @@ function Eu({ sala, v, eu, p, enviar, agora }: { sala: VistaSala; v: VistaRei; e
             <Escolher sala={sala} ids={v.participantes.filter((id) => id !== eu)} rotulo={'🏹 ' + t('rdConfirmar')} ok={([alvo]) => jogo(enviar, { tipo: 'rd_apontar', alvo })} />
           </>
         );
-      return <Frase texto={'🌙 ' + t('rdEspera')} />;
+      return (
+        <>
+          <MiniEstandarte k={1} />
+          <Frase texto={t('rdAntesMeiaNoite') + ' ' + t('rdEspera')} />
+        </>
+      );
     default:
       return <Frase texto={narracao(sala, v)} />;
   }
@@ -402,9 +454,7 @@ export function TelemovelRei({ sala, v, agora, eu, privado, enviar }: PropsRei &
           ) : (
             <p class="centro">{t('rdOlheTv')}</p>
           )}
-          <div class="cartao">
-            <PlacarRei sala={sala} v={v} tam={36} />
-          </div>
+          <PodioEscada sala={sala} podio={v.podio} />
           {sala.vipId === eu && (
             <div class="linha">
               <button class="botao cresce" onClick={() => enviar({ tipo: 'outra_vez', id: '' })}>

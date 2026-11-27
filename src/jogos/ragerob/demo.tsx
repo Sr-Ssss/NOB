@@ -26,22 +26,19 @@ function estado(fase: string, modo: 'normal' | 'pilotos', loja: Loja, lance: str
     ap({ tipo: 'rr_montar', id: 'j1', corpo: 'quadrado', loco: 'rodas', cabeca: 'rino' });
     tempo();
   }
-  const licita = (id: string, mais: number) => ap({ tipo: 'rr_lance', id, item: e.leilao!.item, valor: PRECO[e.loja[e.leilao!.item]] + mais });
+  const licita = (id: string, item: number, mais: number) => ap({ tipo: 'rr_lance', id, item, valor: (e.leilao!.lances[item]?.valor ?? PRECO[e.loja[item]] - 50) + 50 + mais });
   if (fase === 'loja') {
     if (loja === 'privada') return ap({ tipo: 'rr_comprar', id: 'j1', item: 1 });
-    licita('j1', 0);
-    tempo();
-    tempo(); // o 2.º módulo em palco
     if (lance === '0') return e;
-    licita('j3', 0);
-    licita('j2', 100);
+    licita('j1', 0, 0);
+    licita('j3', 1, 0);
+    licita('j2', 1, 0);
+    licita('j4', 3, 0);
     return lance === 'martelo' ? tempo() : e;
   }
   // leilão: a Rita compra 2 módulos, o Beto 1
-  while (e.fase === 'loja') {
-    if (e.leilao && !e.leilao.martelo && e.leilao.item < 3) licita(e.leilao.item < 2 ? 'j1' : 'j2', 0);
-    tempo();
-  }
+  if (e.leilao) [0, 1, 2].forEach((k) => licita(k < 2 ? 'j1' : 'j2', k, 0));
+  while (e.fase === 'loja') tempo();
   if (modo === 'normal') {
     const g = grupoAtual(e);
     if (fase === 'aposta') return ap({ tipo: 'rr_apostar', id: 'j2', robo: g[1] });

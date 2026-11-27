@@ -5,8 +5,8 @@ import {
   CAPITAL_PILOTOS,
   DEF_PADRAO_RAGEROB,
   PRECO_CONTROLO,
-  T_LANCE,
   T_LANCE_EXTRA,
+  T_LEILAO,
   T_MARTELO,
   grupoAtual,
   novoRagerob,
@@ -31,7 +31,7 @@ const fimTv = (s: EstadoRagerob, t = 2000): EstadoRagerob => {
 const tempo = (s: EstadoRagerob) => r(s, { tipo: 'tick' }, s.terminaEm);
 /** passa o leilão (ou a loja privada) inteiro sem lances */
 const semLoja = (s: EstadoRagerob): EstadoRagerob => (s.fase === 'loja' ? semLoja(tempo(s)) : s);
-const lance = (s: EstadoRagerob, id: string, valor: number, t = 1000, item = s.leilao!.item) => r(s, { tipo: 'rr_lance', id, item, valor }, t);
+const lance = (s: EstadoRagerob, id: string, valor: number, t = 1000, item = 0) => r(s, { tipo: 'rr_lance', id, item, valor }, t);
 
 describe('Ragerob — modo normal', () => {
   it('começa com 8 robôs, 500 cada (Pilotos 1500), leilão de 5 módulos; 2 jogadores chegam', () => {
@@ -48,25 +48,26 @@ describe('Ragerob — modo normal', () => {
     expect(novo(10, { rondas: 4 }).robos).toHaveLength(16);
   });
 
-  it('leilão ao vivo: o lance mais alto substitui o anterior e o dinheiro só sai ao martelo', () => {
+  it('leilão ao vivo: os 5 ao mesmo tempo, o lance mais alto substitui o anterior e o dinheiro só sai ao martelo', () => {
     let s = novo(3);
     const p = PRECO[s.loja[0]];
-    expect(s.terminaEm).toBe(T_LANCE * 1000);
+    expect(s.terminaEm).toBe(T_LEILAO * 1000);
+    expect(s.leilao).toEqual({ lances: [null, null, null, null, null], martelo: false });
     expect(lance(s, 'j1', p - 1)).toBe(s); // abaixo do preço
     expect(lance(s, 'j1', CAPITAL + 1)).toBe(s); // não cabe na carteira
     expect(lance(s, 'j1', p + 0.5)).toBe(s);
     expect(lance(s, 'j1', NaN)).toBe(s);
     expect(lance(s, 'x', p)).toBe(s);
-    expect(lance(s, 'j1', p, 1000, 1)).toBe(s); // outro módulo
+    expect(lance(s, 'j1', p, 1000, 5)).toBe(s); // módulo que não existe
     s = lance(s, 'j1', p);
     expect(lance(s, 'j1', p + 50)).toBe(s); // já lidera
     expect(lance(s, 'j2', p)).toBe(s); // não supera
-    expect(s.terminaEm).toBe(T_LANCE * 1000); // ainda havia tempo
-    s = lance(s, 'j2', p + 50, 9000);
-    expect(s.terminaEm).toBe(9000 + T_LANCE_EXTRA * 1000);
+    expect(s.terminaEm).toBe(T_LEILAO * 1000); // ainda havia tempo
+    s = lance(s, 'j2', p + 50, 28_000);
+    expect(s.terminaEm).toBe(28_000 + T_LANCE_EXTRA * 1000);
     // dois toques ao mesmo tempo no mesmo +50: o segundo não paga mais do que viu
-    expect(lance(s, 'j3', p + 50, 9000)).toBe(s);
-    expect(vistaRagerob(s).leilao).toEqual({ item: 0, lance: { id: 'j2', valor: p + 50 }, martelo: false });
+    expect(lance(s, 'j3', p + 50, 28_000)).toBe(s);
+    expect(vistaRagerob(s).leilao!.lances[0]).toEqual({ id: 'j2', valor: p + 50 });
     expect(s.carteira.j2).toBe(CAPITAL);
     const fim = s.terminaEm;
     s = tempo(s);
@@ -76,24 +77,23 @@ describe('Ragerob — modo normal', () => {
     expect(s.inventario.j2).toEqual([s.loja[0]]);
     expect(lance(s, 'j3', p + 100)).toBe(s); // vendido
     s = tempo(s);
-    expect(s.leilao).toEqual({ item: 1, lance: null, martelo: false });
-    s = semLoja(s);
     expect(s.fase).toBe('aposta');
     expect(s.leilao).toBeNull();
     expect(s.vendidos).toEqual([{ id: 'j2', valor: p + 50 }, null, null, null, null]);
     expect(total(s)).toBe(3 * CAPITAL - p - 50); // o dinheiro gasto some
   });
 
-  it('leilão: salta os módulos que ninguém pode pagar', () => {
+  it('leilão: não se promete mais do que se tem (soma dos lances em que lidera)', () => {
     let s = novo(2);
-    s = { ...s, loja: ['oleo', 'martelo', 'escudo', 'chamas', 'bobina'], carteira: { j1: 100, j2: 0 } };
-    s = tempo(tempo(s));
-    expect(s.leilao!.item).toBe(2);
-    s = lance(s, 'j1', 100);
-    s = tempo(tempo(s));
-    expect(s.fase).toBe('aposta');
-    expect(s.vendidos).toEqual([null, null, { id: 'j1', valor: 100 }, null, null]);
-    expect(total(s)).toBe(0);
+    s = { ...s, loja: ['oleo', 'martelo', 'escudo', 'chamas', 'bobina'], carteira: { j1: 350, j2: 500 } };
+    s = lance(s, 'j1', 100, 1000, 0); // óleo
+    s = lance(s, 'j1', 200, 1000, 1); // martelo: 100 + 200 = 300 cabe
+    expect(lance(s, 'j1', 100, 1000, 2)).toBe(s); // escudo: 400 > 350
+    s = lance(s, 'j2', 150, 1000, 0); // a j1 deixa de liderar o óleo: os 100 voltam a contar
+    s = lance(s, 'j1', 100, 1000, 2);
+    expect(s.leilao!.lances.map((l) => l?.id ?? null)).toEqual(['j2', 'j1', 'j1', null, null]);
+    s = tempo(s);
+    expect(s.carteira).toEqual({ j1: 50, j2: 350 });
   });
 
   it('apostas por pódio: um toque, sem pôr dinheiro; muda-se até o tempo acabar; paga 250/150/100/50', () => {
@@ -152,7 +152,7 @@ describe('Ragerob — modo normal', () => {
   it('instalar: só no robô em que apostou; trocar custa +50%', () => {
     let s = novo(2);
     s = { ...s, carteira: { j1: 1500, j2: 1500 } };
-    for (let k = 0; k < 2; k++) s = tempo(tempo(lance(s, 'j1', PRECO[s.loja[k]])));
+    for (let k = 0; k < 2; k++) s = lance(s, 'j1', PRECO[s.loja[k]], 1000, k);
     s = semLoja(s);
     const robo = grupoAtual(s)[0];
     s = r(s, { tipo: 'rr_apostar', id: 'j1', robo });
@@ -225,12 +225,12 @@ describe('Ragerob — modo normal', () => {
   it('desligar e voltar: pausa com menos de 2 ligados e o dinheiro fica', () => {
     let s = novo(2);
     s = r(s, { tipo: 'ligados', ids: ['j1'] }, 5000);
-    expect(s.pausaRestante).toBe(5000);
+    expect(s.pausaRestante).toBe(T_LEILAO * 1000 - 5000);
     expect(lance(s, 'j1', 500)).toBe(s); // em pausa não se licita
     expect(r(s, { tipo: 'tick' }, 1e9).fase).toBe('loja');
     s = r(s, { tipo: 'ligados', ids: ['j1', 'j2'] }, 9000);
     expect(s.pausaRestante).toBeNull();
-    expect(s.terminaEm).toBe(14000);
+    expect(s.terminaEm).toBe(9000 + T_LEILAO * 1000 - 5000);
     expect(s.carteira.j2).toBe(CAPITAL);
   });
 
@@ -296,8 +296,7 @@ describe('Ragerob — modo Pilotos (liga)', () => {
       } else if (s.fase === 'loja') {
         for (let t = s.terminaEm - 10_000; s.fase === 'loja'; t += 250) {
           s = r(s, { tipo: 'tick' }, t);
-          const l = s.leilao?.lance;
-          if (l && !s.participantes.includes(l.id) && !s.leilao!.martelo) expect(s.carteira[l.id]).toBeGreaterThanOrEqual(l.valor);
+          for (const l of s.leilao?.lances ?? []) if (l && !s.participantes.includes(l.id) && !s.leilao!.martelo) expect(s.carteira[l.id]).toBeGreaterThanOrEqual(l.valor);
         }
       } else s = tempo(s);
     }

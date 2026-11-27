@@ -136,6 +136,7 @@ export function Montra() {
           <figure style={{ width: 1920 * k, height: 1080 * k }}>
             <div class="montra-tv" style={{ transform: `scale(${k})` }}>
               {ecras.tv({ g, v, sala: vista, agora, selFim: 0, onOutraVez: nada, onMenu: nada, acao: nada })}
+              <div class="rodape-codigo tv">{vista.codigo}</div>
             </div>
             <figcaption>TV</figcaption>
           </figure>
@@ -144,6 +145,7 @@ export function Montra() {
           <figure key={id} style={{ width: 412 * kTel, height: 915 * kTel }}>
             <div class="montra-tel" style={{ transform: `scale(${kTel})` }}>
               {ecras.telemovel({ v, sala: vista, agora, eu: id, marca: () => minhaMarca(vista, TAGS[id] ?? ''), privado: privadoSala(f.s, id), enviar: nada })}
+              <div class="rodape-codigo">{vista.codigo}</div>
             </div>
             <figcaption>{id === 'eu' ? 'líder (parado)' : id}</figcaption>
           </figure>

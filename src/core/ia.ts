@@ -209,11 +209,13 @@ export const BOT_SEMJUIZO: BotJogo<EstadoSemJuizo, AcaoSemJuizo> = {
 function lanceRagerob(e: EstadoRagerob, id: string): SemId<AcaoRagerob>[] {
   const l = e.leilao;
   if (!l || l.martelo) return [];
-  const h = hashTexto(`${id}:${e.ronda}:${l.item}:${e.seed}`) >>> 8;
-  const preco = PRECO[e.loja[l.item]];
-  const limite = Math.min(preco + 50 * (h % 5), (e.carteira[id] ?? 0) / 2);
-  const valor = l.lance ? l.lance.valor + 50 : preco;
-  return (h >> 4) % 2 || valor > limite ? [] : [{ tipo: 'rr_lance', item: l.item, valor }];
+  return l.lances.flatMap((x, item): SemId<AcaoRagerob>[] => {
+    const h = hashTexto(`${id}:${e.ronda}:${item}:${e.seed}`) >>> 8;
+    const preco = PRECO[e.loja[item]];
+    const limite = Math.min(preco + 50 * (h % 5), (e.carteira[id] ?? 0) / 2);
+    const valor = x ? x.valor + 50 : preco;
+    return (h >> 4) % 2 || x?.id === id || valor > limite ? [] : [{ tipo: 'rr_lance', item, valor }];
+  });
 }
 
 export const BOT_RAGEROB: BotJogo<EstadoRagerob, AcaoRagerob> = {
@@ -227,7 +229,7 @@ export const BOT_RAGEROB: BotJogo<EstadoRagerob, AcaoRagerob> = {
     ...(e.fase === 'aposta' ? [{ tipo: 'rr_apostar' as const, robo: umDe(e.grupos[e.combateIdx] ?? [''], r) }] : []),
   ],
   // leilão: uma jogada por lance (o terminaEm nem sempre muda com ele)
-  chave: (e, id) => (e.fase === 'loja' && e.leilao ? `leilao:${e.ronda}:${e.leilao.item}:${e.leilao.lance?.valor ?? 0}` : `${e.fase}:${e.terminaEm}:${e.inventario[id]?.length ?? 0}`),
+  chave: (e, id) => (e.fase === 'loja' && e.leilao ? `leilao:${e.ronda}:${e.leilao.lances.map((x) => x?.valor ?? 0).join('-')}` : `${e.fase}:${e.terminaEm}:${e.inventario[id]?.length ?? 0}`),
 };
 
 /** Duelo de Rabiscos: a melhor jogada que o bot vê (src/jogos/duelo-rabiscos/bot.ts) */

@@ -89,3 +89,14 @@
 - Não se força ninguém a mostrar nada nem se espreita o telemóvel de outro.
 - O líder não precisa de explicar as escolhas.
 - Sem contacto com a outra divisão, exceto os líderes no momento da troca.
+
+## Design novo (27/11, aprovado e aplicado)
+Maquete: `prints-montra/proposta-rei-final.html` (+ `.png`); versão só parede/estandartes: `prints-montra/proposta-rei-estandartes.html`.
+- **TV**: parede de pedra (tijolos grandes, tom/tamanho/rachas variados, sem chão), tochas realistas nos lados. Cada sala = **estandarte vermelho** (o mesmo nas 2) com nome, sol/lua e os bonecos.
+- **Equipas mudam de cor**: equipa do Rei = **dourado** (era 🔵), equipa do Dragão = **verde** (era 🔴), neutros = branco. Trocar em tudo (TV, telemóvel, ℹ️, i18n).
+- **Bonecos**: cores normais, dentro de um **emblema bordado** redondo (orla em ponto cheio + costura tracejada). Orla **cinzenta** durante o jogo; na revelação passa a dourado/verde/branco + fita com o papel por baixo. Só o emblema muda.
+- **Fim (meia-noite)**: sem dragão. **Explosão de fogo** única no canto de baixo do lado da sala onde está o Dragão (clarão → cresce → faíscas → some). O estandarte dessa sala fica preto/rasgado **só na ponta de baixo** desse lado (não chega aos emblemas), com fumo. Reduzir movimento: imagem final direta.
+- **Carta (telemóvel)** — aprovada, maquete `prints-montra/proposta-rei-carta.html`: ecrã escuro; cartão de couro escuro com moldura dourada fina e cantos; ícone + nome do papel; o boneco no emblema com a orla da equipa; bolinha + "Equipa dourada/verde/Neutro"; objetivo numa frase; botões ℹ️ e OK. **Mostrar cor**: só o emblema grande + nome da equipa + "Esconder".
+- Falta também: `PodioEscada` no fim, `var(--fundo)`, imagens nos ecrãs vazios do telemóvel. Não mexer em `regras.ts` sem autorização.
+- **Aplicado no código e aprovado pelo utilizador (27/11)**: `comuns.tsx` (parede, tochas, `Pano`/estandarte, `Emblema`, `Explosao`, sol/lua), `tv.tsx` (no fim: meia-noite + placa + `PodioEscada` no meio), `telemovel.tsx` (carta de couro, "Minha cor", mini estandartes nos ecrãs vazios, pódio), `rei.css`, i18n (equipe dourada/verde, `rdMinhaCor`). `regras.ts` intacto (cores internas continuam azul/vermelho). Testado com 6 e 24 jogadores. Capturas: `node prints-montra/prints.mjs rei` + `node prints-montra/prints-rei-tel.mjs` (carta, Mostrar cor, TV com 24).
+- "Mostrar cor" mantém o segurar 2 s (largar esconde), por isso não há botão "Esconder".

@@ -1,49 +1,141 @@
-/* O Rei e o Dragão: "duas torres e uma ponte" (aprovado pelo utilizador; info/jogos/dois-lados.md → Visual) */
-.jogo-rei { min-height: 100cqh; box-sizing: border-box; background: var(--noite); }
-.rd-narra { text-align: center; margin: 8px 0; font-size: clamp(22px, 3.4cqw, 56px); }
-.rd-castelos { display: flex; align-items: flex-end; justify-content: center; gap: 0; width: min(98%, 1700px); margin: 0 auto; }
-.rd-torre { position: relative; flex: 1 1 0; min-height: 66cqh; display: flex; }
-.compacto .rd-torre { min-height: 300px; }
-.rd-torre-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rd-dentro { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; padding: 13% 14% 22%; box-sizing: border-box; color: var(--creme); }
-.rd-titulo { margin: 0; font-size: clamp(18px, 2.6cqw, 44px); text-shadow: 2px 2px 0 #000; }
-.rd-lider { margin: 2px 0 8px; font-weight: 700; text-shadow: 1px 1px 0 #000; }
-.rd-gente { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-.compacto .rd-gente { gap: 4px; }
-.rd-pessoa { display: flex; flex-direction: column; align-items: center; min-width: 72px; font-weight: 700; text-shadow: 1px 1px 0 #000; }
-.compacto .rd-pessoa { min-width: 44px; font-size: 12px; }
+/* O Rei e o Dragão: parede de pedra, estandartes vermelhos e emblemas bordados (design de 27/11; info/jogos/dois-lados.md → "Design novo") */
+.jogo-rei { min-height: 100cqh; box-sizing: border-box; background: var(--fundo); }
+.jogo-rei.tv { height: 100cqh; position: relative; overflow: hidden; display: flex; flex-direction: column; background-color: #241f30; background-size: cover; background-position: center; }
+.rd-narra { text-align: center; margin: 4px 0; font-size: clamp(22px, 3.2cqw, 60px); color: #f3e6c8; text-shadow: 0 3px 0 #1b1526, 0 0 12px #1b1526; }
+
+/* parede: tochas, 2 estandartes e o meio */
+.rd-castelos { --lb: 31cqw; position: relative; flex: 1; display: flex; align-items: stretch; justify-content: center; gap: 1.5cqw; width: 100%; min-height: 0; }
+.rd-castelos.fim { --lb: 27cqw; }
+.rd-estandarte { position: relative; flex: none; width: var(--lb); display: flex; flex-direction: column; margin-top: 1cqh; margin-bottom: 2cqh; }
+.rd-vara { position: absolute; z-index: 2; top: 0; left: -6%; width: 112%; height: auto; }
+.rd-pano-caixa { position: absolute; z-index: 0; left: 0; right: 0; bottom: 0; top: calc(var(--lb) * 0.218); }
+.rd-pano-caixa.espelho .rd-pano { transform: scaleX(-1); }
+.rd-pano { width: 100%; height: 100%; display: block; overflow: visible; }
+.rd-dentro { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.4cqw; padding: calc(var(--lb) * 0.218 + 1cqw) 1.6cqw 12cqh; box-sizing: border-box; color: #f3e6c8; }
+.rd-titulo { margin: 0; font-size: clamp(20px, 3.4cqw, 68px); line-height: 1.05; color: #f3d27a; -webkit-text-stroke: 0.4cqw #1b1526; paint-order: stroke fill; text-align: center; }
+.rd-simbolo { width: 4.6cqw; height: 4.6cqw; flex: none; }
+.fim .rd-simbolo { width: 3.8cqw; height: 3.8cqw; }
+.rd-lider { margin: 0; font-weight: 800; font-size: clamp(16px, 1.7cqw, 34px); text-shadow: 0 2px 0 #1b1526; }
+.rd-gente { display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 0.4cqw 0.6cqw; }
+.rd-pessoa { display: flex; flex-direction: column; align-items: center; width: calc(var(--emb) + 0.6cqw); font-weight: 800; }
 .rd-pessoa.novo { animation: rd-chega 1.2s ease-out; }
-.rd-av { position: relative; }
-.rd-coroa { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 1.3em; }
-.rd-carta-fim { font-size: 0.85em; background: var(--creme); color: var(--tinta); border: 2px solid #000; border-radius: 8px; padding: 0 6px; text-shadow: none; }
-.rd-pessoa.dragao .rd-av { animation: rd-vira 1.4s ease-in-out infinite alternate; }
-.rd-ponte { position: relative; display: flex; flex-direction: column; align-items: center; width: clamp(110px, 18cqw, 320px); margin-bottom: 22cqh; }
-.compacto .rd-ponte { margin-bottom: 90px; width: 90px; }
-.rd-ponte-svg { width: 100%; }
-.rd-relogio { font-size: clamp(22px, 4cqw, 72px); font-weight: 800; color: var(--creme); background: var(--tinta); border: 5px solid #000; border-radius: 50%; min-width: 2.6em; aspect-ratio: 1; display: grid; place-items: center; margin-bottom: 8px; }
-.compacto .rd-relogio { font-size: 18px; border-width: 3px; }
-.rd-atravessa { position: absolute; top: 58%; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; }
-.rd-viajante { animation: rd-atravessa 2.4s ease-in-out infinite alternate; }
+.rd-av { position: relative; display: block; }
+.rd-coroa { position: absolute; top: -0.6em; left: 50%; transform: translateX(-50%); font-size: calc(var(--emb) * 0.32); }
+.rd-nome { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(13px, 1.45cqw, 30px); color: #f3e6c8; text-shadow: 0 2px 0 #1b1526; }
+.rd-fita { position: relative; z-index: 1; margin-top: -0.5cqw; padding: 0.1cqw 1.2cqw; background: #efe3c4; color: #3d2a1a; font-size: clamp(11px, calc(var(--emb) * 0.21), 26px); width: max-content; white-space: nowrap; clip-path: polygon(0 0, 100% 0, 91% 50%, 100% 100%, 0 100%, 9% 50%); }
+
+/* emblema bordado (tamanho em --emb) */
+.rd-emb { position: relative; display: grid; place-items: center; width: var(--emb, 64px); aspect-ratio: 1; }
+.rd-emb-orla { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rd-emb .boneco18 { position: relative; width: 62%; height: 62%; }
+.fim .rd-emb-orla { animation: rd-revela 0.7s ease-out both; }
+
+/* o meio: relógio e reféns a atravessar */
+.rd-meio-caixa { flex: none; width: 18cqw; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.fim .rd-meio-caixa { width: 36cqw; justify-content: flex-start; }
+.rd-meio { display: flex; flex-direction: column; align-items: center; gap: 2cqh; width: 100%; }
+.rd-relogio { font-size: clamp(22px, 4cqw, 80px); font-weight: 800; color: #f3d27a; background: radial-gradient(circle at 40% 35%, #4a3726, #241a12); border: 0.5cqw solid #c8901e; box-shadow: 0 0 0 0.25cqw #5b3c25, 0 1cqw 2cqw #0008; border-radius: 50%; min-width: 2.6em; aspect-ratio: 1; display: grid; place-items: center; }
+.rd-atravessa { display: flex; flex-direction: column; align-items: center; gap: 1cqh; width: 100%; }
+.rd-viajante { display: flex; flex-direction: column; align-items: center; color: #f3e6c8; font-size: clamp(14px, 1.4cqw, 28px); text-shadow: 0 2px 0 #1b1526; animation: rd-atravessa 2.4s ease-in-out infinite alternate; }
 .rd-viajante.chegou { animation: none; opacity: 0.4; }
-.rd-placar-fim ol { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0 28px; }
-.rd-placar-fim li { font-size: 32px !important; }
-.rd-tv-fim .rd-torre { min-height: 44cqh; }
-.rd-tv-fim .rd-ponte { margin-bottom: 16cqh; }
-.rd-tv-fim .rd-dentro { padding: 5% 6% 9%; }
-.rd-fogo { position: absolute; bottom: 2%; left: 50%; transform: translateX(-50%); font-size: clamp(60px, 9cqw, 170px); z-index: 2; animation: rd-cospe 0.9s ease-in-out infinite alternate; white-space: nowrap; }
-.rd-fogo span { font-size: 0.6em; }
-.rd-torre.fogo .rd-torre-svg path:first-child { fill: #f0997b; }
-@keyframes rd-atravessa { from { transform: translateX(-40%); } to { transform: translateX(40%); } }
+.rd-viajante .boneco18 { width: 5cqw; height: 5cqw; }
+
+/* fim: meia-noite, placa de quem ganhou e pódio no meio */
+.rd-meio-fim { display: flex; flex-direction: column; align-items: center; gap: 1.2cqh; width: 100%; padding-top: 1cqh; }
+.rd-meianoite { margin: 0; font-size: clamp(28px, 3.8cqw, 76px); color: #f3e6c8; -webkit-text-stroke: 0.45cqw #2a2438; paint-order: stroke fill; }
+.rd-placa { padding: 0.6cqw 1.4cqw; border: 0.3cqw solid #7a4a10; border-radius: 0.8cqw; text-align: center; font-weight: 800; font-size: clamp(16px, 1.7cqw, 34px); color: #3d2a10; background: linear-gradient(135deg, #ffe08a, #c8901e); }
+.rd-placa.vermelho { border-color: #123d1e; color: #f3fbe9; background: linear-gradient(135deg, #5fc46e, #1f7a3a); }
+.rd-extra { margin: 0; text-align: center; font-weight: 700; font-size: clamp(14px, 1.4cqw, 28px); color: #f3e6c8; text-shadow: 0 2px 0 #1b1526; }
+.rd-meio-fim .podio.tv .degrau { max-width: 11cqw; }
+.rd-meio-fim .podio.tv .degrau .boneco18 { width: 5cqw; height: 5cqw; }
+.rd-meio-fim .podio.tv .podio-nome { font-size: clamp(16px, 1.6cqw, 32px); color: #f3e6c8; }
+.rd-meio-fim .podio.tv .podio-bloco b { font-size: clamp(24px, 2.8cqw, 56px); }
+.rd-meio-fim .podio.tv .podio-bloco span { font-size: clamp(14px, 1.3cqw, 26px); }
+.rd-meio-fim .podio.tv .d1 .podio-bloco { height: 12cqh; }
+.rd-meio-fim .podio.tv .d2 .podio-bloco { height: 9.5cqh; }
+.rd-meio-fim .podio.tv .d3 .podio-bloco { height: 8cqh; }
+.rd-meio-fim .podio.tv .podio-resto { grid-template-columns: repeat(3, 1fr); gap: 0.4cqh 0.5cqw; }
+.rd-meio-fim .podio.tv .podio-resto li { gap: 0.4cqw; font-size: clamp(12px, 1.1cqw, 24px); padding: 0 0.6cqw; border-radius: 0.6cqw; white-space: nowrap; overflow: hidden; }
+.rd-meio-fim .podio.tv .podio-resto .boneco18 { width: 1.8cqw; height: 1.8cqw; flex: none; }
+.rd-meio-fim .linha { justify-content: center; }
+
+/* tochas de parede */
+.rd-tocha { position: absolute; z-index: 0; top: 18cqh; width: 12cqw; height: 12cqw; pointer-events: none; }
+.rd-tocha.esq { left: -1.5cqw; }
+.rd-tocha.dir { right: -1.5cqw; }
+.rd-chama { transform-box: view-box; transform-origin: 0 -4px; animation: rd-tremer 0.9s ease-in-out infinite alternate; }
+.rd-tocha.dir .rd-chama { animation-delay: -0.4s; }
+.rd-tocha-luz { animation: rd-luz 1.3s ease-in-out infinite alternate; }
+
+/* fim: explosão única no canto de baixo do lado da sala do Dragão (clarão → cresce → faíscas → some) */
+.rd-explosao { position: absolute; z-index: 3; right: 0; bottom: 0; width: 56cqw; aspect-ratio: 1; transform: translate(50%, 50%); pointer-events: none; }
+.rd-explosao.esq { right: auto; left: 0; transform: translate(-50%, 50%) scaleX(-1); }
+.rd-explosao svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.rd-ex-clarao, .rd-ex-bola, .rd-ex-faiscas { transform-box: view-box; transform-origin: 0 0; }
+.rd-ex-clarao { animation: rd-ex-clarao 3.6s ease-out forwards; }
+.rd-ex-bola { animation: rd-ex-bola 3.6s ease-out forwards; }
+.rd-ex-faiscas { animation: rd-ex-faiscas 3.6s ease-out forwards; }
+.rd-queima, .rd-brasas { animation: rd-aparece 0.8s 0.4s ease-out both; }
+/* fumo a sair da ponta queimada */
+.rd-fumo { position: absolute; z-index: 1; right: -4%; bottom: 0; width: 45%; height: 40%; pointer-events: none; }
+.rd-fumo.esq { right: auto; left: -4%; }
+.rd-fumo i { position: absolute; bottom: 0; left: 30%; width: 50%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #2a2430aa 0%, #2a243055 45%, transparent 70%); opacity: 0; animation: rd-fumo 6s linear infinite; }
+.rd-fumo i:nth-child(2) { left: 50%; animation-delay: 2s; }
+.rd-fumo i:nth-child(3) { left: 10%; animation-delay: 4s; }
+
+@keyframes rd-atravessa { from { transform: translateX(-30%); } to { transform: translateX(30%); } }
 @keyframes rd-chega { from { transform: scale(0.3); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes rd-vira { from { transform: rotate(-6deg); } to { transform: rotate(6deg) scale(1.15); } }
-@keyframes rd-cospe { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.12); } }
-.sem-anim .rd-viajante, .sem-anim .rd-fogo, .sem-anim .rd-pessoa { animation: none !important; }
-@media (prefers-reduced-motion: reduce) { .rd-viajante, .rd-fogo, .rd-pessoa, .rd-av { animation: none !important; } }
+@keyframes rd-revela { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes rd-tremer { from { transform: scale(1, 1) skewX(0deg); } to { transform: scale(0.93, 1.08) skewX(3deg); } }
+@keyframes rd-luz { from { opacity: 0.8; } to { opacity: 1; } }
+@keyframes rd-ex-clarao { 0% { opacity: 0; } 8% { opacity: 1; } 55% { opacity: 0.7; } 100% { opacity: 0; } }
+@keyframes rd-ex-bola { 0% { transform: scale(0.08); opacity: 1; } 30% { transform: scale(1); } 65% { transform: scale(1.06); opacity: 0.95; } 100% { transform: scale(1.12); opacity: 0; } }
+@keyframes rd-ex-faiscas { 0%, 18% { transform: scale(0.6); opacity: 0; } 35% { opacity: 1; } 100% { transform: scale(1.35); opacity: 0; } }
+@keyframes rd-aparece { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rd-fumo { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 25% { opacity: 0.8; } 100% { transform: translateY(-160%) scale(1.7); opacity: 0; } }
+/* sem animação (capturas da demo): fica o pico da explosão */
+.sem-anim .jogo-rei *, .sem-anim .rd-castelos * { animation: none !important; }
+/* reduzir movimento: já o estado final (sem explosão, estandarte queimado, fumo parado) */
+@media (prefers-reduced-motion: reduce) {
+  .jogo-rei *, .rd-castelos * { animation: none !important; }
+  .rd-explosao { display: none; }
+  .rd-fumo i { opacity: 0.5; }
+  .rd-fumo i:nth-child(2) { transform: translateY(-60%) scale(1.3); opacity: 0.35; }
+}
+
+/* painel sem TV (no telemóvel): a parede pequena */
+.rd-castelos.compacto { --lb: 38cqw; gap: 2cqw; min-height: 0; padding: 4px 2cqw 0; border-radius: 14px; overflow: hidden; background-size: cover; background-position: center; }
+.compacto .rd-dentro { padding: calc(var(--lb) * 0.218 + 4px) 6px 34px; gap: 2px; }
+.compacto .rd-titulo { font-size: 15px; -webkit-text-stroke: 3px #1b1526; }
+.compacto .rd-simbolo { width: 26px; height: 26px; }
+.compacto .rd-lider { font-size: 11px; }
+.compacto .rd-gente { gap: 2px 4px; }
+.compacto .rd-pessoa { width: 42px; }
+.compacto .rd-emb { width: 34px; }
+.compacto .rd-nome { font-size: 10px; }
+.compacto .rd-fita { font-size: 9px; padding: 0 6px; margin-top: -3px; }
+.compacto .rd-coroa { font-size: 12px; }
+.compacto .rd-meio-caixa { width: 14cqw; }
+.compacto .rd-relogio { font-size: 13px; border-width: 2px; box-shadow: none; }
+.compacto .rd-viajante { font-size: 10px; }
+.compacto .rd-viajante svg { width: 26px; height: 26px; }
+.compacto .rd-explosao { width: 80%; }
 
 /* telemóvel */
 .rd-tel-topo { text-align: center; font-weight: 800; font-size: 18px; margin: 4px 0 8px; }
 .rd-vai { text-align: center; font-size: clamp(30px, 9cqw, 54px); margin: 16px 0; }
-.rd-mini-torre { width: 120px; height: 180px; position: relative; margin: 0 auto; }
+/* mini estandarte (ecrãs do telemóvel) */
+.rd-mini { width: 104px; margin: 6px auto 0; }
+.rd-mini-vara { position: relative; z-index: 1; height: 10px; margin: 0 -12px; border-radius: 5px; background: linear-gradient(#a8794a, #5b3c25); }
+.rd-mini-vara::before, .rd-mini-vara::after { content: ''; position: absolute; top: -3px; width: 16px; height: 16px; border-radius: 50%; background: #e9c062; border: 2px solid #b8862a; box-sizing: border-box; }
+.rd-mini-vara::before { left: -8px; }
+.rd-mini-vara::after { right: -8px; }
+.rd-mini-pano { height: 120px; margin-top: -4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding-bottom: 18px; box-sizing: border-box; background: repeating-linear-gradient(90deg, #6e2530 0 13px, #93343f 13px 26px); box-shadow: inset 0 0 0 5px #6e2530, inset 0 0 0 7px #d9a84a; clip-path: polygon(0 0, 100% 0, 100% 84%, 50% 100%, 0 84%); }
+.rd-mini .rd-simbolo { width: 54px; height: 54px; }
+.rd-minis { display: flex; justify-content: center; gap: 44px; }
+.rd-minis .rd-mini { margin: 6px 0 0; }
+.rd-mini-nome { text-align: center; font-weight: 800; font-size: 18px; margin: 4px 0 0; }
+.rd-espera-emb { display: flex; justify-content: center; margin: 12px 0; --emb: 120px; }
 .rd-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
 .rd-botoes .botao { margin: 0; }
 .rd-lista { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
@@ -51,26 +143,45 @@
 .rd-linha.on { background: var(--coral); }
 .rd-linha:disabled { opacity: 0.45; }
 .rd-linha .cresce { flex: 1; }
-.rd-escuro { min-height: 70cqh; margin: 8px 0; border-radius: 18px; background: #0d0b1f; color: #f1efe8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; box-sizing: border-box; }
-.rd-escuro h2 { font-size: 34px; margin: 0; }
-.rd-escuro .rd-bola { font-size: 28px; }
-.rd-escuro p { font-size: 20px; margin: 0; max-width: 26em; }
-.rd-escuro .info { text-align: left; overflow: auto; font-size: 18px; justify-content: flex-start; }
 .rd-info { position: fixed; inset: 0; z-index: 60; background: var(--creme); color: var(--tinta); overflow: auto; padding: 20px; font-size: 20px; line-height: 1.45; }
 .rd-info h3 { margin: 18px 0 6px; font-size: 24px; }
 .rd-info li { margin: 4px 0; }
 .rd-pedido { border: 4px solid #000; border-radius: 16px; background: var(--coral); color: var(--tinta); padding: 12px; margin: 8px 0; text-align: center; font-weight: 800; font-size: 20px; }
 
+/* a carta: ecrã escuro, cartão de couro com moldura dourada fina e cantos */
+.rd-escuro { margin: 4px -4px 0; border-radius: 18px; background: #15111c; color: #f3e6c8; display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 12px; box-sizing: border-box; }
+.rd-carta { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 18px 20px; border: 3px solid #d9a84a; border-radius: 18px; background: linear-gradient(#2c2236, #1c1524); text-align: center; }
+.rd-carta::before { content: ''; position: absolute; inset: 7px; border: 1.5px solid #b8862a80; border-radius: 12px; pointer-events: none; }
+.rd-canto { position: absolute; width: 22px; height: 22px; border: solid #d9a84acc; border-width: 3px 0 0 3px; pointer-events: none; }
+.rd-canto::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border: solid #d9a84a99; border-width: 2px 0 0 2px; }
+.rd-canto.c1 { left: 12px; top: 12px; }
+.rd-canto.c2 { right: 12px; top: 12px; transform: scaleX(-1); }
+.rd-canto.c3 { left: 12px; bottom: 12px; transform: scaleY(-1); }
+.rd-canto.c4 { right: 12px; bottom: 12px; transform: scale(-1); }
+.rd-carta-icone { font-size: 28px; line-height: 1; }
+.rd-carta h2 { margin: 0; font-size: 34px; line-height: 1.1; color: #f3d27a; }
+.rd-carta .rd-emb { --emb: 104px; margin: 4px 0; }
+.rd-equipa { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; color: #d8d2e4; }
+.rd-bolinha { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+.rd-carta hr { width: 75%; margin: 2px 0; border: 0; border-top: 1.5px solid #b8862a80; }
+.rd-carta p { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3; }
+.rd-carta-botoes { display: flex; gap: 12px; }
+.rd-carta-botoes .botao { margin: 0; min-height: 52px; border-radius: 14px; }
+.rd-btn-info { flex: none; width: 76px; background: #2c2236; border: 2px solid #4a4058; color: #f3e6c8; }
+.rd-btn-ok { flex: 1; background: linear-gradient(#f3d27a, #b8862a); color: #3d2a10; border-color: #7a4a10; }
+/* "Mostrar cor": só o emblema grande + o nome da equipa */
+.rd-minha-cor { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.rd-minha-cor small { font-size: 20px; font-weight: 800; color: #a9a6b4; }
+.rd-minha-cor .rd-emb { --emb: 180px; }
+.rd-minha-cor b { font-size: 32px; }
+
 /* Mostrar cor / carta: em baixo, segurar 2 s com barra de progresso */
 .jogo-rei.tel { padding-bottom: 200px; }
-.rd-mostrar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 12px 100px; background: var(--noite); border-top: 3px solid #000; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rd-mostrar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 12px 100px; background: var(--fundo); border-top: 3px solid #000; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .rd-segurar { position: relative; overflow: hidden; height: 60px; border: 4px solid #000; border-radius: 16px; background: var(--creme); color: var(--tinta); font-weight: 800; font-size: 18px; touch-action: none; user-select: none; -webkit-user-select: none; }
 .rd-progresso { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, #FFD43B, #FF8A1F); }
 .rd-rotulo { position: relative; }
-.rd-revelado { position: fixed; inset: 0 0 180px; z-index: 40; background: #0d0b1f; color: #f1efe8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
-.rd-revelado h2 { font-size: 34px; margin: 0; }
-.rd-revelado .rd-bola { font-size: 30px; }
-.rd-revelado p { font-size: 20px; margin: 0; }
+.rd-revelado { position: fixed; inset: 0 0 180px; z-index: 40; background: #15111c; color: #f3e6c8; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 14px; padding: 16px; text-align: center; }
 .rd-aviso { position: fixed; left: 12px; right: 12px; bottom: 176px; z-index: 42; background: var(--tinta); color: var(--creme); border: 3px solid #000; border-radius: 12px; padding: 10px; text-align: center; font-weight: 800; }
 /* telemóvel sem scroll (360×640): listas em 2 colunas, barra Mostrar mais baixa (o conteúdo acaba antes dela) */
 .jogo-rei.tel .rd-mostrar { padding: 6px 12px 48px; gap: 8px; }
@@ -86,6 +197,4 @@
 .jogo-rei.tel .botao { min-height: 44px; padding: 8px 14px; font-size: 18px; }
 .jogo-rei.tel .rd-linha svg { width: 28px; height: 28px; }
 .jogo-rei.tel .rd-linha { min-height: 36px; }
-.jogo-rei.tel .rd-mini-torre { height: 96px; width: 64px; }
-.jogo-rei.tel .rd-mini-torre svg { width: 100%; height: 100%; }
 .jogo-rei.tel .rd-vai { margin: 0; font-size: 24px; }

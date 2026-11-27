@@ -86,39 +86,33 @@ export function Premios({ v }: { v: VistaRagerob }) {
   );
 }
 
-/** leilão ao vivo (TV e telemóvel): o módulo em palco, quem lidera e por quanto, e a fila dos cinco */
-export function Palco({ v, sala, tv = false }: { v: VistaRagerob; sala: VistaSala; tv?: boolean }) {
+/** leilão ao vivo (TV e telemóvel): os 5 módulos ao mesmo tempo, cada um com a carinha de quem lidera e por quanto */
+export function Palco({ v, sala, tv = false, botao }: { v: VistaRagerob; sala: VistaSala; tv?: boolean; botao?: (k: number) => preact.JSX.Element }) {
   const l = v.leilao;
   if (!l) return null;
-  const m = v.loja[l.item];
   return (
-    <div class={'rr-palco' + (tv ? ' grande' : '') + (l.martelo ? ' martelo' : '')}>
-      <div class="rr-palco-mod">
-        <ModuloMini m={m} tam={tv ? 260 : 130} />
-        <b>{etiquetaModulo(m)}</b>
-      </div>
-      <div class="rr-lance" role="status" aria-live="polite" aria-label={l.lance ? t('rrLidera', { nome: roboPorId(v, l.lance.id) ? nomeRobo(roboPorId(v, l.lance.id)) : nomeDe(sala, l.lance.id), n: l.lance.valor }) : undefined}>
-        {l.lance ? (
-          <div key={l.item + ':' + l.lance.valor} class="rr-lance-novo">
-            <Rosto v={v} sala={sala} id={l.lance.id} tam={tv ? 170 : 84} />
-            <b>{moeda(l.lance.valor)}</b>
+    <div class={'rr-mesa' + (tv ? ' grande' : '') + (l.martelo ? ' martelo' : '')}>
+      {v.loja.map((m, k) => {
+        const x = l.lances[k];
+        const quem = x && (roboPorId(v, x.id) ? nomeRobo(roboPorId(v, x.id)) : nomeDe(sala, x.id));
+        return (
+          <div key={k} class={'rr-lote' + (x ? ' com' : '')}>
+            <ModuloMini m={m} tam={tv ? 150 : 46} />
+            <b class="rr-lote-nome">{etiquetaModulo(m)}</b>
+            <div class="rr-lance" role="status" aria-live="polite" aria-label={x ? t('rrLidera', { nome: quem!, n: x.valor }) : undefined}>
+              {x ? (
+                <span key={x.id + ':' + x.valor} class="rr-lance-novo">
+                  <Rosto v={v} sala={sala} id={x.id} tam={tv ? 110 : 34} />
+                  <b>{moeda(x.valor)}</b>
+                </span>
+              ) : (
+                <b class="rr-preco-base">{l.martelo ? '💨' : moeda(PRECO[m])}</b>
+              )}
+            </div>
+            {l.martelo ? <span class="rr-martelo">🔨 {t(x ? 'rrVendido' : 'rrNinguemQuis')}</span> : botao?.(k)}
           </div>
-        ) : (
-          <b class="rr-preco-base">{l.martelo ? '💨' : moeda(PRECO[m])}</b>
-        )}
-        {l.martelo && <span class="rr-martelo">🔨 {t(l.lance ? 'rrVendido' : 'rrNinguemQuis')}</span>}
-      </div>
-      <div class="rr-fila-mods" aria-hidden="true">
-        {v.loja.map((x, k) => {
-          const dono = v.vendidos[k];
-          return (
-            <span key={k} class={'rr-fila-mod' + (k === l.item ? ' on' : k < l.item ? ' passou' : '')}>
-              <ModuloMini m={x} tam={tv ? 76 : 40} />
-              {dono && <Rosto v={v} sala={sala} id={dono.id} tam={tv ? 42 : 24} />}
-            </span>
-          );
-        })}
-      </div>
+        );
+      })}
     </div>
   );
 }

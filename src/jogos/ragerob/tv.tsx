@@ -1,3 +1,5 @@
+import { PodioEscada } from '../../ui/podio';
+import { podio } from '../../core/jogo';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../core/i18n';
 import type { AcaoSala, VistaSala } from '../../core/sala';
@@ -305,13 +307,7 @@ export function TvRagerob(p: PropsTvRagerob) {
               <RoboCartao robo={roboPorId(v, v.campeao)!} tam={220} />
             </div>
           )}
-          <ol class="rr-ordem rr-podio">
-            {classificacao(v).map((x, i) => (
-              <li key={x.id}>
-                {['🥇', '🥈', '🥉'][i] ?? `${i + 1}.º`} {nomeDe(sala, x.id)} · {v.def.modo === 'normal' ? moeda(x.valor) : t('rrPontos', { n: x.valor })}
-              </li>
-            ))}
-          </ol>
+          <PodioEscada sala={sala} podio={podio(v.participantes, Object.fromEntries(classificacao(v).map((x) => [x.id, x.valor])))} tv />
           <div class="linha centro">
             <button class={'botao' + (selFim === 0 ? ' foco' : '')} onClick={onOutraVez}>
               {t('jogarOutraVez')}
