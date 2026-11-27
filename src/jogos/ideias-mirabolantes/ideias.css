@@ -1,87 +1,129 @@
-/* Ideias Mirabolantes: visual "planta de inventor" (info/jogos/invencoes-inuteis.md → Visual) */
-.jogo-ideias { min-height: 100cqh; box-sizing: border-box; }
-.planta { position: relative; border: 4px solid #e8eef7; border-radius: 6px; background: #1f4e8c; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
-.planta .tela { background: #1f4e8c; border-radius: 2px; }
-.planta.vazia { aspect-ratio: 4 / 3; background-color: #1f4e8c; background-image: linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px); background-size: 5% 6.67%; }
-.planta-legenda { position: absolute; left: 10px; bottom: 6px; color: #e8eef7; font-size: 0.7em; font-style: italic; }
-.jogo-ideias .editor .tela { box-shadow: 0 0 0 3px #e8eef7; background: #1f4e8c; }
+/* Ideias Mirabolantes: visual "Pedido de Patente" (info/jogos/invencoes-inuteis.md → Design novo) */
+.jogo-ideias { min-height: 100cqh; box-sizing: border-box; background: var(--fundo); --papel: #fbf7ea; --azul-p: #1f4e8c; --tinta-i: #2a1608; --verm-i: #c62a3a; --verde-i: #2c7a3a; }
 
-.im-centro { display: flex; flex-direction: column; gap: 24px; align-items: center; margin-top: 6cqh; }
+/* papel (ficha de patente) */
+.im-ficha { background: var(--papel); color: var(--tinta-i); border: 3px solid #000; box-shadow: 5px 7px 0 rgba(0, 0, 0, 0.3); padding: 10px 14px; transform: rotate(var(--rot, 0deg)); position: relative; }
+.im-ficha label, .im-ficha small, .im-num { display: block; font-size: 0.6em; letter-spacing: 0.06em; text-transform: uppercase; color: #7a7a7a; font-weight: 700; }
+.im-num { color: var(--azul-p); font-size: 0.7em; border-bottom: 2px solid var(--azul-p); padding-bottom: 4px; margin-bottom: 6px; }
+.im-carimbo { display: inline-block; border: 4px solid currentColor; border-radius: 6px; padding: 0 10px; font-weight: 800; text-transform: uppercase; transform: rotate(-12deg); opacity: 0.85; }
+.im-carimbo.verde { color: var(--verde-i); }
+.im-carimbo.verm { color: var(--verm-i); }
 .im-inventor { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
-.im-cartoes { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-.im-cartao { background: var(--noite-2); border: 2px dashed #85b7eb; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
-.im-cartao i { color: var(--cinza); }
 
-/* pitch */
-.im-pitch { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
-.im-problema { background: var(--creme); color: var(--tinta); border-radius: 8px; padding: 10px 16px; font-weight: 700; font-size: 1.3em; }
-.im-problema small { display: block; font-size: 0.55em; text-transform: uppercase; letter-spacing: 0.08em; color: #5f5e5a; }
-.im-pitch-corpo { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(16px, 3cqw, 48px); align-items: center; }
-.im-lado { display: flex; flex-direction: column; gap: 16px; }
-.im-nome { margin: 0; font-size: clamp(32px, 4.5cqw, 84px); line-height: 1.05; color: #fff; }
-.im-slogan { margin: 0; font-size: clamp(18px, 2cqw, 36px); font-style: italic; color: #b5d4f4; }
-.im-etapas { display: flex; gap: 8px; flex-wrap: wrap; }
-.im-etapas span { padding: 4px 10px; border-radius: 999px; border: 2px solid #85b7eb; color: #85b7eb; font-size: 0.8em; }
-.im-etapas span.on { background: #85b7eb; color: #042c53; }
-.im-pitch.compacto .im-pitch-corpo { grid-template-columns: 1fr; gap: 12px; }
-.im-pitch.compacto .im-problema { font-size: 1em; }
+/* planta azul quadriculada, presa com fita-cola */
+.planta { position: relative; border: 4px solid #e8eef7; border-radius: 2px; background: var(--azul-p); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+.planta .tela { background: var(--azul-p); border-radius: 2px; }
+.planta.vazia { aspect-ratio: 4 / 3; background-image: linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px); background-size: 5% 6.67%; }
+.planta.presa::before, .planta.presa::after { content: ''; position: absolute; top: -12px; width: 70px; height: 24px; background: rgba(246, 239, 201, 0.85); border: 1px solid #b7ab7a; }
+.planta.presa::before { left: -20px; transform: rotate(-30deg); }
+.planta.presa::after { right: -20px; transform: rotate(25deg); }
+.planta-legenda { position: absolute; left: 10px; bottom: 6px; color: #e8eef7; font-size: 0.7em; font-style: italic; }
+.jogo-ideias .editor .tela { box-shadow: 0 0 0 3px #e8eef7; background: var(--azul-p); }
 
-/* revelar: barras de dinheiro */
-.barras { display: flex; align-items: flex-end; justify-content: center; gap: clamp(10px, 2cqw, 32px); height: 40cqh; padding: 0 8px; }
-.barra-col { flex: 1; max-width: 200px; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-.barra-poco { flex: 1; width: 100%; display: flex; align-items: flex-end; }
-.barra { width: 100%; border-radius: 6px 6px 0 0; background: repeating-linear-gradient(0deg, #639922 0 22px, #97c459 22px 24px); border: 2px solid #c0dd97; transform-origin: bottom; animation: barra-sobe 1.4s ease-out both; }
-.barra-col.vence .barra { border-color: #fac775; box-shadow: 0 0 0 4px rgba(250, 199, 117, 0.35); }
-.barra-euros { color: #c0dd97; }
-.barra-nome { font-weight: 700; line-height: 1.1; }
-.barras.compacto { height: 220px; }
-.barras.compacto .barra-nome { font-size: 0.75em; }
-@keyframes barra-sobe { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-.im-revelar { display: flex; flex-direction: column; gap: 16px; }
-.im-vencedoras { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
-.im-vencedora { display: flex; gap: 12px; align-items: center; }
-.im-vencedora .planta { width: clamp(140px, 16cqw, 280px); }
-.im-revelar.compacto .im-vencedora { flex-direction: column; }
+/* TV: mesa de desenho verde com moldura de madeira e régua */
+.tv .im-mesa { min-height: calc(100cqh - 32px); box-sizing: border-box; margin: 0; padding: 2cqh 2.5cqw 7cqh; border: 14px solid #5a3818; border-radius: 16px; position: relative; display: flex; flex-direction: column; gap: 2cqh;
+  background-color: #2f6b5a; background-image: linear-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 2px, transparent 2px); background-size: 40px 40px; }
+.tv .im-mesa::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1cqh; height: 3.5cqh; border-block: 3px solid #000; background: repeating-linear-gradient(90deg, transparent 0 18px, #000 18px 20px) top / 100% 40% no-repeat, #f2d35b; }
+.im-cabeca { display: flex; align-items: center; justify-content: center; gap: 2cqw; }
+.im-titulo { text-align: center; min-width: 40cqw; transform: rotate(-0.6deg); }
+.im-titulo small { color: var(--azul-p); }
+.im-titulo h1 { margin: 0; font-size: clamp(28px, 3.6cqw, 72px); line-height: 1.1; }
+.im-relogio { background: var(--papel); color: var(--verm-i); border: 4px solid #000; border-radius: 50%; width: clamp(64px, 6cqw, 120px); aspect-ratio: 1; display: grid; place-items: center; font-weight: 800; font-size: clamp(22px, 2.4cqw, 48px); box-shadow: inset 0 0 0 6px var(--papel), inset 0 0 0 10px var(--verm-i); }
+.im-relogio > * { background: none !important; color: inherit !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+.im-arrecadou { margin: -1cqh 0 0; text-align: center; font-size: clamp(18px, 1.8cqw, 36px); font-weight: 700; color: var(--papel); }
+
+/* problema / inventar: uma ficha por jogador */
+.im-jogadores { display: flex; flex-wrap: wrap; gap: clamp(10px, 1.6cqw, 30px); justify-content: center; align-content: center; flex: 1; }
+.im-jog { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: clamp(110px, 10cqw, 200px); padding-bottom: 14px; }
+.im-jog b { font-size: clamp(18px, 1.6cqw, 32px); }
+.im-jog .im-carimbo { font-size: clamp(14px, 1.2cqw, 24px); }
+.im-lapis { width: 70%; height: 14px; background: linear-gradient(90deg, #e88 0 12%, #f3c64a 12% 88%, #f4dcb0 88%); border: 2px solid #000; transform: rotate(25deg); margin-top: 8px; }
+
+/* investir */
+.im-inv { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: 16cqw; text-align: center; }
+.im-inv i { font-size: 0.8em; color: #5a4a30; }
+.im-mini-nome { color: var(--azul-p); font-size: clamp(16px, 1.5cqw, 30px); line-height: 1.1; }
+.im-quem { display: flex; gap: clamp(8px, 1.4cqw, 24px); justify-content: center; flex-wrap: wrap; }
+.im-quem-1 { display: flex; flex-direction: column; align-items: center; color: var(--papel); font-weight: 700; position: relative; }
+.im-quem-1.ok::after { content: '✓'; position: absolute; top: -4px; right: -6px; width: 28px; height: 28px; border-radius: 50%; background: #3a9a4a; border: 2px solid #000; color: #fff; display: grid; place-items: center; font-size: 18px; }
+
+/* pitch: planta à esquerda, ficha de patente à direita */
+.im-pitch { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: clamp(16px, 3cqw, 48px); align-items: center; flex: 1; }
+.im-pitch > .planta { transform: rotate(-1deg); }
+.im-patente { display: flex; flex-direction: column; gap: 2px; font-size: clamp(16px, 1.6cqw, 32px); transform: rotate(1.2deg); }
+.im-campo { font-weight: 700; border-bottom: 2px solid #c9c3b0; padding-bottom: 4px; margin-bottom: 6px; }
+.im-campo.im-nome { color: var(--azul-p); font-size: 1.8em; line-height: 1.05; }
+.im-campo.im-slogan { font-style: italic; }
+.im-caixas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 0.8em; font-weight: 700; }
+.im-caixas span { display: inline-flex; align-items: center; gap: 6px; color: #9a9a9a; }
+.im-caixas span::before { content: ''; width: 1.1em; height: 1.1em; border: 3px solid #000; background: #fff; }
+.im-caixas span.on { color: var(--tinta-i); }
+.im-caixas span.on::before { content: '✓'; color: var(--azul-p); font-weight: 900; line-height: 1; display: grid; place-items: center; }
+.im-pitch.compacto { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.im-pitch.compacto .im-patente { font-size: 13px; padding: 6px 8px; }
+
+/* revelar: fichas + pilhas de moedas */
+.im-fichas { display: flex; gap: clamp(10px, 1.6cqw, 28px); justify-content: center; align-items: flex-end; flex: 1; }
+.im-col { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 16cqw; }
+.im-moedas { display: flex; flex-direction: column-reverse; align-items: center; margin-bottom: 6px; }
+.im-moeda { width: clamp(50px, 6cqw, 110px); height: clamp(14px, 1.6cqw, 30px); margin-top: -4px; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #f6d46a 55%, #c9962a 56%); border: 3px solid #000; animation: im-cai 0.4s ease-out both; }
+@keyframes im-cai { from { transform: translateY(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.im-mini { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; box-sizing: border-box; text-align: center; padding: 8px; }
+.im-mini .planta { width: 100%; box-shadow: none; }
+.im-euros { color: #2c5a12; font-size: clamp(18px, 1.8cqw, 36px); }
+.im-mini .im-carimbo { position: absolute; top: 18%; left: 50%; translate: -50% 0; font-size: clamp(14px, 1.4cqw, 28px); background: rgba(251, 247, 234, 0.4); }
+.im-fichas.compacto .im-moeda { width: 32px; height: 10px; border-width: 2px; }
+.im-fichas.compacto .im-mini { font-size: 11px; padding: 4px; }
+.im-fichas.compacto .im-mini-nome { font-size: 11px; }
+.im-fichas.compacto .im-euros { font-size: 13px; }
+.im-fichas.compacto .im-mini .im-carimbo { font-size: 10px; border-width: 2px; top: 4px; }
+.im-revelar { display: flex; flex-direction: column; flex: 1; }
+
+/* fim */
+.im-fim { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 0.8fr); gap: 2cqw; align-items: end; flex: 1; }
+.im-venc { display: flex; flex-direction: column; gap: 2cqh; }
+.im-venc-planta { position: relative; }
+.im-venc-planta .im-carimbo { position: absolute; top: 40%; left: 50%; translate: -50% -50%; font-size: clamp(22px, 2.4cqw, 48px); }
+.im-venc-prob { font-size: clamp(16px, 1.5cqw, 30px); font-weight: 700; text-align: center; transform: rotate(1deg); }
+.im-fim-lado { display: flex; flex-direction: column; gap: 12px; }
+.im-invest { transform: rotate(1.5deg); font-size: clamp(14px, 1.3cqw, 26px); }
+.im-invest-l { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.im-invest-l b { color: #2c5a12; }
 
 /* telemóvel */
-.im-tel { display: flex; flex-direction: column; gap: 10px; }
-.im-tel input { width: 100%; }
-.notas { display: flex; gap: 6px; justify-content: center; }
-.nota { background: #3b6d11; color: #eaf3de; border: 2px solid #c0dd97; border-radius: 4px; padding: 4px 10px; font-weight: 700; }
-.nota.usada { opacity: 0.25; }
-.investe { display: flex; flex-direction: column; gap: 4px; background: var(--noite-2); border: 2px dashed #85b7eb; border-radius: 10px; padding: 10px 12px; }
+.im-tel { display: flex; flex-direction: column; gap: 8px; }
+.im-tel input { width: 100%; min-height: 44px; box-sizing: border-box; padding-top: 6px; padding-bottom: 6px; }
+.im-tel h2.centro, .jogo-ideias:not(.tv) h2.centro { font-size: 18px; margin: 0; }
+.im-tel .im-patente { font-size: 16px; transform: rotate(-1deg); }
+.im-tel .direita { text-align: right; }
+.im-tel .im-problema { padding: 6px 10px; font-weight: 700; }
+.im-tel .im-campos { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.im-tel .editor .tela { max-height: 25svh; width: auto; max-width: 100%; margin: 0 auto; }
+.im-enrolada { width: min(70vw, 260px); height: auto; margin: 0 auto; display: block; }
+.im-espera { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 4svh; }
+.im-espera p { margin: 0; opacity: 0.8; }
+.im-passos { gap: 10px; padding: 14px 18px; }
+.im-passo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; color: #9a9a9a; padding: 6px; border: 3px solid transparent; border-radius: 8px; }
+.im-passo::before { content: ''; flex: none; width: 32px; height: 32px; border: 3px solid #000; background: #fff; display: grid; place-items: center; color: var(--azul-p); font-weight: 900; }
+.im-passo.on { color: var(--tinta-i); }
+.im-passo.on::before { content: '✓'; }
+.im-passo.atual { border-color: #f0957a; }
+.notas { display: flex; gap: 8px; justify-content: center; }
+.nota { width: 48px; height: 22px; border-radius: 50%; background: radial-gradient(ellipse at 50% 35%, #f6d46a 55%, #c9962a 56%); border: 2px solid #000; color: #8a6420; font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+.nota.usada { filter: grayscale(1); opacity: 0.45; }
+.investe { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: center; padding: 4px 8px; font-size: 15px; line-height: 1.2; transform: none; box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.3); }
 .investe.minha { opacity: 0.55; }
-.investe-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.investe-linha b { font-size: 1.2em; min-width: 70px; text-align: center; }
-.sem-anim .barra { animation: none; }
-/* telemóvel sem scroll (360×640) */
-.im-tel .editor .tela { max-height: 34svh; width: auto; max-width: 100%; margin: 0 auto; }
-.im-tel input { min-height: 44px; }
-.im-tel h2.centro { font-size: 20px; margin: 0; }
-.investe { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; row-gap: 0; padding: 4px 8px; align-items: center; }
 .investe > :not(.investe-linha) { grid-column: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.investe .investe-linha { grid-column: 2; grid-row: 1 / span 3; gap: 4px; }
-.investe .investe-linha .botao { padding: 6px 12px; min-width: 44px; min-height: 44px; }
-.investe .investe-linha b { min-width: 56px; font-size: 1em; }
-.jogo-ideias:not(.tv) .barras.compacto { height: 150px; }
-.jogo-ideias:not(.tv) .im-revelar h1.pergunta { font-size: 22px; margin: 0; }
-.im-pitch.compacto { gap: 6px; margin-top: 0; }
-.im-pitch.compacto .im-pitch-corpo canvas, .im-pitch.compacto .im-pitch-corpo .tela { max-height: 24svh; width: auto; max-width: 100%; margin: 0 auto; }
-.investe i { display: none; }
-.im-tel .editor .tela { max-height: 28svh; }
-.im-tel input { min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
-.jogo-ideias:not(.tv) h2.centro { font-size: 18px; margin: 0; }
-.im-pitch.compacto .im-pitch-corpo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-.investe { font-size: 15px; line-height: 1.2; }
-.investe .investe-linha .botao { min-height: 40px; padding: 4px 10px; font-size: 20px; box-shadow: 0 2px 0 #bdb8a8; }
-.im-pitch.compacto .im-lado { gap: 4px; }
-.im-pitch.compacto .im-nome { font-size: 22px; }
-.im-pitch.compacto .im-slogan { font-size: 15px; }
-.im-pitch.compacto .im-etapas { gap: 3px; font-size: 12px; }
-.im-pitch.compacto .im-etapas span { padding: 1px 6px; }
-.im-pitch.compacto .im-problema { padding: 6px 10px; font-size: 15px; }
-.investe > span.mini { display: none; }
-.im-tel .editor .tela { max-height: 25svh; }
-.im-tel .im-problema { padding: 6px 10px; font-size: 1.1em; }
-.jogo-ideias .im-tel { gap: 6px; }
-.investe .investe-linha { grid-row: 1; }
+.investe > b { color: var(--azul-p); }
+.investe i, .investe > span.mini { display: none; }
+.investe-linha { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 4px; }
+.investe-linha b { min-width: 56px; text-align: center; color: #2c5a12; }
+.investe-linha .botao { min-width: 44px; min-height: 40px; padding: 4px 10px; font-size: 20px; }
+.im-jogadores.compacto .im-jog { min-width: 64px; padding: 4px 6px; font-size: 12px; }
+.im-jogadores.compacto .im-jog b { font-size: 12px; }
+.im-jogadores.compacto .im-carimbo { font-size: 10px; border-width: 2px; }
+.im-jogadores.compacto .im-inv { max-width: 40%; font-size: 12px; }
+
+@media (prefers-reduced-motion: reduce) { .im-moeda { animation: none; } }
+.sem-anim .im-moeda { animation: none; }
+.im-fichas.compacto { gap: 3px; } .im-fichas.compacto .im-col { min-width: 0; max-width: none; }

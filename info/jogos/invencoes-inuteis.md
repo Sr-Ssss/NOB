@@ -32,3 +32,12 @@ Problemas parvos → invenções desenhadas → pitch → a sala investe.
 
 ## Pausa
 - Pausa abaixo de 3 participantes ligados; a audiência não conta (18/11).
+
+## Design novo (27/11, em curso — falta aprovar o fim + telemóvel)
+Maquetes: `prints-montra/proposta-ideias-patente.html` (TV pitch + revelar, **escolhida**) e `proposta-ideias-final.html` (fim, problema/inventar, investir, telemóvel) (+ `.png`). Recusadas: `-oficina`, `-palco`. Capturas do estado atual: `node prints-montra/prints-ideias.mjs tv|tel [fases]`; montagem: `prints-montra/montagem.mjs`.
+- **TV — "Pedido de Patente"**: tampo verde de mesa de desenho (quadrícula ténue, moldura de madeira), régua amarela em baixo, esquadro e lápis. Pitch: planta azul presa com fita-cola à esquerda; **ficha "PEDIDO DE PATENTE Nº…"** à direita com campos Problema / Invenção (nome grande azul) / Slogan / Inventor(a) (boneco) e 3 caixas de verificação = etapas. Tempo num relógio redondo de papel.
+- **Revelar**: uma ficha pequena por invenção (planta + nome + boneco + €) com **pilha de moedas** por cima (1 moeda = 100 €); a vencedora leva o carimbo vermelho **PATENTEADO**.
+- **Problema/Inventar**: ficha-título ("Pedido de patente · passo N") + uma ficha por jogador (boneco + nome) com lápis = a escrever, carimbo verde **ENTREGUE** = enviou.
+- **Investir**: fichas pequenas das invenções (planta, nome, slogan, boneco) + bonecos com ✓ de quem confirmou. Notas passam a **moedas de 100 €**.
+- **Fim**: ficha "PATENTE CONCEDIDA · X venceu! · invenção arrecadou N €"; planta vencedora com PATENTEADO + ficha do problema (autor +500); `PodioEscada` ao meio; ficha "Investimento" com as outras; botões Outra vez / Menu.
+- **Telemóvel** (`var(--fundo)`): problema = ficha de patente com o campo; inventar = problema numa tira + planta (canvas) + cores/ferramentas + ficha com nome/slogan + "Entregar pedido"; o meu pitch = ficha com 3 caixas (atual com orla coral) + Voltar/Seguinte; investir = 3 moedas em cima + fichas com miniatura, − / € / +; espera = planta enrolada + lápis + carimbo ENTREGUE + "Olhem para a TV".

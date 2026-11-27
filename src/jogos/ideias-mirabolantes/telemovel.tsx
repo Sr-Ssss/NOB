@@ -6,7 +6,8 @@ import { Tela } from '../../ui/tela';
 import type { Traco } from '../../ui/tracos';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { ETAPAS, MAX_NOME, MAX_PROBLEMA, MAX_SLOGAN, NOTAS, VALOR_NOTA, type Problema } from './regras';
-import { ETAPAS_TXT, Palco, PlacarIdeias, type PropsIdeias } from './comuns';
+import { ETAPAS_TXT, Ficha, Palco, PlantaEnrolada, type PropsIdeias } from './comuns';
+import { PodioEscada } from '../../ui/podio';
 import { Espera, Progresso } from '../../ui/ecraunico';
 import { AcabarPartida } from '../../ui/acabarPartida';
 import { useRascunho, useSoRascunho } from '../../ui/rascunho';
@@ -20,12 +21,17 @@ function EscreverProblema({ sorteado, idioma, enviar, grupo }: { sorteado: Probl
   // o rascunho sobrevive a remontar (passagem do anfitrião, recarregar): src/ui/rascunho.ts
   const [texto, setTexto] = useRascunho(grupo, 'texto', original);
   return (
-    <div class="cartao im-tel">
-      <label>{t('imProblema')}</label>
-      <input value={texto} maxLength={MAX_PROBLEMA} onInput={(e) => setTexto(e.currentTarget.value)} />
-      <div class="mini centro">
-        {texto.length}/{MAX_PROBLEMA}
-      </div>
+    <div class="im-tel">
+      <Ficha class="im-patente">
+        <small class="im-num">{t('imPatente')}</small>
+        <label>{t('imProblema')}</label>
+        <input value={texto} maxLength={MAX_PROBLEMA} onInput={(e) => setTexto(e.currentTarget.value)} />
+        <div class="mini direita">
+          {texto.length}/{MAX_PROBLEMA}
+        </div>
+        <p class="mini">{t('imAlguem')}</p>
+      </Ficha>
+      <PlantaEnrolada />
       <button class="botao grande" onClick={() => jogo(enviar, { tipo: 'im_problema', texto: texto.trim() || original })}>
         {t('enviar')}
       </button>
@@ -41,10 +47,10 @@ function Inventar({ problema, enviar, grupo }: { problema: string; enviar: Envia
   const [aviso, setAviso] = useState(false);
   return (
     <div class="im-tel">
-      <div class="im-problema">
+      <Ficha class="im-problema">
         <small>{t('imSeuProblema')}</small>
         <div>{problema}</div>
-      </div>
+      </Ficha>
       <Tela
         planta
         tracos={tracos}
@@ -53,8 +59,10 @@ function Inventar({ problema, enviar, grupo }: { problema: string; enviar: Envia
           setAviso(false);
         }}
       />
-      <input placeholder={t('imNome')} value={nome} maxLength={MAX_NOME} onInput={(e) => (setNome(e.currentTarget.value), setAviso(false))} />
-      <input placeholder={t('imSlogan')} value={slogan} maxLength={MAX_SLOGAN} onInput={(e) => setSlogan(e.currentTarget.value)} />
+      <Ficha class="im-campos">
+        <input placeholder={t('imNome')} aria-label={t('imNome')} value={nome} maxLength={MAX_NOME} onInput={(e) => (setNome(e.currentTarget.value), setAviso(false))} />
+        <input placeholder={t('imSlogan')} aria-label={t('imSlogan')} value={slogan} maxLength={MAX_SLOGAN} onInput={(e) => setSlogan(e.currentTarget.value)} />
+      </Ficha>
       {aviso && <p class="centro mini">{t('imVazio')}</p>}
       <button
         class="botao grande"
@@ -63,7 +71,7 @@ function Inventar({ problema, enviar, grupo }: { problema: string; enviar: Envia
           jogo(enviar, { tipo: 'im_invencao', tracos, nome, slogan });
         }}
       >
-        {t('enviar')}
+        {t('imEntregar')}
       </button>
     </div>
   );
@@ -73,11 +81,18 @@ function Inventar({ problema, enviar, grupo }: { problema: string; enviar: Envia
 function Comando({ etapa, enviar }: { etapa: number; enviar: Enviar }) {
   const ultima = etapa >= ETAPAS - 1;
   return (
-    <div class="cartao im-tel">
+    <div class="im-tel">
       <h2 class="centro">{t('imSeuPitch')}</h2>
-      <p class="centro">
-        <b>{t(ETAPAS_TXT[etapa] ?? 'imEtapa0')}</b> ({etapa + 1}/{ETAPAS})
-      </p>
+      <Ficha class="im-patente im-passos">
+        {ETAPAS_TXT.map((k, i) => (
+          <span key={k} class={'im-passo' + (i <= etapa ? ' on' : '') + (i === etapa ? ' atual' : '')}>
+            {t(k)}
+          </span>
+        ))}
+        <small class="centro">
+          {etapa + 1}/{ETAPAS}
+        </small>
+      </Ficha>
       <div class="linha">
         <button class="botao sec" disabled={etapa === 0} onClick={() => jogo(enviar, { tipo: 'im_etapa', etapa: etapa - 1 })}>
           {t('imAnterior')}
@@ -113,7 +128,7 @@ function Investir({ sala, v, eu, enviar }: Omit<PropsIdeias, 'agora'> & { eu: st
       <div class="notas">
         {Array.from({ length: NOTAS }, (_, i) => (
           <span key={i} class={'nota' + (i < usadas ? ' usada' : '')}>
-            {VALOR_NOTA} €
+            {VALOR_NOTA}
           </span>
         ))}
       </div>
@@ -121,7 +136,7 @@ function Investir({ sala, v, eu, enviar }: Omit<PropsIdeias, 'agora'> & { eu: st
         const minha = c.inventor === eu;
         const n = notas[c.inventor] ?? 0;
         return (
-          <div key={c.inventor} class={'investe' + (minha ? ' minha' : '')}>
+          <div key={c.inventor} class={'investe im-ficha' + (minha ? ' minha' : '')}>
             <b>
               {c.nome}
               {minha && <small> ({t('imSua')})</small>}
@@ -155,7 +170,17 @@ function Eu({ sala, v, eu, tag, enviar }: Omit<PropsIdeias, 'agora'> & { eu: str
   const participa = v.participantes.includes(eu);
   // sem TV, à espera vê-se o que a TV mostraria (um só ecrã)
   const palco = <Palco sala={sala} v={v} compacto />;
-  const espero = (txt: string) => <Espera semTv={sala.semTv} texto={txt} palco={palco} />;
+  // com TV, ecrã vazio = planta enrolada + frase; sem TV, o palco por baixo
+  const espero = (txt: string) =>
+    sala.semTv ? (
+      <Espera semTv texto={txt} palco={palco} />
+    ) : (
+      <div class="im-espera">
+        <PlantaEnrolada />
+        <h2 class="centro">{txt}</h2>
+        <p class="centro">{t('imOlheTv')}</p>
+      </div>
+    );
   const progresso = <Progresso semTv={sala.semTv} ids={v.espera} feitos={v.enviaram} />;
 
   if (v.fase === 'problema') {
@@ -233,9 +258,7 @@ export function TelemovelIdeias({ sala, v, agora, eu, tag, enviar }: PropsIdeias
       {fim ? (
         <>
           <h1 class="pergunta">{t('fim')}</h1>
-          <div class="cartao">
-            <PlacarIdeias sala={sala} v={v} tam={40} />
-          </div>
+          <PodioEscada sala={sala} podio={v.podio} />
           {lider && (
             <div class="linha">
               <button class="botao cresce" onClick={() => enviar({ tipo: 'outra_vez', id: '' })}>
