@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 /** 27/11: no telemóvel (360×640) tudo cabe num ecrã, sem scroll para baixo, em todas as fases (com e sem TV). */
 const F: Record<string, string[]> = {
+  '5050': ['escrever', 'mostrar', 'votar', 'revelar', 'placar', 'fim'],
   pensa: ['escrever', 'votar', 'revelar', 'final', 'podio'],
   wifi: ['palavras', 'cripto', 'resposta', 'revelar', 'fim'],
   sevira: ['preparar', 'tema', 'apresentar', 'nota', 'fim'],
@@ -13,6 +14,7 @@ const F: Record<string, string[]> = {
   semjuizo: ['caso', 'provas', 'escolher', 'explicar', 'contra_fala', 'contra_juri', 'contra_juiz', 'contra_res', 'testemunha', 'juri', 'juiz', 'estrela', 'revelar', 'fim'],
 };
 const EXTRA: Record<string, string[]> = {
+  '5050': ['n=16&fase=votar', 'n=16&fase=fim', 'n=16&fase=placar'],
   sevira: ['papel=apresentador&fase=apresentar', 'semtv=1&papel=apresentador&fase=apresentar', 'semtv=1&papel=plateia&fase=apresentar'],
   wifi: ['eu=j2&fase=cripto', 'eu=j3&fase=resposta'],
   ideias: ['eu=j3&fase=investir'],

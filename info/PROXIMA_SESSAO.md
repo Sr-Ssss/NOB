@@ -375,4 +375,6 @@ Falta:
 - Antes: 35 de 123 ecrãs passavam do limite (wifi cripto 1128, ideias investir 1243, mona revelar 1097, pirata votar 924, menu de jogos 1345, lobby c/ 12 927). Depois: todos cabem.
 - Como: `src/ui/estilo.css` (`.pag:not(.tv)` gap/margens menores, `.botao.grande` mais baixo, placar compacto e em 2 colunas com 7+, lobby com o boneco ao lado do nome, menu de jogos em grelha de 3); listas de jogadores em 2 colunas (pirata, maquinas, rei); o que não cabe vai para popup: `src/ui/verPopup.tsx` (`BotaoPopup`, na revelação final do Pirata e do Rei sem TV) e os históricos 📶 do Wi-Fi.
 - Perdeu-se no telemóvel: slogan e autor no investir das Ideias; a mesa das provas na revelação do Sem Juízo sem TV.
-- Testes da TV que falham sem relação com isto (falham também com o CSS antigo): `tv-scroll` « lobby da TV (vazio) » (lista de jogos com 12) e `lobby.spec` « Tornar TV ».
+- Lobby da TV: a lista de jogos é um menu, pode rolar (1 coluna, letra grande; `e2e/medir.ts` ignora `.lista-jogos ol`). Cada jogo só com ícone + nome. À esquerda: vídeo (lugar do futuro vídeo) e por baixo a `.caixa-jogo` com nome, resumo, 👥/⏱ e o ⚠ motivo. Rodapé sem as letras pequenas ("Esperando jogadores…", "O líder escolhe…").
+- Regra do utilizador: menus e listas de escolha podem dar scroll; os ecrãs de jogo não.
+- 50/50 tem demo: `#/demo-5050?fase=escrever|mostrar|votar|revelar|placar|fim&ecra=tv|tel[&n=3..16][&eu=j1][&semtv=1]`; está em `tv-scroll` e `tel-scroll`.

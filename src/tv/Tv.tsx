@@ -149,19 +149,22 @@ function EcraTv({ idioma }: { idioma: Idioma }) {
           </>
         ) : atual && (
           <>
+            {/* o vídeo de como se joga vai aparecer aqui */}
             <div class="video">
               <span>▶ {t('videoEmBreve')}</span>
             </div>
-            <h1>{nome(atual, s.idioma)}</h1>
-            <p class="desc">{descricao(atual, s.idioma)}</p>
-            <div class="linha">
-              <span class="chip">👥 {t('jogadoresN', { a: atual.min, b: atual.max })}</span>
-              <span class="chip">⏱ {t('minutosN', { m: atual.minutos })}</span>
-              {atual.precisaTv && <span class="chip">📺 {t('fTv')}</span>}
+            {/* caixa do jogo: nome, resumo por baixo, e jogadores/tempo dentro dela */}
+            <div class="caixa-jogo">
+              <h1>{nome(atual, s.idioma)}</h1>
+              <p class="desc">{descricao(atual, s.idioma)}</p>
+              <div class="linha">
+                <span class="chip">👥 {t('jogadoresN', { a: atual.min, b: atual.max })}</span>
+                <span class="chip">⏱ {t('minutosN', { m: atual.minutos })}</span>
+                {atual.precisaTv && <span class="chip">📺 {t('fTv')}</span>}
+                {motivo(atual, n) && <span class="chip porque">⚠ {textoMotivo(atual, n)}</span>}
+              </div>
             </div>
-            {motivo(atual, n) ? (
-              <p class="porque">⚠ {textoMotivo(atual, n)}</p>
-            ) : (
+            {!motivo(atual, n) && (
               <button class="botao grande" onClick={() => lancar(atual)} disabled={!podeComecar(s)}>
                 ▶ {t('jogar')} · OK
               </button>
@@ -185,7 +188,6 @@ function EcraTv({ idioma }: { idioma: Idioma }) {
                   <IconeJogo id={j.id} />
                   <span class="item-jogo-txt">
                     <b>{nome(j, s.idioma)}</b>
-                    {m && <small>{m}</small>}
                   </span>
                 </button>
               </li>
@@ -202,15 +204,12 @@ function EcraTv({ idioma }: { idioma: Idioma }) {
           {s.fechada && <small>{t('mbFechadaTv')}</small>}
         </div>
         <div class="faixa-bonecos">
-          {s.jogadores.length === 0 ? (
-            <span class="mini">{t('esperandoJogadores')}</span>
-          ) : (
-            s.jogadores.map((j) => <Boneco key={j.id} j={j} tam={72} marca={j.id === s.vipId ? '👑' : j.bot ? '🤖' : j.pronto ? '✓' : undefined} />)
-          )}
+          {s.jogadores.map((j) => (
+            <Boneco key={j.id} j={j} tam={72} marca={j.id === s.vipId ? '👑' : j.bot ? '🤖' : j.pronto ? '✓' : undefined} />
+          ))}
         </div>
         <div class="faixa-info">
           <span>{t('prontos', { n: prontos, t: n })}</span>
-          <span class="mini">{t('liderComando')}</span>
           {n > 0 && n < 3 && <span class="mini">{t('minimo3')}</span>}
         </div>
       </footer>

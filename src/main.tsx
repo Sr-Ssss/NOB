@@ -21,6 +21,7 @@ import type { JSX } from 'preact';
 import { Tv } from './tv/Tv';
 import { Jogar } from './jogar/Jogar';
 import { Criar } from './jogar/Criar';
+import { Demo5050 } from './jogos/5050/demo';
 import { DemoPensa } from './jogos/pensa-dores/demo';
 import { DemoWifi } from './jogos/senha-wifi/demo';
 import { DemoSevira } from './jogos/se-vira/demo';
@@ -132,6 +133,7 @@ function Inicio() {
 
 /** só em dev: `#/demo-<jogo>?fase=…&ecra=tv|tel` (capturas e testes Playwright) */
 const DEMOS: Record<string, () => JSX.Element> = {
+  '/demo-5050': Demo5050,
   '/demo-pensa': DemoPensa,
   '/demo-wifi': DemoWifi,
   '/demo-sevira': DemoSevira,

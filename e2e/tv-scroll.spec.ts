@@ -3,6 +3,7 @@ import { transbordos } from './medir';
 
 /** Fase 3 (20/11): na TV tudo cabe num ecrã, sem scroll, em todas as fases de todos os jogos. */
 const DEMOS: Record<string, string[]> = {
+  '5050': ['escrever', 'mostrar', 'votar', 'revelar', 'placar', 'fim'],
   pensa: ['escrever', 'votar', 'revelar', 'final', 'podio'],
   wifi: ['palavras', 'cripto', 'resposta', 'revelar', 'fim'],
   sevira: ['preparar', 'tema', 'apresentar', 'nota', 'fim'],
