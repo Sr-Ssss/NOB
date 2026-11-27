@@ -1,79 +1,146 @@
-/* Pirata: visual A + B + C (info/jogos/pirata-a-bordo.md → Visual) */
-.jogo-pirata { min-height: 100cqh; box-sizing: border-box; --papiro: #ecd9a8; --papiro-2: #c9a86a; --madeira: #b07a45; --madeira-2: #8a5a2e; --mar: #2c6fa0; }
-.jogo-pirata.tv.fase-noite, .jogo-pirata.tv.fase-carta { background: #1a1640; }
-.jogo-pirata.tv.fase-discussao, .jogo-pirata.tv.fase-votar, .jogo-pirata.tv.fase-resultado, .jogo-pirata.tv.fase-artilheiro { background: var(--mar); }
-.pr-narra { text-align: center; margin: 8px 0; font-size: clamp(28px, 4cqw, 64px); }
+/* Pirata: "Cartazes de Procurado" (info/jogos/pirata-a-bordo.md → Design novo, 27/11) */
+.jogo-pirata { min-height: 100cqh; box-sizing: border-box; background: var(--fundo); --papiro: #f4e4bb; --papiro-2: #d9bd85; --tinta-p: #2a1a08; --castanho: #5a2a10; --lacre: #b3261e; }
+.pr-narra { text-align: center; margin: 4px 0; font-size: 18px; color: var(--creme); }
 
-/* A: noite */
-.pr-noite { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.pr-barco { width: min(92cqw, 1100px); max-height: 62cqh; }
-.pr-balanco { animation: pr-balanco 6s ease-in-out infinite; transform-origin: 405px 330px; will-change: transform; }
-@keyframes pr-balanco { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+/* papel rasgado (cartaz) com contorno preto */
+.pr-papel, .pr-mini, .pr-enrolado-papel, .pr-diario, .pr-nota, .pr-hist {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 170 222' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f4e4bb'/%3E%3Cstop offset='1' stop-color='%23d9bd85'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M2 6 L51 2 L94 7 L168 2 L165 89 L168 220 L102 216 L42 220 L3 219 L5 111Z' fill='url(%23g)' stroke='%23000' stroke-width='4' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  color: var(--tinta-p);
+}
+.pr-prego { position: absolute; top: 0.25em; left: 50%; width: 0.6em; height: 0.6em; margin-left: -0.3em; border-radius: 50%; background: #666; border: 2px solid #000; z-index: 2; }
 
-/* B: diário de bordo (pergaminho) */
-.pr-diario, .pr-pergaminho { display: flex; flex-direction: column; align-items: center; margin: 2cqh auto; width: min(92%, 900px); }
-.pr-rolo { width: 104%; height: 22px; border-radius: 11px; background: var(--papiro-2); border: 3px solid #000; }
-.pr-folha { width: 100%; box-sizing: border-box; background: var(--papiro); color: #2a1a08; border-left: 3px solid #000; border-right: 3px solid #000; padding: 18px 24px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: pr-abrir 0.6s ease-out; transform-origin: top; }
-.pr-folha small { color: #6b4a1e; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
-.pr-folha h1 { margin: 0; font-size: clamp(24px, 3.4cqw, 60px); }
-.pr-diario .pr-folha { min-height: 40cqh; justify-content: center; }
-@keyframes pr-abrir { from { transform: scaleY(0.05); } to { transform: scaleY(1); } }
+/* ---------- TV ---------- */
+.jogo-pirata.tv { height: 100cqh; overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
+.pr-cabine { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; border: 4px solid #000; border-radius: 18px; overflow: hidden; background-color: #6e4524; background-size: 100% 100%; }
+/* luz quente da lanterna (canto de cima à direita) */
+.pr-cabine::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 88% 30%, rgba(255, 207, 122, 0.3), rgba(0, 0, 0, 0.35) 70%); pointer-events: none; }
+.pr-cabine.noite::before { background: radial-gradient(ellipse at 88% 30%, rgba(255, 207, 122, 0.28), rgba(8, 12, 44, 0.72) 55%); }
+.pr-cabine > * { position: relative; }
 
-/* C: convés visto de cima + prancha */
-.pr-dia { display: flex; flex-direction: column; gap: 12px; }
-.pr-conves { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 22%; align-items: center; margin: 0 auto; width: min(96%, 1500px); }
-.pr-tabuas { background: var(--madeira); background-image: repeating-linear-gradient(0deg, transparent 0 58px, var(--madeira-2) 58px 62px); border: 5px solid #000; border-radius: 120px 40px 40px 120px; padding: 32px 48px; display: flex; flex-wrap: wrap; gap: 18px 28px; justify-content: center; min-height: 40cqh; align-content: center; }
-.pr-tripulante { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; color: #fff; font-weight: 700; font-size: 1.3em; text-shadow: 0 2px 0 #000; }
-.compacto .pr-tripulante { font-size: 1em; }
-.pr-tripulante.fora { opacity: 0.3; filter: grayscale(1); }
-.pr-marca { position: absolute; top: -10px; right: -10px; background: var(--creme); color: var(--tinta); border: 3px solid #000; border-radius: 999px; min-width: 34px; text-align: center; font-weight: 800; text-shadow: none; }
-.pr-prancha { height: 70px; background: var(--madeira-2); border: 5px solid #000; border-left: 0; position: relative; display: flex; align-items: center; }
-.pr-anda { position: absolute; display: flex; flex-direction: column; align-items: center; color: #fff; font-weight: 700; animation: pr-anda 6s ease-in forwards; }
-@keyframes pr-anda { 0% { left: -20%; top: -60px; } 70% { left: 70%; top: -60px; } 100% { left: 85%; top: 60px; opacity: 0; } }
-.pr-conves.compacto { grid-template-columns: minmax(0, 1fr) 18%; }
-.pr-conves.compacto .pr-tabuas { padding: 14px 18px; border-radius: 60px 16px 16px 60px; min-height: 0; gap: 8px 12px; font-size: 13px; }
-.pr-conves.compacto .pr-prancha { height: 36px; }
+.pr-tabuleta { align-self: center; position: relative; margin: 3cqh 0 1cqh; padding: 1.2cqh 3cqw; max-width: 70%; background: #c99560; border: 5px solid #000; border-radius: 14px; box-shadow: inset 0 0 0 6px #c99560, inset 0 0 0 9px #7a4e2a, 0 6px 0 rgba(0, 0, 0, 0.3); }
+.pr-tabuleta::before, .pr-tabuleta::after { content: ''; position: absolute; bottom: 100%; width: 0; height: 4cqh; border-left: 5px dashed #222; }
+.pr-tabuleta::before { left: 18%; }
+.pr-tabuleta::after { right: 18%; }
+.pr-tabuleta h1 { margin: 0; text-align: center; color: var(--tinta-p); font-size: clamp(28px, 3.8cqw, 72px); line-height: 1.15; }
+.pr-lacre-tempo { position: absolute; left: 100%; top: 50%; transform: translate(14px, -50%); }
+.pr-lacre-tempo > * { display: flex; align-items: center; justify-content: center; min-width: 2.4em; height: 2.4em; border-radius: 50%; background: var(--lacre); color: #fff; border: 5px solid #000; box-shadow: inset 0 0 0 5px #7a1f12; font-size: clamp(22px, 2.6cqw, 48px); font-weight: 800; padding: 0; }
 
-/* telemóvel */
+.pr-parede { flex: 1; min-height: 0; display: grid; grid-template-columns: 14cqw minmax(0, 1fr) 14cqw; align-items: center; container-type: size; }
+.pr-vigia { width: 12cqw; justify-self: center; }
+.pr-lanterna { justify-self: center; align-self: start; width: 7cqw; margin-top: -4cqh; filter: drop-shadow(0 0 3cqw rgba(255, 190, 90, 0.5)); }
+.noite .pr-lanterna { filter: drop-shadow(0 0 5cqw rgba(255, 190, 90, 0.8)); }
+.pr-lanterna svg { display: block; width: 100%; }
+.pr-chama { transform-origin: 50px 132px; animation: pr-chama 1.6s ease-in-out infinite; }
+@keyframes pr-chama { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(0.9, 1.08); } }
+.pr-barquinho { animation: pr-balanco 5s ease-in-out infinite; transform-origin: 26px -12px; }
+@keyframes pr-balanco { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) translateY(2px); } }
+
+/* cartazes: tamanho pela altura da parede, nº de filas e colunas */
+.pr-cartazes { --ch: min(calc((86cqh - (var(--filas) - 1) * 4cqh) / var(--filas)), calc(64cqw / var(--cols) / 0.82)); display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 4cqh 1.6cqw; font-size: calc(var(--ch) * 0.1); }
+.pr-cartaz { position: relative; width: calc(var(--ch) * 0.77); height: var(--ch); transform: rotate(var(--rot, 0deg)); filter: drop-shadow(5px 7px 0 rgba(0, 0, 0, 0.3)); }
+.pr-papel { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 0.9em 0.4em 0.5em; box-sizing: border-box; }
+.pr-papel small { font-weight: 800; color: var(--castanho); letter-spacing: 0.04em; font-size: 1.05em; border-bottom: 0.12em solid var(--castanho); padding: 0 0.3em; line-height: 1.2; white-space: nowrap; }
+.pr-papel svg { width: auto; height: 50%; }
+.pr-papel b { font-size: 1.35em; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-cartaz.fora .pr-papel { opacity: 0.6; }
+.pr-cartaz.fora .pr-papel svg { filter: grayscale(1); }
+.pr-carimbo { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) rotate(-22deg); border: 0.2em solid var(--lacre); border-radius: 0.2em; color: var(--lacre); font-weight: 800; font-size: 1.5em; padding: 0 0.25em; white-space: nowrap; }
+.pr-lacre { position: absolute; right: -0.6em; bottom: 22%; min-width: 1.7em; height: 1.7em; padding: 0 0.2em; box-sizing: border-box; border-radius: 50%; background: var(--lacre); border: 3px solid #000; box-shadow: inset 0 0 0 0.15em #7a1f12; color: #fff; font-weight: 800; font-size: 1.4em; display: flex; align-items: center; justify-content: center; }
+.pr-fita { position: absolute; left: -10%; right: -10%; bottom: -1.5em; height: 1.8em; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05em; white-space: nowrap; border-top: 3px solid #000; border-bottom: 3px solid #000; clip-path: polygon(0 0, 100% 0, 92% 50%, 100% 100%, 0 100%, 8% 50%); background: #f1e2b8; color: var(--tinta-p); }
+.pr-fita.pirata { background: var(--lacre); color: #fff; }
+.pr-fita.vigia { background: #2f6fa8; color: #fff; }
+.pr-fita.medico { background: #2e8b57; color: #fff; }
+.pr-fita.artilheiro { background: #3a3a3a; color: #fff; }
+
+/* amanhecer / disparo: página do diário pregada por cima da parede */
+.pr-sobre { position: absolute !important; inset: 17cqh 0 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.35); }
+.pr-diario { position: relative; width: min(52cqw, 900px); min-height: 60cqh; box-sizing: border-box; padding: 3cqh 3cqw; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5cqh; text-align: center; transform: rotate(-1.5deg); filter: drop-shadow(8px 10px 0 rgba(0, 0, 0, 0.35)); animation: pr-pregar 0.5s ease-out; }
+.pr-diario small { color: var(--castanho); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; font-size: clamp(18px, 2cqw, 36px); border-bottom: 3px solid var(--castanho); padding: 0 1em; }
+.pr-diario h1 { margin: 0; font-size: clamp(30px, 3.6cqw, 68px); line-height: 1.15; }
+.pr-diario svg { width: auto; height: 22cqh; }
+.pr-diario .pr-fita { position: static; height: auto; padding: 0.2em 2em; font-size: clamp(20px, 2cqw, 38px); }
+.pr-ondas { width: 30%; height: 1.2cqh; min-height: 8px; background: radial-gradient(circle at 50% 0, transparent 55%, #2f6fa8 57%, #2f6fa8 75%, transparent 77%) 0 0 / 2.6cqh 100% repeat-x; }
+@keyframes pr-pregar { from { opacity: 0; transform: rotate(-6deg) scale(1.1); } to { opacity: 1; transform: rotate(-1.5deg); } }
+.pr-ninguem { position: absolute !important; right: 2cqw; bottom: 2cqh; margin: 0; background: var(--papiro); color: var(--tinta-p); border: 3px solid #000; border-radius: 10px; padding: 0.3em 0.8em; font-weight: 800; font-size: clamp(18px, 2cqw, 34px); }
+
+/* fim: cartazes com a fita do papel em cima; diário · pódio · botões em baixo */
+.pr-fim .pr-parede { flex: 1; grid-template-columns: 13cqw minmax(0, 1fr) 30cqw; }
+.pr-fim .pr-revela { height: 100%; container-type: size; display: flex; align-items: center; justify-content: center; }
+.pr-fim .pr-cartazes { --ch: min(calc((80cqh - (var(--filas) - 1) * 12cqh) / var(--filas)), calc(80cqw / var(--cols) / 0.82)); gap: 12cqh 2.6cqw; }
+.pr-fim-baixo { flex: none; display: flex; justify-content: space-between; align-items: end; gap: 2cqw; padding: 0 2cqw 2cqh; }
+.pr-fim-baixo .pr-hist { max-width: 50%; }
+.pr-fim .podio.tv { align-self: end; padding-right: 2cqw; }
+.pr-fim .podio.tv .degrau svg { width: auto; height: 16cqh; }
+.pr-fim .podio.tv .d1 .podio-bloco { height: 26cqh; }
+.pr-fim .podio.tv .d2 .podio-bloco { height: 19cqh; }
+.pr-fim .podio.tv .d3 .podio-bloco { height: 14cqh; }
+.pr-fim .podio.tv .podio-bloco b { font-size: clamp(28px, 3cqw, 54px); }
+.pr-fim .podio.tv .podio-resto { display: none; }
+.pr-botoes { display: flex; align-items: center; gap: 1.5cqw; margin-left: auto; }
+.pr-hist { position: relative; padding: 1.4em 1.2em 1em; display: flex; flex-direction: column; gap: 0.2em; font-weight: 700; font-size: clamp(14px, 1.25cqw, 24px); transform: rotate(-2deg); filter: drop-shadow(5px 7px 0 rgba(0, 0, 0, 0.3)); }
+.pr-hist b { color: var(--castanho); text-align: center; font-size: 1.3em; }
+
+/* ---------- telemóvel ---------- */
 .jogo-pirata.tel { padding-bottom: 120px; }
-.pr-frase { text-align: center; margin: 8px 0 0; }
-.pr-lista { gap: 4px; padding: 10px 12px; }
-.pr-linha { display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 10px; border-radius: 10px; background: transparent; border: 3px solid transparent; color: #2a1a08; font: inherit; font-weight: 700; font-size: 18px; min-height: 48px; text-align: left; }
-.pr-linha.on { border-color: var(--coral); background: rgba(240, 153, 123, 0.18); }
-.pr-linha:disabled { opacity: 0.35; }
-.pr-x { width: 36px; text-align: center; font-size: 22px; }
-.pr-relatorio { font-size: 22px; font-weight: 700; min-height: 120px; justify-content: center; }
+.pr-frase { text-align: center; margin: 0; font-size: 20px; }
+.pr-lista { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: var(--fila); gap: 6px; padding: 2px 4px; }
+.pr-mini { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px 4px; border: 0; font: inherit; font-weight: 800; font-size: 16px; min-height: 0; transform: rotate(var(--rot, 0deg)); filter: drop-shadow(3px 4px 0 rgba(0, 0, 0, 0.3)); }
+.pr-mini svg { width: auto; height: 52%; }
+.pr-mini span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-mini.on { outline: 5px solid var(--coral); outline-offset: -2px; border-radius: 4px; }
+.pr-mini.on::after { content: '✓'; position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; background: var(--coral); border: 3px solid #000; color: var(--tinta); font-size: 16px; line-height: 20px; }
+.pr-mini:disabled { opacity: 0.4; }
+.pr-mini:disabled svg { filter: grayscale(1); }
+.pr-x { font-size: 30px; line-height: 1; color: var(--castanho); }
 .pr-ok { font-weight: 700; }
-.pr-pergaminho.fechado { width: 70%; }
-.pr-selo { width: 96%; height: 140px; background: var(--papiro); border-left: 3px solid #000; border-right: 3px solid #000; display: flex; align-items: center; justify-content: center; font-size: 64px; color: #8a1e1e; }
-.pr-mar { background: var(--mar); border-radius: 20px; padding: 24px; text-align: center; margin-top: 12px; }
+
+/* carta: cartaz enrolado com lacre */
+.pr-enrolado { display: flex; flex-direction: column; align-items: center; margin: 14px auto 0; width: 190px; }
+.pr-enrolado .pr-rolo { display: block; width: 100%; height: 30px; border-radius: 15px; background: #c9a86a; border: 4px solid #000; box-sizing: border-box; position: relative; z-index: 1; }
+.pr-enrolado-papel { position: relative; width: 170px; height: 280px; margin: -6px 0; display: flex; flex-direction: column; align-items: center; padding-top: 20px; box-sizing: border-box; }
+.pr-enrolado-papel small { font-weight: 800; font-size: 22px; color: var(--castanho); }
+.pr-enrolado-papel b { font-size: 100px; line-height: 1.2; color: var(--castanho); opacity: 0.25; }
+.pr-faixa { position: absolute; left: -10px; right: -10px; top: 128px; height: 26px; background: #a8331f; border-top: 3px solid #000; border-bottom: 3px solid #000; }
+.pr-selo { position: absolute; top: 108px; left: 50%; margin-left: -34px; width: 68px; height: 68px; border-radius: 50%; background: var(--lacre); border: 4px solid #000; box-shadow: inset 0 0 0 6px #7a1f12; color: #fff; font-size: 34px; display: flex; align-items: center; justify-content: center; }
+
+/* ecrãs vazios: vigia grande */
+.pr-espera { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pr-espera .pr-vigia { width: min(72vw, 270px); margin-top: 8px; }
+.pr-mar-txt { margin: 0; text-align: center; }
+
+/* amanhecer: nota pregada */
+.pr-nota { position: relative; margin: 8px auto 0; width: 88%; min-height: 120px; box-sizing: border-box; padding: 26px 18px 18px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 20px; font-weight: 800; transform: rotate(-1.5deg); filter: drop-shadow(4px 6px 0 rgba(0, 0, 0, 0.3)); }
+
 .pr-botao-id { overflow: hidden; position: fixed; left: 50%; bottom: 52px; transform: translateX(-50%); min-width: 200px; min-height: 52px; border-radius: 999px; background: var(--noite-2); color: var(--creme); border: 3px solid var(--creme); font: inherit; font-weight: 800; font-size: 18px; user-select: none; -webkit-user-select: none; touch-action: none; z-index: 5; }
 .pr-botao-id.on { background: var(--coral); color: var(--tinta); }
-.pr-identidade { position: fixed; inset: 10% 6% auto; background: var(--creme); color: var(--tinta); border-radius: 20px; padding: 20px; text-align: center; z-index: 6; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); }
-.pr-identidade h2 { margin: 0; }
-.pr-identidade p { margin: 6px 0; }
-.pr-simbolo { font-size: 56px; }
+/* Identidade: o próprio cartaz com a fita do papel + caixa com a ação e os segredos */
+.pr-identidade { position: fixed; inset: 0 0 110px; background: rgba(10, 8, 30, 0.82); z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 12px 20px; }
+.pr-identidade .pr-cartaz { --ch: 230px; width: calc(var(--ch) * 0.77); height: var(--ch); font-size: 23px; flex: none; }
+.pr-id-txt { background: var(--creme); color: var(--tinta); border: 3px solid #000; border-radius: 14px; padding: 10px 14px; text-align: center; max-width: 340px; max-height: 40%; overflow: auto; }
+.pr-id-txt p { margin: 3px 0; }
+.pr-id-txt p:first-child { font-weight: 800; }
 
-/* fim */
-.pr-fim { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; align-items: start; }
-.tel .pr-fim, .pr-revela { display: flex; flex-direction: column; gap: 12px; }
-.pr-revela h2 { text-align: center; margin: 0; }
-.pr-papeis { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.pr-papel-j { background: var(--noite-2); border-radius: 14px; padding: 8px 12px; display: flex; flex-direction: column; align-items: center; min-width: 110px; }
-.pr-papel-j.pirata { background: #5a1f2a; }
-.pr-papel-j.fora { opacity: 0.6; }
-.pr-hist { background: var(--papiro); color: #2a1a08; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
-@media (prefers-reduced-motion: reduce) { .pr-balanco, .pr-folha, .pr-anda { animation: none; } }
-/* telemóvel sem scroll (360×640): lista em 2 colunas, rolos finos (o botão Identidade fica fixo por cima de ~536 px) */
-.jogo-pirata.tel .pr-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 6px 8px; }
-.jogo-pirata.tel .pr-linha { min-height: 44px; padding: 4px 6px; gap: 6px; font-size: 16px; }
-.jogo-pirata.tel .pr-rolo { height: 12px; }
-.jogo-pirata.tel .pr-frase { font-size: 20px; margin: 0; }
-.jogo-pirata.tel .pr-lista { gap: 2px; }
-.jogo-pirata.tel .pr-linha { min-height: 40px; }
-.jogo-pirata.tel > * { margin-top: 0; margin-bottom: 0; }
-.jogo-pirata.tel .palco-tel .pr-diario .pr-folha { min-height: 0; }
-.jogo-pirata.tel .pr-relatorio { min-height: 0; font-size: 18px; }
-.jogo-pirata.tel .pr-mar { padding: 10px; margin-top: 0; }
-.jogo-pirata.tel .pr-mar h2 { font-size: 20px; margin: 0; }
-.jogo-pirata.tel .pr-mar p { margin: 4px 0 0; }
+/* sem TV: o palco compacto por baixo */
+.palco-tel .pr-cabine { border-width: 3px; border-radius: 12px; padding: 6px 4px 14px; }
+.palco-tel .pr-parede { display: block; container-type: normal; }
+.palco-tel .pr-cartazes { --ch: 84px; gap: 10px 6px; font-size: 8.4px; }
+.palco-tel .pr-sobre { position: static !important; background: none; padding: 4px; }
+.palco-tel .pr-diario { width: 100%; min-height: 0; padding: 14px 10px 10px; gap: 4px; }
+.palco-tel .pr-diario small { font-size: 12px; }
+.palco-tel .pr-diario h1 { font-size: 18px; }
+.palco-tel .pr-diario svg { height: 50px; }
+.palco-tel .pr-diario .pr-fita { font-size: 14px; }
+.palco-tel .pr-cabine:has(.pr-sobre) .pr-parede { display: none; }
+.palco-tel .pr-ninguem { position: static !important; align-self: center; font-size: 14px; margin-top: 4px; }
+
+/* fim no telemóvel e popup da revelação (sem TV) */
+.jogo-pirata.tel .d1 .podio-bloco { height: 80px; }
+.jogo-pirata.tel .d2 .podio-bloco { height: 60px; }
+.jogo-pirata.tel .d3 .podio-bloco { height: 44px; }
+.pr-revela.compacto { display: flex; flex-direction: column; gap: 14px; }
+.pr-revela.compacto h2 { text-align: center; margin: 0; }
+.pr-revela.compacto .pr-cartazes { --ch: 96px; gap: 18px 8px; font-size: 9.6px; }
+.pr-revela.compacto .pr-hist { transform: none; font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) { .pr-chama, .pr-barquinho, .pr-diario { animation: none; } }
+.sem-anim .pr-chama, .sem-anim .pr-barquinho, .sem-anim .pr-diario { animation: none; }

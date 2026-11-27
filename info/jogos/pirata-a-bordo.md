@@ -65,3 +65,14 @@ Lobisomem clássico com tema de navio mercante. Os piratas atiram marinheiros ao
 
 ## Segredo
 - Papéis e resultados da vigia vão só pelo canal privado. A vista da TV nunca leva papéis.
+
+## Design novo (27/11, aprovado e aplicado)
+Maquetes: `prints-montra/proposta-pirata-cartazes.html` (TV no jogo) e `proposta-pirata-final.html` (fim, noite, amanhecer, telemóvel) (+ `.png`). Recusadas: `-conves`, `-mapa`.
+- **TV — "Cartazes de Procurado"**: parede de tábuas da cabine (`var(--fundo)` por baixo), **vigia** redonda de latão à esquerda (mar de dia com barco; à noite lua e estrelas), **lanterna** pendurada à direita. Texto grande numa **tabuleta** de madeira pendurada por correntes; tempo num **lacre vermelho** ao lado.
+- **Jogadores = cartazes "PROCURADO"** (papel envelhecido, bordas rasgadas, prego, ligeiramente rodados): boneco + nome. Votou = **selo de lacre** com ✓. Saiu = esbatido + carimbo **"AO MAR"**. Resultado: número de votos no lacre.
+- **Noite**: a mesma parede escurecida (azul), vigia com lua, lanterna mais forte; tabuleta "Os piratas escolhem…".
+- **Amanhecer/disparo**: página do **diário de bordo** pregada por cima da parede (linhas, "DIÁRIO DE BORDO · NOITE N", boneco e frase).
+- **Fim**: tabuleta com o vencedor + frase; cartazes pequenos com **fita do papel** por baixo (Pirata vermelho ☠, Vigia azul 🔭, Médico verde 🩹, Artilheiro cinza 💣, Marinheiro creme ⚓); `PodioEscada` ao meio; papel "Diário de bordo" com o histórico das noites.
+- **Telemóvel**: carta = **cartaz enrolado** com lacre ☠; escolher = **mini-cartazes** em 2 colunas (escolhido com orla coral + ✓); Identidade = o **próprio cartaz** com a fita do papel + caixa com a ação/companheiros/votos; ecrãs vazios = **vigia grande** com o mar e o barco. Mesmo aspeto para todos os papéis.
+- **Aplicado no código e aprovado pelo utilizador (27/11)**: `comuns.tsx` (`TABUAS`, `Vigia`, `Lanterna`, `Tabuleta` com o tempo em lacre, `Cartaz`/`Cartazes`, `Fita`, `Diario` pregado, `Historico`; saíram `Barco`, `Conves`, `PlacarPirata`, `Topo`), `tv.tsx` (fim: vigia · cartazes com fita · `PodioEscada`; diário + botões em baixo), `telemovel.tsx` (mini-cartazes, cartaz enrolado, Identidade = o próprio cartaz com a fita, vigia nos ecrãs vazios, `PodioEscada`), `pirata.css` (`var(--fundo)`), i18n (`prProcurado`, `prAoMar`, `prDiarioTit`). `regras.ts` e `demo.tsx` intactos. Capturas: `node prints-montra/prints-pirata.mjs tv|tel [fases]`. Lint 0, testes verdes, e2e tel/tv-scroll pirata 38/38.
+- Barco da vigia assenta na água (casco um pouco por baixo das ondas), pedido do utilizador.

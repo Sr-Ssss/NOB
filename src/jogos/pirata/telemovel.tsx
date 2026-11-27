@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
+import type { ComponentChildren } from 'preact';
 import type { AcaoSala, VistaSala } from '../../core/sala';
 import { t, type Chave } from '../../core/i18n';
 import { Avatar, BarraSegurar, Temporizador } from '../../ui/comuns';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { limiarVigia, type Privado, type PrivadoPirata, type VistaPirata } from './regras';
-import { Palco, PlacarPirata, Revelacao, SIMBOLO, nomePapel, type PropsPirata } from './comuns';
+import { Cartaz, Palco, Revelacao, Vigia, type PropsPirata } from './comuns';
+import { PodioEscada } from '../../ui/podio';
 import { Progresso } from '../../ui/ecraunico';
 import { AcabarPartida } from '../../ui/acabarPartida';
 import { BotaoPopup } from '../../ui/verPopup';
@@ -23,7 +25,7 @@ function textoResultado(r: Privado, nome: (id: string) => string): string {
   return r.tipo === 'vigia' ? t(r.pirata ? 'prVigiaSim' : 'prVigiaNao', { nome: nome(r.alvo) }) : t(r.saiu ? 'prSaiu' : 'prNaoSaiu', { nome: nome(r.alvo) });
 }
 
-function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaPirata; p: PrivadoPirata | null; aberta?: boolean }) {
+function Identidade({ sala, v, eu, p, aberta = false }: { sala: VistaSala; v: VistaPirata; eu: string; p: PrivadoPirata | null; aberta?: boolean }) {
   const [estado, setEstado] = useState<'nada' | 'segura' | 'mostra'>(aberta ? 'mostra' : 'nada');
   const tempo = useRef<number | undefined>(undefined);
   const largar = () => {
@@ -43,8 +45,8 @@ function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaP
     <>
       {estado === 'mostra' && p?.papel && (
         <div class="pr-identidade" role="dialog" aria-live="assertive">
-          <div class="pr-simbolo">{SIMBOLO[p.papel]}</div>
-          <h2>{nomePapel(p.papel)}</h2>
+          <Cartaz sala={sala} id={eu} papel={p.papel} />
+          <div class="pr-id-txt">
           {v.fase === 'noite' && p.vivo && <p>{t(acao as Chave, { n: n ?? '' })}</p>}
           <p class="mini">{p.papel === 'pirata' ? t('prObjetivo_pirata') : t('prObjetivo_outro')}</p>
           {p.companheiros.length > 0 && <p>{t('prCompanheiros', { nomes: p.companheiros.map(nome).join(', ') })}</p>}
@@ -64,6 +66,7 @@ function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaP
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
       <button class={'pr-botao-id' + (estado === 'mostra' ? ' on' : '')} {...eventosSegurar({ segurar, largar, mostrar: () => setEstado('mostra'), aberto: estado === 'mostra' })}>
@@ -74,40 +77,57 @@ function Identidade({ sala, v, p, aberta = false }: { sala: VistaSala; v: VistaP
   );
 }
 
-/** pergaminho com todos os jogadores; `escolher` = toque num vivo (o mesmo aspeto para todos os papéis) */
-function Pergaminho({ sala, v, sel, escolher, ninguem = false }: { sala: VistaSala; v: VistaPirata; sel: string | null | undefined; escolher?: (id: string | null) => void; ninguem?: boolean }) {
+/** mini-cartazes de todos os jogadores; `escolher` = toque num vivo (o mesmo aspeto para todos os papéis).
+ *  Colunas e altura das filas pelo nº de jogadores, para caber em 360×640 sem scroll. */
+function Pergaminho({ sala, v, sel, escolher, ninguem = false, alt }: { sala: VistaSala; v: VistaPirata; sel: string | null | undefined; escolher?: (id: string | null) => void; ninguem?: boolean; alt: number }) {
+  const n = v.participantes.length + (ninguem ? 1 : 0);
+  const cols = n <= 6 ? 2 : n <= 12 ? 3 : 4;
+  const filas = Math.ceil(n / cols);
   return (
-    <div class="pr-pergaminho">
-      <div class="pr-rolo" />
-      <div class="pr-folha pr-lista">
-        {v.participantes.map((id) => {
-          const vivo = v.vivos.includes(id);
-          return (
-            <button key={id} class={'pr-linha' + (sel === id ? ' on' : '')} disabled={!vivo || !escolher} onClick={() => escolher?.(id)}>
-              <Avatar n={avatarDe(sala, id)} tam={36} />
-              <span>{nomeDe(sala, id)}</span>
-            </button>
-          );
-        })}
-        {ninguem && (
-          <button class={'pr-linha' + (sel === null ? ' on' : '')} disabled={!escolher} onClick={() => escolher?.(null)}>
-            <span class="pr-x">✕</span>
-            <span>{t('prNinguem')}</span>
+    <div class="pr-lista" style={{ '--cols': cols, '--fila': `min(112px, ${Math.floor((alt - (filas - 1) * 6) / filas)}px)` }}>
+      {v.participantes.map((id, k) => {
+        const vivo = v.vivos.includes(id);
+        return (
+          <button key={id} class={'pr-mini' + (sel === id ? ' on' : '')} style={{ '--rot': [-2, 1.5, 1, -1.5, -1, 2][k % 6] + 'deg' }} disabled={!vivo || !escolher} onClick={() => escolher?.(id)}>
+            <Avatar n={avatarDe(sala, id)} tam={60} />
+            <span>{nomeDe(sala, id)}</span>
           </button>
-        )}
-      </div>
-      <div class="pr-rolo" />
+        );
+      })}
+      {ninguem && (
+        <button class={'pr-mini' + (sel === null ? ' on' : '')} disabled={!escolher} onClick={() => escolher?.(null)}>
+          <span class="pr-x">✕</span>
+          <span>{t('prNinguem')}</span>
+        </button>
+      )}
     </div>
   );
 }
 
-/** pergaminho fechado (carta) */
+/** cartaz enrolado com lacre (carta) */
 function Fechado() {
   return (
-    <div class="pr-pergaminho fechado">
-      <div class="pr-rolo" />
-      <div class="pr-selo">☠</div>
-      <div class="pr-rolo" />
+    <div class="pr-enrolado" aria-hidden="true">
+      <span class="pr-rolo" />
+      <div class="pr-enrolado-papel">
+        <small>{t('prProcurado')}</small>
+        <b>?</b>
+        <span class="pr-faixa" />
+        <span class="pr-selo">☠</span>
+      </div>
+      <span class="pr-rolo" />
+    </div>
+  );
+}
+
+/** ecrã vazio: vigia grande com o mar + frase */
+function Espera({ texto, semTv = false, children }: { texto: string; semTv?: boolean; children?: ComponentChildren }) {
+  return (
+    <div class="pr-espera">
+      {/* sem TV o palco vem por baixo: sem a vigia grande */}
+      {!semTv && <Vigia />}
+      <h2 class="pr-frase">{texto}</h2>
+      {children}
     </div>
   );
 }
@@ -119,7 +139,8 @@ function Escolher({ sala, v, enviada, tipo, ninguem = false, enviar }: { sala: V
   const bloqueado = tipo === 'pr_votar' && enviada !== undefined;
   return (
     <>
-      <Pergaminho sala={sala} v={v} sel={atual} escolher={bloqueado ? undefined : setSel} ninguem={ninguem} />
+      {/* altura livre para a grelha: a votação tem mais uma linha de aviso; o Artilheiro, uma frase de 2 linhas */}
+      <Pergaminho sala={sala} v={v} sel={atual} escolher={bloqueado ? undefined : setSel} ninguem={ninguem} alt={ninguem ? 300 : tipo === 'pr_levar' ? 330 : 370} />
       {feito ? (
         <p class="centro pr-ok">{t('prConfirmado')}</p>
       ) : (
@@ -146,7 +167,7 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
   const vivo = v.vivos.includes(eu);
   const nome = (id: string) => nomeDe(sala, id);
   // sem TV, o palco por baixo já conta o que se passa ("Olhem para a TV" não faz sentido)
-  if (!v.participantes.includes(eu)) return sala.semTv ? null : <Frase texto={t('prOlheTv')} />;
+  if (!v.participantes.includes(eu)) return sala.semTv ? null : <Espera texto={t('prOlheTv')} />;
   if (v.fase === 'carta')
     return (
       <>
@@ -164,10 +185,9 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
     );
   if (!vivo)
     return (
-      <div class="pr-mar">
-        <h2>{t('prMar')}</h2>
-        <p>{t('prMarTxt')}</p>
-      </div>
+      <Espera texto={t('prMar')} semTv={sala.semTv}>
+        <p class="pr-mar-txt">{t('prMarTxt')}</p>
+      </Espera>
     );
   switch (v.fase) {
     case 'noite':
@@ -183,10 +203,9 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
       return (
         <>
           <Frase texto={t('prAmanhecer')} />
-          <div class="pr-pergaminho">
-            <div class="pr-rolo" />
-            <div class="pr-folha pr-relatorio">{txt}</div>
-            <div class="pr-rolo" />
+          <div class="pr-nota">
+            <span class="pr-prego" />
+            {txt}
           </div>
         </>
       );
@@ -202,7 +221,7 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
     case 'discussao':
       return (
         <>
-          <Frase texto={sala.semTv ? t('conversem') : t('prDiscussao')} />
+          <Espera texto={sala.semTv ? t('conversem') : t('prDiscussao')} semTv={sala.semTv} />
           {sala.vipId === eu && (
             <button class="botao sec" onClick={() => jogo(enviar, { tipo: 'pr_votar_ja' })}>
               {t('prVotarJa')}
@@ -211,9 +230,9 @@ function Eu({ sala, v, eu, p, enviar }: { sala: VistaSala; v: VistaPirata; eu: s
         </>
       );
     case 'artilheiro':
-      return <Frase texto={t('prArtilheiroOutros')} />;
+      return <Espera texto={t('prArtilheiroOutros')} semTv={sala.semTv} />;
     default:
-      return sala.semTv ? null : <Frase texto={t('prOlheTv')} />;
+      return sala.semTv ? null : <Espera texto={t('prOlheTv')} />;
   }
 }
 
@@ -256,9 +275,7 @@ export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta 
               <Revelacao sala={sala} v={v} compacto />
             </BotaoPopup>
           )}
-          <div class="cartao">
-            <PlacarPirata sala={sala} v={v} tam={36} />
-          </div>
+          <PodioEscada sala={sala} podio={v.podio} />
           {lider && (
             <div class="linha">
               <button class="botao cresce" onClick={() => enviar({ tipo: 'outra_vez', id: '' })}>
@@ -281,7 +298,7 @@ export function TelemovelPirata({ sala, v, agora, eu, privado, enviar, idAberta 
           )}
         </>
       )}
-      {!fim && v.participantes.includes(eu) && <Identidade sala={sala} v={v} p={privado} aberta={idAberta} />}
+      {!fim && v.participantes.includes(eu) && <Identidade sala={sala} v={v} eu={eu} p={privado} aberta={idAberta} />}
     </div>
   );
 }
