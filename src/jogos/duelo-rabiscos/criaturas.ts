@@ -20,18 +20,18 @@ const f = (classe: Classe, tinta: number, defesa: number, passos: number, dados:
 export const CRIATURAS: Record<Criatura, Ficha> = {
   duende: f('lacaio', 2, 1, 2, 2, 'dentada'),
   sapinho: f('lacaio', 2, 1, 3, 1, 'dentada'),
-  corvo: f('batedor', 3, 2, 4, 2, 'garras'),
+  corvo: f('batedor', 2, 1, 4, 2, 'garras'),
   lobo: f('batedor', 3, 2, 4, 3, 'garras'),
   velhoPescador: f('pescador', 3, 2, 2, 2, 'anzol'),
-  mumia: f('pescador', 3, 3, 2, 2, 'ligaduras'),
-  elfo: f('arqueiro', 4, 2, 3, 3, 'seta'),
-  dragaozinho: f('arqueiro', 4, 2, 1, 3, 'queimado'),
-  golem: f('guardiao', 4, 3, 3, 4, 'amolgadela'),
-  carvalho: f('guardiao', 4, 4, 2, 3, 'amolgadela'),
+  mumia: f('pescador', 3, 3, 1, 2, 'ligaduras'),
+  elfo: f('arqueiro', 4, 1, 3, 3, 'seta'),
+  dragaozinho: f('arqueiro', 4, 2, 2, 3, 'queimado'),
+  golem: f('guardiao', 4, 4, 2, 2, 'amolgadela'),
+  carvalho: f('guardiao', 4, 5, 1, 2, 'amolgadela'),
   cavaleiro: f('duelista', 5, 4, 2, 4, 'corte'),
-  raposa: f('duelista', 5, 3, 3, 4, 'corte'),
+  raposa: f('duelista', 4, 2, 3, 5, 'corte'),
   minotauro: f('barbaro', 6, 4, 3, 6, 'soco'),
-  ogre: f('barbaro', 6, 4, 2, 6, 'soco'),
+  ogre: f('barbaro', 5, 5, 2, 3, 'soco'),
 };
 
 export type Poder = 'empurrao' | 'escudo' | 'retoque' | 'maisAtaque' | 'tempestade' | 'copia' | 'sono' | 'furia' | 'muralha' | 'troca';

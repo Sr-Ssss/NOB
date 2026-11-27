@@ -5,7 +5,7 @@ import type { VistaSala } from '../../core/sala';
 import { MAGOS_PODERES, exercitosProntos, type Criatura, type RoupaMago } from './criaturas';
 import { DefinicoesDuelo } from './definicoes';
 import { jogadaBot } from './bot';
-import { DEF_PADRAO_DUELO, desenhosDuelo, livre, novoDuelo, podeRelancar, privadoDuelo, reduzDuelo, vistaDuelo, type AcaoDuelo, type EstadoDuelo } from './regras';
+import { DEF_PADRAO_DUELO, desenhosDuelo, livre, novoDuelo, podeComprar, privadoDuelo, reduzDuelo, vistaDuelo, type AcaoDuelo, type EstadoDuelo } from './regras';
 import { TelemovelDuelo } from './telemovel';
 import { TvDuelo } from './tv';
 import { GaleriaEstruturas } from './galeria';
@@ -47,7 +47,7 @@ function jogarOutros(e: EstadoDuelo, agora: number, todos: boolean): EstadoDuelo
 function avancar(e: EstadoDuelo, fase: string, agora: number): EstadoDuelo {
   const minha = () =>
     e.fase === fase &&
-    (fase === 'rodar' || fase === 'fim' || (fase === 'vez' && e.vez === 'j1') || (fase === 'batalha' && podeRelancar(e, 'j1')) || (fase === 'lobo' && e.criaturas.some((c) => c.id === e.lobo && c.dono === 'j1')));
+    (fase === 'rodar' || fase === 'fim' || (fase === 'vez' && e.vez === 'j1') || (fase === 'batalha' && podeComprar(e, 'j1')) || (fase === 'lobo' && e.criaturas.some((c) => c.id === e.lobo && c.dono === 'j1')));
   for (let i = 0; i < 3_000 && !minha() && e.fase !== 'fim'; i++) e = jogarOutros(e, agora, true);
   return e;
 }

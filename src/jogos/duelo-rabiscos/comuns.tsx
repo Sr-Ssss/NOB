@@ -4,7 +4,7 @@ import { Boneco18 } from '../../ui/bonecos';
 import { avatarDe, nomeDe } from '../5050/tv';
 import { ENCAIXE, Mago } from './artes/magos';
 import { MOSTRAR_BATALHA, Sinal, Retrato, indice } from './colmeia';
-import { DadoRola, type FaceDado } from './artes/dados';
+import { Dado, DadoRola, type FaceDado } from './artes/dados';
 import { MarcaGolpe, type Marca } from './artes/icones';
 import { ICONES_STATUS } from './artes/carta';
 import { Arte } from './artes/lapis';
@@ -91,6 +91,8 @@ export function Luta({
   const lado = (q: Quem, ataca: boolean) => {
     const morreu = caiu?.[ataca ? 0 : 1];
     const [normais, feridas] = ataca ? [b.ataque, b.feridaAtaque] : [b.defesa, b.feridaDefesa];
+    const porRolar = b.rolado === false;
+    const n = ataca ? b.nA : b.nD;
     const meu = aoTocar && q.dono === eu;
     const dado = (f: FaceDado, i: number) =>
       meu ? (
@@ -115,9 +117,17 @@ export function Luta({
           )}
         </div>
         <span>{TEXTO_CRIATURA[q.tipo].nome}</span>
-        <div class="dr-dados">{facesLado(normais, feridas, ataca).map(dado)}</div>
+        <div class="dr-dados">
+          {porRolar
+            ? Array.from({ length: n }, (_, i) => (
+                <span key={i} class="dr-por-rolar" aria-hidden="true">
+                  <Dado face={ataca ? 'ataque1' : 'defesa1'} tam={tam} />
+                </span>
+              ))
+            : facesLado(normais, feridas, ataca).map(dado)}
+        </div>
         <b>
-          {ataca ? TXT.ataca : TXT.defende} {total(normais, feridas, ataca)}
+          {ataca ? TXT.ataca : TXT.defende} {porRolar ? n + ' 🎲' : total(normais, feridas, ataca)}
         </b>
       </div>
     );
@@ -153,7 +163,7 @@ export function BatalhaOuUltima(p: Omit<PropsDuelo, 'agora'> & { desenhos: Desen
   if (!u) return null;
   return (
     <div class="dr-resultado" role="status">
-      <Luta sala={p.sala} v={v} desenhos={p.desenhos} tam={p.tam} b={u.dados} de={u.quemAtacou} alvo={u.quemDefendeu} rolar={false} caiu={[u.morreuQuemAtacou, u.morreu]} marca={u.marca} />
+      <Luta sala={p.sala} v={v} desenhos={p.desenhos} tam={p.tam} b={u.dados} de={u.quemAtacou} alvo={u.quemDefendeu} rolar={v.fase !== 'fim'} caiu={[u.morreuQuemAtacou, u.morreu]} marca={u.marca} />
       {/* o resultado vê-se nos retratos; o texto fica só para os leitores de ecrã */}
       <p class="dr-so-leitor">{TXT.resultado(u.morreu, u.morreuQuemAtacou, TEXTO_CRIATURA[u.quemAtacou.tipo].nome, TEXTO_CRIATURA[u.quemDefendeu.tipo].nome)}</p>
     </div>

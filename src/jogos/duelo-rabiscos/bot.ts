@@ -5,7 +5,7 @@
  */
 import { CRIATURAS, CUSTO, MAGOS_PODERES, exercitosProntos, type Criatura, type Poder, type RoupaMago } from './criaturas';
 import { passoPoder, poderCompleto, tocarPoder } from './jogadas';
-import { acertos, alvoAoChegar, alvosAtaque, alvosEspecial, alvosLuta, casasAndar, casasEspecial, casasLobo, colados, cria, dadosAtaque, dadosDefesa, fogoSopro, podeRelancar, serve, type AcaoDuelo, type AlvoPoder, type Cria, type Face, type VistaDuelo } from './regras';
+import { alvoAoChegar, alvosAtaque, alvosEspecial, alvosLuta, casasAndar, casasEspecial, casasLobo, colados, cria, chegaParaComprar, custoDado, dadosAtaque, dadosDefesa, fogoSopro, podeComprar, serve, type AcaoDuelo, type AlvoPoder, type Cria, type Face, type VistaDuelo } from './regras';
 import { distancia, vizinhas, type Casa } from './tabuleiro';
 
 type Sorte = () => number;
@@ -279,39 +279,24 @@ function poder(v: VistaDuelo, id: string, r: Sorte): Jogada | null {
   return null;
 }
 
-/** relançar na batalha: o dado meu que mais melhora o resultado, se compensar */
-function relancar(v: VistaDuelo, id: string): Jogada {
+/** antes de rolar: compra mais um dado se o ganho esperado (em tinta) passar o custo (em gemas, a meio valor) */
+function comprar(v: VistaDuelo, id: string): Jogada {
   const b = v.batalha!;
   const de = cria(v, b.de)!;
   const alvo = cria(v, b.alvo)!;
   const ataco = de.dono === id;
   const perto = colados(de, alvo);
-  const util = (ataque: number, defesa: number) => {
-    const empate = perto && ataque === defesa;
-    const morre = ataque > defesa || (empate && alvo.tipo !== 'raposa');
-    const morreQuem = perto && (ataque < defesa || (empate && de.tipo !== 'raposa'));
-    const x = (morre ? valor(alvo) : 0) - (morreQuem ? valor(de) : 0);
+  const valorDe = (nA: number, nD: number) => {
+    const [pM, pE, pP] = probabilidades(soma(nA - Math.min(nA, de.ferimentos), Math.min(nA, de.ferimentos), true), soma(nD - Math.min(nD, alvo.ferimentos), Math.min(nD, alvo.ferimentos), false));
+    // pM: alvo morre; pE: empate; pP: atacante perde (só colado)
+    const morre = pM + (perto && alvo.tipo !== 'raposa' ? pE : 0);
+    const morreQuem = perto ? pP + (de.tipo !== 'raposa' ? pE : 0) : 0;
+    const x = morre * valor(alvo) - morreQuem * valor(de);
     return ataco ? x : -x;
   };
-  const conta = (l: number[], f: string[], espada: string) => acertos(l) + f.filter((x) => x === espada).length;
-  const A = conta(b.ataque, b.feridaAtaque, 'espada');
-  const D = conta(b.defesa, b.feridaDefesa, 'escudo');
-  const agora = util(A, D);
-  const [normais, feridas] = ataco ? [b.ataque, b.feridaAtaque] : [b.defesa, b.feridaDefesa];
-  // só os acertos contam aqui (a face de ferimento vale 0)
-  const faces = ataco ? [0, 0, 0, 1, 1, 2] : [0, 0, 0, 1, 1, 1];
-  const conta1 = ataco ? 'espada' : 'escudo';
-  let melhor: [number, number] = [v.magos[id].gratis > 0 ? 0.05 : 0.8, -1];
-  const media = (atual: number, novos: number[]) => novos.reduce((s, n) => s + (ataco ? util(A - atual + n, D) : util(A, D - atual + n)), 0) / novos.length - agora;
-  normais.forEach((x, i) => {
-    const g = media(x, faces);
-    if (g > melhor[0]) melhor = [g, i];
-  });
-  feridas.forEach((f, i) => {
-    const g = media(f === conta1 ? 1 : 0, [1, 0, 0, 0, 0, 0]);
-    if (g > melhor[0]) melhor = [g, normais.length + i];
-  });
-  return melhor[1] >= 0 ? { tipo: 'dr_relancar', id, i: melhor[1] } : { tipo: 'dr_pronto', id };
+  const ganho = ataco ? valorDe(b.nA + 1, b.nD) - valorDe(b.nA, b.nD) : valorDe(b.nA, b.nD + 1) - valorDe(b.nA, b.nD);
+  const custo = v.magos[id].gratis > 0 ? 0 : custoDado(v, id);
+  return chegaParaComprar(v, id) && ganho > custo * 0.5 ? { tipo: 'dr_comprar', id } : { tipo: 'dr_pronto', id };
 }
 
 /** a jogada do bot agora (null = nada a fazer) */
@@ -349,7 +334,7 @@ export function jogadaBot(v: VistaDuelo, id: string, r: Sorte = Math.random): Jo
       return { tipo: 'dr_pronto', id };
     }
     case 'batalha':
-      return podeRelancar(v, id) ? relancar(v, id) : null;
+      return podeComprar(v, id) ? comprar(v, id) : null;
     case 'lobo': {
       const lobo = cria(v, v.lobo ?? undefined);
       if (lobo?.dono !== id) return null;
@@ -373,5 +358,5 @@ export function jogadaBot(v: VistaDuelo, id: string, r: Sorte = Math.random): Jo
 /** o que conta como "já joguei aqui" (poder e relançar não mudam o relógio) */
 export const chaveBot = (v: VistaDuelo, id: string): string => {
   const m = v.magos[id];
-  return `${v.fase}:${v.terminaEm}:${v.volta}:${v.vez}:${v.ultimo?.n}:${m?.dados.length}:${m?.poderUsado}:${m?.relancou}:${m?.gemas}:${m?.gratis}:${m?.pronto}`;
+  return `${v.fase}:${v.terminaEm}:${v.volta}:${v.vez}:${v.ultimo?.n}:${m?.dados.length}:${m?.poderUsado}:${m?.relancou}:${m?.gemas}:${m?.gratis}:${m?.pronto}:${v.batalha?.nA}:${v.batalha?.nD}`;
 };

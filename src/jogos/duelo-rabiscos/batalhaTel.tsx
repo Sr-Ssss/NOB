@@ -16,7 +16,7 @@ import { avatarDe } from '../5050/tv';
 import { Zoom } from './zoom';
 import { CUSTO, MAGOS_PODERES, type Poder } from './criaturas';
 import { acaoModo, faceAcao, modos, motivoPoder, opcoesModo, passoPoder, poderCompleto, tocarPoder, type Modo, type Opcoes } from './jogadas';
-import { casasLobo, cria, foraDuelo, podeRelancar, type AlvoPoder, type Cria, type Desenhos } from './regras';
+import { casasLobo, chegaParaComprar, cria, custoDado, foraDuelo, podeComprar, type AlvoPoder, type Cria, type Desenhos } from './regras';
 import type { Casa } from './tabuleiro';
 import { NOME_FACE, TEXTO_CRIATURA, TEXTO_PODER, TXT } from './textos';
 
@@ -337,7 +337,8 @@ export function BatalhaTel(p: PropsBatalha) {
     );
   const jogador = v.participantes.includes(eu);
   const vivo = jogador && !foraDuelo(v, eu);
-  const relanco = vivo && v.fase === 'batalha' && podeRelancar(v, eu);
+  // antes de rolar: comprar dados com gemas (custa os dados que fica a ter), depois Rolar!
+  const compro = vivo && v.fase === 'batalha' && podeComprar(v, eu);
   const espera = useEsperaBatalha(v);
   const luta = (v.fase === 'batalha' || nova) && !espera;
   const minhaVez = vivo && v.fase === 'vez' && v.vez === eu;
@@ -358,13 +359,16 @@ export function BatalhaTel(p: PropsBatalha) {
             desenhos={desenhos}
             tam={40}
             eu={eu}
-            aoTocar={relanco ? (i) => jogo(enviar, { tipo: 'dr_relancar', i }) : undefined}
-            selo={relanco ? (v.magos[eu].gratis > 0 ? 'gratis' : 'gema') : undefined}
           />
-          {relanco && (
-            <button class="botao grande dr-ok" aria-label={TXT.ficar} onClick={() => jogo(enviar, { tipo: 'dr_pronto' })}>
-              ✓
-            </button>
+          {compro && (
+            <div class="linha dr-comprar">
+              <button class="botao sec" disabled={!chegaParaComprar(v, eu)} onClick={() => jogo(enviar, { tipo: 'dr_comprar' })}>
+                {v.magos[eu].gratis > 0 ? TXT.comprarGratis : TXT.comprarDado(custoDado(v, eu))} <Gemas n={v.magos[eu].gemas} tam={18} />
+              </button>
+              <button class="botao grande cresce" onClick={() => jogo(enviar, { tipo: 'dr_pronto' })}>
+                🎲 {TXT.rolar}
+              </button>
+            </div>
           )}
         </div>
       )}

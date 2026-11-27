@@ -33,7 +33,7 @@ describe('bot do Duelo', () => {
       voltas += p.e.volta;
       expect(Object.keys(resultadoDuelo(p.e)).sort()).toEqual(['b0', 'b1']);
     }
-    for (const t of ['mago/dr_mago', 'exercito/dr_exercito', 'desenhar/dr_desenho', 'rodar/dr_pronto', 'rodar/dr_rodar', 'vez/dr_andar', 'vez/dr_atacar', 'vez/dr_poder', 'batalha/dr_relancar']) expect(tipos, t).toContain(t);
+    for (const t of ['mago/dr_mago', 'exercito/dr_exercito', 'desenhar/dr_desenho', 'rodar/dr_pronto', 'rodar/dr_rodar', 'vez/dr_andar', 'vez/dr_atacar', 'vez/dr_poder', 'batalha/dr_comprar']) expect(tipos, t).toContain(t);
     // partidas razoáveis: nem relâmpago nem infinitas
     expect(voltas / 30).toBeGreaterThan(2);
     expect(voltas / 30).toBeLessThan(25);

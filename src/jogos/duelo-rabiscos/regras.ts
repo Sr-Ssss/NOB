@@ -29,7 +29,7 @@ export const T_RODAR = 12;
 export const T_VEZ = 30;
 export const T_BATALHA = 8;
 export const T_LOBO = 10;
-export const TIPOS_DUELO = ['dr_mago', 'dr_exercito', 'dr_desenho', 'dr_rodar', 'dr_pronto', 'dr_andar', 'dr_atacar', 'dr_especial', 'dr_poder', 'dr_relancar', 'dr_passar', 'dr_lobo', 'dr_lutar'];
+export const TIPOS_DUELO = ['dr_mago', 'dr_exercito', 'dr_desenho', 'dr_rodar', 'dr_pronto', 'dr_andar', 'dr_atacar', 'dr_especial', 'dr_poder', 'dr_comprar', 'dr_passar', 'dr_lobo', 'dr_lutar'];
 
 /** Habilidade: só para os especiais das criaturas (Velho Pescador, Múmia, Carvalho Vivo); a coringa serve para tudo */
 export type Face = 'andar' | 'fazer' | 'habilidade' | 'coringa';
@@ -90,6 +90,10 @@ export interface Mago {
 export interface Batalha {
   de: number;
   alvo: number;
+  /** antes de rolar (26/11): quantos dados cada lado vai rolar (a base + os comprados com gemas) */
+  nA: number;
+  nD: number;
+  rolado: boolean;
   ataque: number[];
   defesa: number[];
   /** dados de ferimento de cada lado */
@@ -163,7 +167,7 @@ type AcaoJogador =
   | { tipo: 'dr_atacar'; id: string; i: number; criatura: number; alvo: number }
   | { tipo: 'dr_especial'; id: string; i: number; criatura: number; alvo?: number; casa?: Casa }
   | { tipo: 'dr_poder'; id: string; poder: Poder; alvo: AlvoPoder }
-  | { tipo: 'dr_relancar'; id: string; i: number }
+  | { tipo: 'dr_comprar'; id: string }
   | { tipo: 'dr_passar'; id: string; i: number }
   | { tipo: 'dr_lutar'; id: string; criatura: number; alvo: number }
   | { tipo: 'dr_lobo'; id: string; casa: Casa | null };
@@ -327,12 +331,22 @@ export function dadosDefesa(e: VistaDuelo, alvo: Cria): number {
   return CRIATURAS[alvo.tipo].defesa + (golem ? 1 : 0) + (alvo.escudo ? 1 : 0);
 }
 
-/** ainda pode relançar um dado nesta batalha? */
-export function podeRelancar(e: VistaDuelo, id: string): boolean {
+/** quanto custa o próximo dado de batalha: os dados que ficam (ter 2 → o 3.º custa 3) */
+export function custoDado(e: VistaDuelo, id: string): number {
   const b = e.batalha;
-  if (!b || (cria(e, b.de)?.dono !== id && cria(e, b.alvo)?.dono !== id)) return false;
-  return !e.magos[id].pronto && (e.magos[id].gratis > 0 || e.magos[id].gemas > 0);
+  if (!b) return Infinity;
+  return (cria(e, b.de)?.dono === id ? b.nA : b.nD) + 1;
 }
+
+/** este mago ainda está a escolher (comprar dados ou ficar) nesta batalha? */
+export function podeComprar(e: VistaDuelo, id: string): boolean {
+  const b = e.batalha;
+  if (!b || b.rolado || (cria(e, b.de)?.dono !== id && cria(e, b.alvo)?.dono !== id)) return false;
+  return !e.magos[id].pronto;
+}
+
+/** dá para pagar mais um dado agora? (a 1.ª compra é grátis depois do 1.º poder da volta) */
+export const chegaParaComprar = (e: VistaDuelo, id: string): boolean => podeComprar(e, id) && (e.magos[id].gratis > 0 || e.magos[id].gemas >= custoDado(e, id));
 
 /** casas para o passo extra do Lobo */
 export const casasLobo = (e: VistaDuelo, c: Cria): Casa[] => vizinhas(c.casa).filter((v) => livre(e, v));
@@ -577,10 +591,28 @@ function resolver(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
   depoisDaAcao(s, agora, rnd);
 }
 
+/** começa a batalha: antes de rolar, cada lado pode comprar dados com gemas; quem não chega para nenhum fica logo pronto */
 function atacar(s: EstadoDuelo, de: Cria, alvo: Cria, agora: number, rnd?: Rodar): void {
+  s.batalha = { de: de.id, alvo: alvo.id, nA: dadosAtaque(s, de, alvo), nD: dadosDefesa(s, alvo), rolado: false, ataque: [], defesa: [], feridaAtaque: [], feridaDefesa: [] };
+  for (const id of [de.dono, alvo.dono]) s.magos[id].pronto = false;
+  for (const id of [de.dono, alvo.dono]) if (!chegaParaComprar(s, id)) s.magos[id].pronto = true;
+  mudarFase(s, 'batalha', T_BATALHA, agora);
+  if (!podeComprar(s, de.dono) && !podeComprar(s, alvo.dono)) rolarEResolver(s, agora, rnd);
+}
+
+/** rola os dados todos (os comprados incluídos) e resolve */
+function rolarEResolver(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
+  const b = s.batalha!;
+  if (!b.rolado) rolarBatalha(s, b, rnd);
+  resolver(s, agora, rnd);
+}
+
+function rolarBatalha(s: EstadoDuelo, b: Batalha, rnd?: Rodar): void {
+  const de = cria(s, b.de)!;
+  const alvo = cria(s, b.alvo)!;
   const rodar = <F,>(n: number, faces: F[]) => Array.from({ length: n }, () => faces[dar(s, rnd)]);
-  const nAtaque = dadosAtaque(s, de, alvo);
-  const nDefesa = dadosDefesa(s, alvo);
+  const nAtaque = b.nA;
+  const nDefesa = b.nD;
   const fracosA = Math.min(nAtaque, de.ferimentos);
   const fracosD = Math.min(nDefesa, alvo.ferimentos);
   const ataque = rodar(nAtaque - fracosA, ATAQUE);
@@ -593,10 +625,7 @@ function atacar(s: EstadoDuelo, de: Cria, alvo: Cria, agora: number, rnd?: Rodar
   const feridaAtaque = rodar(fracosA, FERIDA_ATAQUE);
   const defesa = rodar(nDefesa - fracosD, DEFESA);
   outraVez(alvo, defesa, DEFESA);
-  s.batalha = { de: de.id, alvo: alvo.id, ataque, defesa, feridaAtaque, feridaDefesa: rodar(fracosD, FERIDA_DEFESA) };
-  s.magos[de.dono].pronto = s.magos[alvo.dono].pronto = false;
-  mudarFase(s, 'batalha', T_BATALHA, agora);
-  if (!podeRelancar(s, de.dono) && !podeRelancar(s, alvo.dono)) resolver(s, agora, rnd);
+  Object.assign(b, { ataque, defesa, feridaAtaque, feridaDefesa: rodar(fracosD, FERIDA_DEFESA), rolado: true });
 }
 
 /** aplica o poder; false = alvo inválido */
@@ -669,7 +698,7 @@ function tempoEsgotado(s: EstadoDuelo, agora: number, rnd?: Rodar): void {
       largarDado(s.magos[s.vez], 0);
       return acabarVez(s, agora, rnd);
     case 'batalha':
-      return resolver(s, agora, rnd);
+      return rolarEResolver(s, agora, rnd);
     case 'lobo':
       return depoisDaAcao(s, agora, rnd);
   }
@@ -725,9 +754,9 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
         if (todos((x) => x.pronto)) darVez(s, s.comecou, agora, rnd);
         return true;
       }
-      if (s.fase !== 'batalha' || !podeRelancar(s, a.id)) return false;
+      if (s.fase !== 'batalha' || !podeComprar(s, a.id)) return false;
       m.pronto = true;
-      if (!s.participantes.some((id) => podeRelancar(s, id))) resolver(s, agora, rnd);
+      if (!s.participantes.some((id) => podeComprar(s, id))) rolarEResolver(s, agora, rnd);
       return true;
     case 'dr_andar': {
       const c = cria(s, a.criatura);
@@ -799,19 +828,15 @@ function agir(s: EstadoDuelo, a: AcaoJogador, agora: number, rnd?: Rodar): boole
       if (!verFim(s, agora) && !vivos(s).includes(a.id)) acabarVez(s, agora, rnd);
       return true;
     }
-    case 'dr_relancar': {
+    case 'dr_comprar': {
+      // +1 dado antes de rolar; custa os dados que fica a ter (o 1.º depois do 1.º poder da volta é grátis)
       const b = s.batalha;
-      if (s.fase !== 'batalha' || !b || !podeRelancar(s, a.id)) return false;
-      const ataca = cria(s, b.de)!.dono === a.id;
-      const l = ataca ? b.ataque : b.defesa;
-      const fracos = ataca ? b.feridaAtaque : b.feridaDefesa;
-      if (!Number.isInteger(a.i) || a.i < 0 || a.i >= l.length + fracos.length) return false;
-      // os dados de ferimento vêm a seguir aos normais
-      if (a.i < l.length) l[a.i] = (ataca ? ATAQUE : DEFESA)[dar(s, rnd)];
-      else fracos[a.i - l.length] = (ataca ? FERIDA_ATAQUE : FERIDA_DEFESA)[dar(s, rnd)];
+      if (s.fase !== 'batalha' || !b || !chegaParaComprar(s, a.id)) return false;
+      const custo = custoDado(s, a.id);
       if (m.gratis > 0) m.gratis--;
-      else m.gemas--;
-      if (!s.participantes.some((id) => podeRelancar(s, id))) resolver(s, agora, rnd);
+      else m.gemas -= custo;
+      if (cria(s, b.de)!.dono === a.id) b.nA++;
+      else b.nD++;
       return true;
     }
     case 'dr_passar':
